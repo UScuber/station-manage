@@ -1,12 +1,15 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import StationList from "./StationList";
 import StationInfo from "./StationInfo";
 import SearchStation from "./SearchStation";
 
 const App = () => {
+  const queryClient = new QueryClient();
+
   return (
-    <div className="App">
+    <QueryClientProvider client={queryClient}>
       <p>header</p>
       <BrowserRouter>
         <Routes>
@@ -16,7 +19,7 @@ const App = () => {
           <Route path="/searchStation/" element={<SearchStation />} />
         </Routes>
       </BrowserRouter>
-    </div>
+    </QueryClientProvider>
   );
 };
 
