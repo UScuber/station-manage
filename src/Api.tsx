@@ -7,8 +7,8 @@ export type Station = {
   companyCode: number,
   railwayCode: number,
   stationGroupCode: number,
-  railwayName: String,
-  railwayCompany: String,
+  railwayName: string,
+  railwayCompany: string,
   latitude: number,
   longitude: number
 };
