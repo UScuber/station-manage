@@ -6,7 +6,6 @@ import {
   IconButton,
   Typography,
   Box,
-  CssBaseline,
   List,
   ListItem,
   ListItemButton,
@@ -29,9 +28,8 @@ const Header = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar component="nav">
+    <>
+      <AppBar component="nav" position="static">
         <Toolbar>
           <IconButton
             color="inherit"
@@ -62,7 +60,7 @@ const Header = () => {
           </Box>
         </Toolbar>
       </AppBar>
-    </Box>
+    </>
   );
 };
 
