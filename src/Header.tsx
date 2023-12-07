@@ -17,7 +17,6 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 
 const navItems: Array<{ text: string, url: string }> = [
-  { text: "Top", url: "/" },
   { text: "List", url: "/stationList" },
   { text: "Search", url: "/searchStation" },
 ];
@@ -59,10 +58,10 @@ const Header = () => {
             </Button>
           </Typography>
           <Box sx={{ display: { xs: "none", sm: "block", textAlign: "center" } }}>
-            <List component="nav" sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <List component="nav" sx={{ display: "flex", justifyContent: "flex-start" }}>
               {navItems.map((item) => (
                 <ListItem key={item.text} disablePadding>
-                  <ListItemButton component={Link} to={item.url} sx={{ textAlign: 'center' }}>
+                  <ListItemButton component={Link} to={item.url} sx={{ textAlign: "center" }}>
                     <ListItemText primary={item.text} />
                   </ListItemButton>
                 </ListItem>
@@ -81,11 +80,11 @@ const Header = () => {
             keepMounted: true, // Better open performance on mobile.
           }}
           sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
           }}
         >
-          <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
+          <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
             <Typography variant="h6" sx={{ my: 2 }}>
               <Button
                 component={Link}
@@ -100,7 +99,7 @@ const Header = () => {
             <List>
               {navItems.map((item) => (
                 <ListItem key={item.text} disablePadding>
-                  <ListItemButton component={Link} to={item.url} sx={{ textAlign: 'center' }}>
+                  <ListItemButton component={Link} to={item.url} sx={{ textAlign: "center" }}>
                     <ListItemText primary={item.text} />
                   </ListItemButton>
                 </ListItem>
