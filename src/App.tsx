@@ -1,7 +1,9 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CssBaseline } from "@mui/material";
 import Header from "./Header";
+import Top from "./Top";
 import StationList from "./StationList";
 import StationInfo from "./StationInfo";
 import SearchStation from "./SearchStation";
@@ -11,10 +13,11 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <CssBaseline />
       <BrowserRouter>
         <Header />
         <Routes>
-          <Route path="/" element={<p>hello</p>} />
+          <Route path="/" element={<Top />} />
           <Route path="/stationList" element={<StationList />} />
           <Route path="/station/:stationCode" element={<StationInfo />} />
           <Route path="/searchStation/" element={<SearchStation />} />
