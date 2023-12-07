@@ -6,6 +6,7 @@ import Header from "./Header";
 import Top from "./Top";
 import StationList from "./StationList";
 import StationInfo from "./StationInfo";
+import StationGroupInfo from "./StationGroupInfo";
 import SearchStation from "./SearchStation";
 
 const App = () => {
@@ -20,7 +21,8 @@ const App = () => {
           <Route path="/" element={<Top />} />
           <Route path="/stationList" element={<StationList />} />
           <Route path="/station/:stationCode" element={<StationInfo />} />
-          <Route path="/searchStation/" element={<SearchStation />} />
+          <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
+          <Route path="/searchStation" element={<SearchStation />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
