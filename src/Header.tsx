@@ -19,6 +19,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 const navItems: Array<{ text: string, url: string }> = [
   { text: "List", url: "/stationList" },
   { text: "Search", url: "/searchStation" },
+  { text: "History", url: "/history" },
 ];
 
 const drawerWidth = 240;
