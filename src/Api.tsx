@@ -4,6 +4,7 @@ import axios from "axios";
 
 export type Station = {
   stationCode: number,
+  stationName: string,
   companyCode: number,
   railwayCode: number,
   stationGroupCode: number,
