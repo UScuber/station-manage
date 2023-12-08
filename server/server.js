@@ -113,5 +113,22 @@ app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
   );
 });
 
+app.get("/api/stationHistory", (req, res) => {
+  const off = req.query.off;
+  const len = req.query.len;
+  if(off === undefined || len === undefined){
+    res.json({});
+    return;
+  }
+  db.all(
+    "SELECT * FROM StationHistory LIMIT ? OFFSET ?",
+    len, off,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
 app.listen(PORT);
 console.log(`Server running at ${PORT}`);

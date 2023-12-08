@@ -90,3 +90,21 @@ export const useSearchNearestStationGroup = (pos: Coordinate): UseQueryResult<nu
     enabled: pos !== undefined,
   });
 };
+
+
+export type StationHistory = {
+  stationCode: number,
+  date: Date,
+  state: number
+};
+
+export const useStationHistoryList = (offset: number, length: number): UseQueryResult<StationHistory[]> => {
+  return useQuery<StationHistory[]>({
+    queryKey: ["StationHistoryList", offset, length],
+    queryFn: async() => {
+      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}`);
+      return data;
+    },
+    enabled: offset !== undefined || length !== undefined,
+  });
+};
