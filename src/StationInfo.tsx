@@ -22,13 +22,19 @@ const StationInfo = () => {
     <>
       <Toolbar />
       <Container>
-        <Typography variant="h4">{info?.stationName}</Typography>
+        <Typography variant="h3" sx={{ mb: 2 }}>{info?.stationName}</Typography>
         <Box>
-          <Typography variant="h6">駅コード: {info?.stationCode}</Typography>
-          <p>路線名: {info?.railwayName}</p>
-          <p>路線運営会社: {info?.railwayCompany}</p>
-          <p>緯度: {info?.latitude}</p>
-          <p>経度: {info?.longitude}</p>
+          <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
+          <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
+
+          <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
+          <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
+
+          <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
+          <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
+
+          <Typography variant="h6" sx={{ color: "gray" }}>座標:</Typography>
+          <Typography variant="h6" sx={{ mx: 2 }}>緯度:{info?.latitude}, 経度:{info?.longitude}</Typography>
         </Box>
       </Container>
     </>
