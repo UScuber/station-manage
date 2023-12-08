@@ -60,8 +60,9 @@ json_data = json_data.filter((elem) => elem !== null);
 json_data = json_data.map((elem) => {
   let latitude = 0, longitude = 0;
   elem.coordinates.forEach((pos) => {
-    latitude += (pos[0][0] + pos[pos.length-1][0]) * 0.5;
-    longitude += (pos[0][1] + pos[pos.length-1][1]) * 0.5;
+    // [経度, 緯度]
+    latitude += (pos[0][1] + pos[pos.length-1][1]) * 0.5;
+    longitude += (pos[0][0] + pos[pos.length-1][0]) * 0.5;
   });
   latitude /= elem.coordinates.length;
   longitude /= elem.coordinates.length;
@@ -107,6 +108,20 @@ json_data = json_data.map((elem, index) => {
   return elem;
 });
 
+
+// calc center
+const station_group_codes = Array.from(new Set(group_codes));
+let centers = new Array(json_data.length);
+for(let i = 0; i < json_data.length; i++) centers[i] = { lat:0, lng:0, cnt:0 };
+group_codes.forEach((code, index) => {
+  centers[code].lat += json_data[index].center[0];
+  centers[code].lng += json_data[index].center[1];
+  centers[code].cnt++;
+});
+centers = centers.map((pos) => {
+  if(!pos.cnt) return {};
+  return { lat: pos.lat/pos.cnt, lng: pos.lng/pos.cnt };
+});
 
 
 if(fs.existsSync("./station.db")) fs.rmSync("./station.db");
@@ -168,6 +183,8 @@ db.serialize(() => {
     CREATE TABLE StationNames(
       stationGroupCode INTEGER,
       stationName VARCHAR(32) NOT NULL,
+      latitude DOUBLE PRECISION NOT NULL,
+      longitude DOUBLE PRECISION NOT NULL,
       PRIMARY KEY (stationGroupCode)
     )
   `);
@@ -241,8 +258,14 @@ db.serialize(() => {
   // data insert
   // StationNames
   db.parallelize(() => {
-    Array.from(new Set(group_codes)).forEach((index) => {
-      db.run("INSERT INTO StationNames VALUES(?,?)", index, json_data[index].stationName);
+    station_group_codes.forEach((code) => {
+      db.run(
+        "INSERT INTO StationNames VALUES(?,?,?,?)",
+        code,
+        json_data[code].stationName,
+        centers[code].lat,
+        centers[code].lng
+      );
     });
   });
 

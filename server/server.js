@@ -57,6 +57,38 @@ app.get("/api/searchStationName", (req, res) => {
   );
 });
 
+app.get("/api/searchNearestStationGroup", (req, res) => {
+  const lat = req.query.lat;
+  const lng = req.query.lng;
+  if(lat === undefined || lng == undefined){
+    res.json({});
+    return;
+  }
+  db.all(`
+      SELECT * FROM StationNames
+      WHERE (
+        6371 * ACOS(
+          COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+          + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+        )
+      ) = (
+        SELECT MIN(
+          6371 * ACOS(
+            COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+            + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+          )
+        )
+        FROM StationNames
+      )
+    `,
+    lat,lng,lat, lat,lng,lat,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
 app.get("/api/stationState/:stationCode", (req, res) => {
   const code = req.params.stationCode;
   db.get(
@@ -74,6 +106,23 @@ app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
   db.get(
     "SELECT * FROM StationGroupState WHERE stationGroupCode = ?",
     code,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
+app.get("/api/stationHistory", (req, res) => {
+  const off = req.query.off;
+  const len = req.query.len;
+  if(off === undefined || len === undefined){
+    res.json({});
+    return;
+  }
+  db.all(
+    "SELECT * FROM StationHistory LIMIT ? OFFSET ?",
+    len, off,
     (err, data) => {
       if(err) console.error(err);
       res.json(data);
