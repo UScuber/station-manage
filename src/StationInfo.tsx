@@ -1,7 +1,18 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { useStationInfo, useStationState } from "./Api";
-import { Box, CircularProgress, Container, Toolbar, Typography } from "@mui/material";
+import { useSendStationStateMutation, useStationInfo, useStationState } from "./Api";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Toolbar,
+  Typography,
+  ListItemText,
+  Stack,
+} from "@mui/material";
+
+const stateNames = ["乗車","降車","通過"];
 
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
@@ -15,7 +26,17 @@ const StationInfo = () => {
   const getOffDate = state?.getOffDate ? state.getOffDate.toString() : "なし";
   const passDate = state?.passDate ? state.passDate.toString() : "なし";
 
-  if(station.isLoading){
+  const mutation = useSendStationStateMutation();
+
+  const handleSubmit = (state: number) => {
+    mutation.mutate({
+      stationCode: stationCode,
+      state: state,
+      date: new Date(),
+    });
+  };
+
+  if(station.isLoading || stationState.isLoading){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -48,6 +69,15 @@ const StationInfo = () => {
             <Typography variant="h6">降車: {getOffDate}</Typography>
             <Typography variant="h6">通過: {passDate}</Typography>
           </Box>
+        </Box>
+        <Box>
+          <Stack spacing={2} direction="row">
+            {stateNames.map((value, index) => (
+              <Button key={value} variant="outlined" onClick={() => handleSubmit(index)} sx={{ textAlign: "center" }}>
+                <ListItemText primary={value} />
+              </Button>
+            ))}
+          </Stack>
         </Box>
       </Container>
     </>
