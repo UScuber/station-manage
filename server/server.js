@@ -130,5 +130,42 @@ app.get("/api/stationHistory", (req, res) => {
   );
 });
 
+
+app.get("/api/postStationDate", (req, res) => {
+  const code = req.query.code;
+  let date = req.query.date;
+  const state = req.query.state;
+  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 3){
+    res.end("NG");
+    return;
+  }
+  date = new Date(date).toLocaleDateString("sv-SE");
+  db.run(
+    "INSERT INTO StationHistory VALUES(?,date(?),?)",
+    code, date, state,
+    (err, data) => {
+      if(err){
+        console.error(err);
+        res.end("error");
+      }else{
+        const valueName = ["getOnDate", "getOffDate", "passDate"][state];
+        db.run(
+          `UPDATE StationState SET ${valueName} = date(?) WHERE stationCode = ?`,
+          date, code,
+          (e, d) => {
+            if(e){
+              console.error(e);
+              res.end("error");
+            }else{
+              res.end("OK");
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
+
 app.listen(PORT);
 console.log(`Server running at ${PORT}`);
