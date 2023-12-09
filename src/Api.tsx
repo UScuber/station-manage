@@ -1,5 +1,5 @@
 import React from "react";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
 export type Station = {
@@ -106,5 +106,47 @@ export const useStationHistoryList = (offset: number, length: number): UseQueryR
       return data;
     },
     enabled: offset !== undefined || length !== undefined,
+  });
+};
+
+
+export const useSendStationStateMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: StationHistory) => {
+      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${req.date.toString()}`);
+      return data;
+    },
+    onSuccess: (data: string) => {
+      console.log(data);
+      queryClient.invalidateQueries({ queryKey: ["StationState"] });
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    }
+  });
+};
+
+
+export type StationGroupHistory = {
+  stationGroupCode: number,
+  date: Date,
+  state: number,
+};
+
+export const useSendStationGroupStateMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: StationGroupHistory) => {
+      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&state=${req.state}&date=${req.date.toString()}`);
+      return data;
+    },
+    onSuccess: (data: string) => {
+      console.log(data);
+      queryClient.invalidateQueries({ queryKey: ["StationGroupState"] });
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    }
   });
 };
