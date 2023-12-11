@@ -35,29 +35,29 @@ const Header = () => {
     <>
       <AppBar position="static">
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
           <Typography
             variant="h6"
             component="div"
-            sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
+            sx={{ flexGrow: { xs: 1, sm: 0 }, mr: 1, display: "block" }}
           >
             <Button
               component={Link}
               color="inherit"
               to="/"
-              sx={{ fontSize: "20px", color: "#fff", textTransform: "none" }}
+              sx={{ fontSize: "18px", fontWeight: 700, color: "#fff", textTransform: "none" }}
             >
               Station Manage
             </Button>
           </Typography>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 1, display: { sm: "none" } }}
+          >
+            <MenuIcon />
+          </IconButton>
           <Box sx={{ display: { xs: "none", sm: "block", textAlign: "center" } }}>
             <List component="nav" sx={{ display: "flex", justifyContent: "flex-start" }}>
               {navItems.map((item) => (
