@@ -121,7 +121,7 @@ app.get("/api/stationHistory", (req, res) => {
     return;
   }
   db.all(
-    "SELECT * FROM StationHistory LIMIT ? OFFSET ?",
+    "SELECT * FROM StationHistory ORDER BY date DESC LIMIT ? OFFSET ?",
     len, off,
     (err, data) => {
       if(err) console.error(err);
