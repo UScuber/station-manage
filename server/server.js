@@ -75,14 +75,31 @@ app.get("/api/searchStationName", (req, res) => {
     return;
   }
   db.all(`
-      SELECT * FROM StationCodes
-      INNER JOIN StationNames
+      WITH StationData AS (
+        SELECT * FROM StationCodes
+        INNER JOIN StationNames
         ON StationCodes.stationGroupCode = StationNames.stationGroupCode
-          AND StationNames.stationName = ?
+      )
+        SELECT 0 AS ord, StationData.* FROM StationData
+          WHERE stationName = ?
+      UNION ALL
+        SELECT 1 AS ord, StationData.* FROM StationData
+          WHERE stationName LIKE ?
+      UNION ALL
+        SELECT 2 AS ord, StationData.* FROM StationData
+          WHERE stationName LIKE ?
+      UNION ALL
+        SELECT 3 AS ord, StationData.* FROM StationData
+          WHERE stationName LIKE ?
+      ORDER BY ord
     `,
-    name,
+    name,`${name}_%`,`_%${name}`,`_%${name}_%`,
     (err, data) => {
       if(err) console.error(err);
+      data = data.map((item) => {
+        delete item.ord;
+        return item;
+      });
       res.json(data);
     }
   );
