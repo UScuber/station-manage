@@ -37,6 +37,37 @@ app.get("/api/station/:stationCode", (req, res) => {
   );
 });
 
+
+app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
+  const code = req.params.stationGroupCode;
+  db.get(`
+      SELECT * FROM StationNames
+        WHERE stationGroupCode = ?
+    `,
+    code,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
+app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
+  const code = req.params.stationGroupCode;
+  db.all(`
+      SELECT * FROM StationCodes
+      INNER JOIN StationNames
+        ON StationCodes.stationGroupCode = StationNames.stationGroupCode
+          AND StationCodes.stationGroupCode = ?
+    `,
+    code,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
 app.get("/api/searchStationName", (req, res) => {
   const name = req.query.name;
   if(name === undefined){
