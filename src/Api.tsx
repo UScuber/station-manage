@@ -26,6 +26,18 @@ export const useStationInfo = (code: number): UseQueryResult<Station> => {
 };
 
 
+export const useStationsInfoByGroupCode = (code: number): UseQueryResult<Station[]> => {
+  return useQuery<Station[]>({
+    queryKey: ["Stations", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Station[]>("/api/stationsByGroupCode/" + code);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
 export type StationState = {
   stationCode: number,
   getOnDate: Date | null,
