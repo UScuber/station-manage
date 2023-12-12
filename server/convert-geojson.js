@@ -235,7 +235,6 @@ db.serialize(() => {
     CREATE TABLE StationGroupHistory(
       stationGroupCode INTEGER,
       date DATE,
-      state INTEGER,
       isIntoStation BOOLEAN,
       PRIMARY KEY (stationGroupCode, date, isIntoStation),
       FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
