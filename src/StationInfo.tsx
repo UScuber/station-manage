@@ -46,41 +46,38 @@ const StationInfo = () => {
   }
 
   return (
-    <>
-      <Toolbar />
-      <Container>
-        <Typography variant="h3" sx={{ mb: 2 }}>{info?.stationName}</Typography>
-        <Box>
-          <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
-          <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
+    <Container>
+      <Typography variant="h3" sx={{ mb: 2 }}>{info?.stationName}</Typography>
+      <Box>
+        <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
+        <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
 
-          <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
-          <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
+        <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
+        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
 
-          <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
-          <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
+        <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
+        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
 
-          <Typography variant="h6" sx={{ color: "gray" }}>座標:</Typography>
-          <Typography variant="h6" sx={{ mx: 2 }}>緯度:{info?.latitude}, 経度:{info?.longitude}</Typography>
+        <Typography variant="h6" sx={{ color: "gray" }}>座標:</Typography>
+        <Typography variant="h6" sx={{ mx: 2 }}>緯度:{info?.latitude}, 経度:{info?.longitude}</Typography>
 
-          <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
-          <Box sx={{ mx: 2 }}>
-            <Typography variant="h6">乗車: {getOnDate}</Typography>
-            <Typography variant="h6">降車: {getOffDate}</Typography>
-            <Typography variant="h6">通過: {passDate}</Typography>
-          </Box>
+        <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
+        <Box sx={{ mx: 2 }}>
+          <Typography variant="h6">乗車: {getOnDate}</Typography>
+          <Typography variant="h6">降車: {getOffDate}</Typography>
+          <Typography variant="h6">通過: {passDate}</Typography>
         </Box>
-        <Box>
-          <Stack spacing={2} direction="row">
-            {stateNames.map((value, index) => (
-              <Button key={value} variant="outlined" onClick={() => handleSubmit(index)} sx={{ textAlign: "center" }}>
-                <ListItemText primary={value} />
-              </Button>
-            ))}
-          </Stack>
-        </Box>
-      </Container>
-    </>
+      </Box>
+      <Box>
+        <Stack spacing={2} direction="row">
+          {stateNames.map((value, index) => (
+            <Button key={value} variant="outlined" onClick={() => handleSubmit(index)} sx={{ textAlign: "center" }}>
+              <ListItemText primary={value} />
+            </Button>
+          ))}
+        </Stack>
+      </Box>
+    </Container>
   );
 };
 
