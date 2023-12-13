@@ -40,8 +40,7 @@ export const useStationsInfoByGroupCode = (code: number): UseQueryResult<Station
 
 export type StationState = {
   stationCode: number,
-  getOnDate: Date | null,
-  getOffDate: Date | null,
+  getDate: Date | null,
   passDate: Date | null
 };
 
@@ -59,8 +58,7 @@ export const useStationState = (code: number): UseQueryResult<StationState> => {
 
 export type StationGroupState = {
   stationGroupCode: number,
-  enterDate: Date | null,
-  getOutDate: Date | null
+  date: Date | null,
 };
 
 export const useStationGroupState = (code: number): UseQueryResult<StationGroupState> => {
@@ -142,15 +140,14 @@ export const useSendStationStateMutation = () => {
 
 export type StationGroupHistory = {
   stationGroupCode: number,
-  date: Date,
-  state: number,
+  date: Date
 };
 
 export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&state=${req.state}&date=${req.date.toString()}`);
+      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&date=${req.date.toString()}`);
       return data;
     },
     onSuccess: (data: string) => {
