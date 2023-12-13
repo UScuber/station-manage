@@ -178,27 +178,35 @@ app.get("/api/stationHistory", (req, res) => {
   );
 });
 
+const date_options = {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+};
 
 app.get("/api/postStationDate", (req, res) => {
   const code = req.query.code;
   let date = req.query.date;
   const state = req.query.state;
-  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 3){
+  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 2){
     res.end("NG");
     return;
   }
-  date = new Date(date).toLocaleDateString("sv-SE");
+  date = new Date(date).toLocaleString("ja-jp", date_options).replaceAll("/", "-");
   db.run(
-    "INSERT INTO StationHistory VALUES(?,date(?),?)",
+    "INSERT INTO StationHistory VALUES(?,datetime(?),?)",
     code, date, state,
     (err, data) => {
       if(err){
         console.error(err);
         res.end("error");
       }else{
-        const valueName = ["getOnDate", "getOffDate", "passDate"][state];
+        const valueName = ["getDate", "passDate"][state];
         db.run(
-          `UPDATE StationState SET ${valueName} = date(?) WHERE stationCode = ?`,
+          `UPDATE StationState SET ${valueName} = datetime(?) WHERE stationCode = ?`,
           date, code,
           (e, d) => {
             if(e){
@@ -217,23 +225,21 @@ app.get("/api/postStationDate", (req, res) => {
 app.get("/api/postStationGroupDate", (req, res) => {
   const code = req.query.code;
   let date = req.query.date;
-  const state = req.query.state;
-  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 2){
+  if(code === undefined || date === undefined){
     res.end("NG");
     return;
   }
-  date = new Date(date).toLocaleDateString("sv-SE");
+  date = new Date(date).toLocaleString("ja-jp", date_options).replaceAll("/", "-");
   db.run(
-    "INSERT INTO StationGroupHistory VALUES(?,date(?),?)",
-    code, date, state,
+    "INSERT INTO StationGroupHistory VALUES(?,datetime(?))",
+    code, date,
     (err, data) => {
       if(err){
         console.error(err);
         res.end("error");
       }else{
-        const valueName = ["enterDate", "getOutDate"][state];
         db.run(
-          `UPDATE StationGroupState SET ${valueName} = date(?) WHERE stationGroupCode = ?`,
+          `UPDATE StationGroupState SET date = datetime(?) WHERE stationGroupCode = ?`,
           date, code,
           (e, d) => {
             if(e){

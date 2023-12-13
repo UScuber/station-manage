@@ -222,8 +222,7 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE StationState(
       stationCode INTEGER,
-      getOnDate DATE,
-      getOffDate DATE,
+      getDate DATE,
       passDate DATE,
       PRIMARY KEY (stationCode),
       FOREIGN KEY (stationCode) REFERENCES StationCodes(stationCode)
@@ -235,8 +234,7 @@ db.serialize(() => {
     CREATE TABLE StationGroupHistory(
       stationGroupCode INTEGER,
       date DATE,
-      isIntoStation BOOLEAN,
-      PRIMARY KEY (stationGroupCode, date, isIntoStation),
+      PRIMARY KEY (stationGroupCode, date),
       FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
     )
   `);
@@ -245,8 +243,7 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE StationGroupState(
       stationGroupCode INTEGER,
-      enterDate DATE,
-      getOutDate DATE,
+      date DATE,
       PRIMARY KEY (stationGroupCode),
       FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
     )
@@ -286,12 +283,12 @@ db.serialize(() => {
   
     // StationState, StationGroupState
     json_data.forEach((elem) => {
-      db.run("INSERT INTO StationState VALUES(?,NULL,NULL,NULL)", elem.stationCode);
+      db.run("INSERT INTO StationState VALUES(?,NULL,NULL)", elem.stationCode);
     });
 
     // StationGroupState
     Array.from(new Set(group_codes)).forEach((index) => {
-      db.run("INSERT INTO StationGroupState VALUES(?,NULL,NULL)", json_data[index].stationGroupCode);
+      db.run("INSERT INTO StationGroupState VALUES(?,NULL)", json_data[index].stationGroupCode);
     });
   });
 });
