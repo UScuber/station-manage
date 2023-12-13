@@ -13,7 +13,7 @@ type Props = {
   history: StationHistory,
 };
 
-const stateNames = ["乗車","降車","通過"];
+const stateNames = ["乗降", "通過"];
 
 const HistoryContent: React.FC<Props> = (props) => {
   const { history } = props;

@@ -12,7 +12,7 @@ import {
   Stack,
 } from "@mui/material";
 
-const stateNames = ["乗車","降車","通過"];
+const stateNames = ["乗降", "通過"];
 
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
@@ -22,8 +22,7 @@ const StationInfo = () => {
 
   const stationState = useStationState(stationCode);
   const state = stationState.data;
-  const getOnDate = state?.getOnDate ? state.getOnDate.toString() : "なし";
-  const getOffDate = state?.getOffDate ? state.getOffDate.toString() : "なし";
+  const getDate = state?.getDate ? state.getDate.toString() : "なし";
   const passDate = state?.passDate ? state.passDate.toString() : "なし";
 
   const mutation = useSendStationStateMutation();
@@ -63,8 +62,7 @@ const StationInfo = () => {
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
         <Box sx={{ mx: 2 }}>
-          <Typography variant="h6">乗車: {getOnDate}</Typography>
-          <Typography variant="h6">降車: {getOffDate}</Typography>
+          <Typography variant="h6">乗降: {getDate}</Typography>
           <Typography variant="h6">通過: {passDate}</Typography>
         </Box>
       </Box>
