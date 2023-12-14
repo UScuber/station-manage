@@ -67,8 +67,8 @@ const History = () => {
   return (
     <Container>
       <Box>
-        {historyList.data?.map((item) => (
-          <HistoryContent history={item}/>
+        {historyList.data?.map((item, index) => (
+          <HistoryContent key={index} history={item}/>
         ))}
       </Box>
       <Toolbar />
