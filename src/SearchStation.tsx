@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Coordinate } from "./Api";
+import { Coordinate, useSearchNearestStationGroup, useStationsInfoByGroupCode } from "./Api";
 import { Box, Button, CircularProgress, Container, Typography } from "@mui/material";
 
 const SearchStation = () => {
@@ -7,12 +7,11 @@ const SearchStation = () => {
   const [position, setPosition] = useState<Coordinate>();
   const isFirstRef = useRef(true);
 
-  useEffect(() => {
-    isFirstRef.current = false;
-    if("geolocation" in navigator){
-      setAvailable(true);
-    }
-  }, [isAvailable]);
+  const nearestStationGroup = useSearchNearestStationGroup(position);
+  const groupStation = nearestStationGroup.data;
+
+  const stations = useStationsInfoByGroupCode(groupStation?.stationGroupCode);
+  const infos = stations.data;
 
   const getCurrentPosition = () => {
     navigator.geolocation.getCurrentPosition(position => {
@@ -21,7 +20,15 @@ const SearchStation = () => {
     });
   };
 
-  if(isFirstRef.current){
+  useEffect(() => {
+    isFirstRef.current = false;
+    if("geolocation" in navigator){
+      getCurrentPosition();
+      setAvailable(true);
+    }
+  }, []);
+
+  if(isFirstRef.current || nearestStationGroup.isLoading || stations.isLoading){
     return (
       <Container>
         Loading...
@@ -40,6 +47,13 @@ const SearchStation = () => {
           <Typography variant="h6">経度: {position?.lng}</Typography>
         </Box>
       )}
+      <Typography variant="h6">List</Typography>
+      {infos?.map((station, index) => (
+        <Box key={index}>
+          <Typography variant="h6">駅名: {station.stationName}</Typography>
+          <Typography variant="h6">路線名: {station.railwayName}</Typography>
+        </Box>
+      ))}
     </Container>
   );
 };
