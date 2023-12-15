@@ -2,6 +2,9 @@ import React from "react";
 import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
+axios.defaults.baseURL = process.env.REACT_APP_API_BASEURL;
+
+
 export type Station = {
   stationCode: number,
   stationName: string,
