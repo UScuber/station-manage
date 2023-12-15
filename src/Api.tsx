@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -15,7 +14,7 @@ export type Station = {
   railwayName: string,
   railwayCompany: string,
   latitude: number,
-  longitude: number
+  longitude: number,
 };
 
 export const useStationInfo = (code: number): UseQueryResult<Station> => {
@@ -30,7 +29,7 @@ export const useStationInfo = (code: number): UseQueryResult<Station> => {
 };
 
 
-export const useStationsInfoByGroupCode = (code: number): UseQueryResult<Station[]> => {
+export const useStationsInfoByGroupCode = (code: number | undefined): UseQueryResult<Station[]> => {
   return useQuery<Station[]>({
     queryKey: ["Stations", code],
     queryFn: async() => {
@@ -45,7 +44,7 @@ export const useStationsInfoByGroupCode = (code: number): UseQueryResult<Station
 export type StationState = {
   stationCode: number,
   getDate: Date | null,
-  passDate: Date | null
+  passDate: Date | null,
 };
 
 export const useStationState = (code: number): UseQueryResult<StationState> => {
@@ -77,7 +76,7 @@ export const useStationGroupState = (code: number): UseQueryResult<StationGroupS
 };
 
 
-export const useSearchStationName = (name: string): UseQueryResult<Station[]> => {
+export const useSearchStationName = (name: string | undefined): UseQueryResult<Station[]> => {
   return useQuery<Station[]>({
     queryKey: ["SearchStationName", name],
     queryFn: async() => {
@@ -91,14 +90,21 @@ export const useSearchStationName = (name: string): UseQueryResult<Station[]> =>
 
 export type Coordinate = {
   lat: number,
-  lng: number
+  lng: number,
 };
 
-export const useSearchNearestStationGroup = (pos: Coordinate): UseQueryResult<number> => {
-  return useQuery<number>({
+export type StationGroup = {
+  stationGroupCode: number,
+  stationName: string,
+  latitude: number,
+  longitude: number,
+};
+
+export const useSearchNearestStationGroup = (pos: Coordinate | undefined): UseQueryResult<StationGroup> => {
+  return useQuery<StationGroup>({
     queryKey: ["SearchNearestStationGroup", pos],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/searchNearestStationGroup?lat=${pos.lat}&lng=${pos.lng}`, ngrok_header);
+      const { data } = await axios.get<StationGroup>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}`, ngrok_header);
       return data;
     },
     enabled: pos !== undefined,
@@ -144,7 +150,7 @@ export const useSendStationStateMutation = () => {
 
 export type StationGroupHistory = {
   stationGroupCode: number,
-  date: Date
+  date: Date,
 };
 
 export const useSendStationGroupStateMutation = () => {
