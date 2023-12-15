@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3001;
 const app = express();
 
 app.use(cors({
-  origin: process.env.REACT_URL,
+  origin: [process.env.REACT_URL, "http://localhost:3000"],
   credentials: true,
   optionsSuccessStatus: 200,
 }));
@@ -140,7 +140,7 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
     lat,lng,lat, lat,lng,lat,
     (err, data) => {
       if(err) console.error(err);
-      res.json(data);
+      res.json(data[0]);
     }
   );
 });
