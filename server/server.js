@@ -1,6 +1,8 @@
 const fs = require("fs");
 const express = require("express");
+const cors = require("cors");
 const sqlite3 = require("sqlite3");
+require("dotenv").config();
 
 const db_path = "./station.db";
 if(!fs.existsSync(db_path)){
@@ -10,6 +12,12 @@ if(!fs.existsSync(db_path)){
 
 const PORT = process.env.PORT || 3001;
 const app = express();
+
+app.use(cors({
+  origin: process.env.REACT_URL,
+  credentials: true,
+  optionsSuccessStatus: 200,
+}));
 
 const db = new sqlite3.Database(db_path);
 
