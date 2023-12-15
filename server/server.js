@@ -169,6 +169,23 @@ app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
   );
 });
 
+app.get("/api/stationGroupList", (req, res) => {
+  const off = req.query.off;
+  const len = req.query.len;
+  if(off === undefined || len === undefined){
+    res.json({});
+    return;
+  }
+  db.all(
+    "SELECT * FROM StationNames ORDER BY stationGroupCode LIMIT ? OFFSET ?",
+    len, off,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
 app.get("/api/stationHistory", (req, res) => {
   const off = req.query.off;
   const len = req.query.len;
