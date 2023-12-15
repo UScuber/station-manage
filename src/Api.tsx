@@ -15,6 +15,8 @@ export type Station = {
   railwayCompany: string,
   latitude: number,
   longitude: number,
+  getDate: Date | null,
+  passDate: Date | null,
 };
 
 export const useStationInfo = (code: number): UseQueryResult<Station> => {
@@ -47,6 +49,7 @@ export type StationGroup = {
   stationName: string,
   latitude: number,
   longitude: number,
+  date: Date | null,
 };
 
 export const useStationGroupInfo = (code: number): UseQueryResult<StationGroup> => {
