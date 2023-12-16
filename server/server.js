@@ -32,7 +32,7 @@ app.get("/api", (req, res) => {
 app.get("/api/station/:stationCode", (req, res) => {
   const code = req.params.stationCode;
   db.get(`
-      SELECT * FROM Stations
+      SELECT Stations.*, StationGroups.stationName FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationCode = ?
@@ -66,7 +66,7 @@ app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
 app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
   const code = req.params.stationGroupCode;
   db.all(`
-      SELECT * FROM Stations
+      SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
@@ -87,7 +87,7 @@ app.get("/api/searchStationName", (req, res) => {
   }
   db.all(`
       WITH StationData AS (
-        SELECT * FROM Stations
+        SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
       )
