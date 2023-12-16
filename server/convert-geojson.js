@@ -178,9 +178,9 @@ db.serialize(() => {
     db.run("INSERT INTO InstitutionTypeCd VALUES(?,?)", data.code, data.content);
   });
 
-  // StationNames
+  // StationGroups
   db.run(`
-    CREATE TABLE StationNames(
+    CREATE TABLE StationGroups(
       stationGroupCode INTEGER,
       stationName VARCHAR(32) NOT NULL,
       latitude DOUBLE PRECISION NOT NULL,
@@ -189,9 +189,9 @@ db.serialize(() => {
     )
   `);
 
-  // StationCodes
+  // Stations
   db.run(`
-    CREATE TABLE StationCodes(
+    CREATE TABLE Stations(
       stationCode INTEGER,
       companyCode INTEGER,
       railwayCode INTEGER,
@@ -203,7 +203,7 @@ db.serialize(() => {
       PRIMARY KEY (stationCode),
       FOREIGN KEY (companyCode) REFERENCES InstitutionTypeCd(code),
       FOREIGN KEY (railwayCode) REFERENCES RailwayClassCd(code),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
     )
   `);
 
@@ -214,7 +214,7 @@ db.serialize(() => {
       date DATE,
       state INTEGER,
       PRIMARY KEY (stationCode, date, state),
-      FOREIGN KEY (stationCode) REFERENCES StationCodes(stationCode)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
     )
   `);
 
@@ -225,7 +225,7 @@ db.serialize(() => {
       getDate DATE,
       passDate DATE,
       PRIMARY KEY (stationCode),
-      FOREIGN KEY (stationCode) REFERENCES StationCodes(stationCode)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
     )
   `);
 
@@ -235,7 +235,7 @@ db.serialize(() => {
       stationGroupCode INTEGER,
       date DATE,
       PRIMARY KEY (stationGroupCode, date),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
     )
   `);
 
@@ -245,18 +245,18 @@ db.serialize(() => {
       stationGroupCode INTEGER,
       date DATE,
       PRIMARY KEY (stationGroupCode),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
     )
   `);
 
 
   console.log("Insert data");
   // data insert
-  // StationNames
+  // StationGroups
   db.parallelize(() => {
     station_group_codes.forEach((code) => {
       db.run(
-        "INSERT INTO StationNames VALUES(?,?,?,?)",
+        "INSERT INTO StationGroups VALUES(?,?,?,?)",
         code,
         json_data[code].stationName,
         centers[code].lat,
@@ -266,10 +266,10 @@ db.serialize(() => {
   });
 
   db.parallelize(() => {
-    // StationCodes
+    // Stations
     json_data.forEach((elem) => {
       db.run(
-        "INSERT INTO StationCodes VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT INTO Stations VALUES(?,?,?,?,?,?,?,?)",
         elem.stationCode,
         elem.companyCode,
         elem.railwayCode,

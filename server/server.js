@@ -32,12 +32,12 @@ app.get("/api", (req, res) => {
 app.get("/api/station/:stationCode", (req, res) => {
   const code = req.params.stationCode;
   db.get(`
-      SELECT * FROM StationCodes
-      INNER JOIN StationNames
-        ON StationCodes.stationGroupCode = StationNames.stationGroupCode
-          AND StationCodes.stationCode = ?
+      SELECT * FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND Stations.stationCode = ?
       INNER JOIN StationState
-        ON StationCodes.stationCode = StationState.stationCode
+        ON Stations.stationCode = StationState.stationCode
     `,
     code,
     (err, data) => {
@@ -51,13 +51,13 @@ app.get("/api/station/:stationCode", (req, res) => {
 app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
   const code = req.params.stationGroupCode;
   db.get(`
-      SELECT StationNames.*, MAX(StationState.getDate) AS maxGetDate, MAX(StationState.passDate) AS maxPassDate FROM StationCodes
-      INNER JOIN StationNames
-        ON StationCodes.stationGroupCode = StationNames.stationGroupCode
-          AND StationCodes.stationGroupCode = ?
+      SELECT StationGroups.*, MAX(StationState.getDate) AS maxGetDate, MAX(StationState.passDate) AS maxPassDate FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND Stations.stationGroupCode = ?
       INNER JOIN StationState
-        ON StationCodes.stationCode = StationState.stationCode
-      GROUP BY StationCodes.stationGroupCode
+        ON Stations.stationCode = StationState.stationCode
+      GROUP BY Stations.stationGroupCode
     `,
     code,
     (err, data) => {
@@ -70,12 +70,12 @@ app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
 app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
   const code = req.params.stationGroupCode;
   db.all(`
-      SELECT * FROM StationCodes
-      INNER JOIN StationNames
-        ON StationCodes.stationGroupCode = StationNames.stationGroupCode
-          AND StationCodes.stationGroupCode = ?
+      SELECT * FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND Stations.stationGroupCode = ?
       INNER JOIN StationState
-        ON StationCodes.stationCode = StationState.stationCode
+        ON Stations.stationCode = StationState.stationCode
     `,
     code,
     (err, data) => {
@@ -93,9 +93,9 @@ app.get("/api/searchStationName", (req, res) => {
   }
   db.all(`
       WITH StationData AS (
-        SELECT * FROM StationCodes
-        INNER JOIN StationNames
-        ON StationCodes.stationGroupCode = StationNames.stationGroupCode
+        SELECT * FROM Stations
+        INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
       )
         SELECT 0 AS ord, StationData.* FROM StationData
           WHERE stationName = ?
@@ -130,9 +130,9 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
     return;
   }
   db.all(`
-      SELECT * FROM StationNames
+      SELECT * FROM StationGroups
       INNER JOIN StationGroupState
-        ON StationNames.stationGroupCode = StationGroupState.stationGroupCode
+        ON StationGroups.stationGroupCode = StationGroupState.stationGroupCode
           AND (
             6371 * ACOS(
               COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
@@ -145,7 +145,7 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
                 + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
               )
             )
-            FROM StationNames
+            FROM StationGroups
           )
     `,
     lat,lng,lat, lat,lng,lat,
@@ -188,9 +188,9 @@ app.get("/api/stationGroupList", (req, res) => {
     return;
   }
   db.all(`
-      SELECT * FROM StationNames
+      SELECT * FROM StationGroups
       INNER JOIN StationGroupState
-        ON StationNames.stationGroupCode = StationGroupState.stationGroupCode
+        ON StationGroups.stationGroupCode = StationGroupState.stationGroupCode
       ORDER BY stationGroupCode
       LIMIT ? OFFSET ?
     `,
