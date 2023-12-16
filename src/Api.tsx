@@ -68,7 +68,7 @@ export const useStationGroupList = (offset: number, length: number): UseQueryRes
   return useQuery<StationGroup[]>({
     queryKey: ["StationGroupList", offset, length],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/stationGroupList?off=${offset}&len=${length}`);
+      const { data } = await axios.get<StationGroup[]>(`/api/stationGroupList?off=${offset}&len=${length}`, ngrok_header);
       return data;
     },
     enabled: offset !== undefined && length !== undefined,
