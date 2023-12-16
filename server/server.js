@@ -36,8 +36,6 @@ app.get("/api/station/:stationCode", (req, res) => {
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationCode = ?
-      INNER JOIN StationState
-        ON Stations.stationCode = StationState.stationCode
     `,
     code,
     (err, data) => {
@@ -51,12 +49,10 @@ app.get("/api/station/:stationCode", (req, res) => {
 app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
   const code = req.params.stationGroupCode;
   db.get(`
-      SELECT StationGroups.*, MAX(StationState.getDate) AS maxGetDate, MAX(StationState.passDate) AS maxPassDate FROM Stations
+      SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
-      INNER JOIN StationState
-        ON Stations.stationCode = StationState.stationCode
       GROUP BY Stations.stationGroupCode
     `,
     code,
@@ -74,8 +70,6 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
-      INNER JOIN StationState
-        ON Stations.stationCode = StationState.stationCode
     `,
     code,
     (err, data) => {
@@ -95,7 +89,7 @@ app.get("/api/searchStationName", (req, res) => {
       WITH StationData AS (
         SELECT * FROM Stations
         INNER JOIN StationGroups
-        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
       )
         SELECT 0 AS ord, StationData.* FROM StationData
           WHERE stationName = ?
@@ -131,22 +125,20 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
   }
   db.all(`
       SELECT * FROM StationGroups
-      INNER JOIN StationGroupState
-        ON StationGroups.stationGroupCode = StationGroupState.stationGroupCode
-          AND (
-            6371 * ACOS(
-              COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-              + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
-            )
-          ) = (
-            SELECT MIN(
-              6371 * ACOS(
-                COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-                + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
-              )
-            )
-            FROM StationGroups
+      WHERE (
+        6371 * ACOS(
+          COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+          + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+        )
+      ) = (
+        SELECT MIN(
+          6371 * ACOS(
+            COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+            + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
           )
+        )
+        FROM StationGroups
+      )
     `,
     lat,lng,lat, lat,lng,lat,
     (err, data) => {
@@ -156,10 +148,11 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
   );
 });
 
+// check
 app.get("/api/stationState/:stationCode", (req, res) => {
   const code = req.params.stationCode;
   db.get(
-    "SELECT * FROM StationState WHERE stationCode = ?",
+    "SELECT * FROM Stations WHERE stationCode = ?",
     code,
     (err, data) => {
       if(err) console.error(err);
@@ -171,7 +164,7 @@ app.get("/api/stationState/:stationCode", (req, res) => {
 app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
   const code = req.params.stationGroupCode;
   db.get(
-    "SELECT * FROM StationGroupState WHERE stationGroupCode = ?",
+    "SELECT * FROM StationGroups WHERE stationGroupCode = ?",
     code,
     (err, data) => {
       if(err) console.error(err);
@@ -189,8 +182,6 @@ app.get("/api/stationGroupList", (req, res) => {
   }
   db.all(`
       SELECT * FROM StationGroups
-      INNER JOIN StationGroupState
-        ON StationGroups.stationGroupCode = StationGroupState.stationGroupCode
       ORDER BY stationGroupCode
       LIMIT ? OFFSET ?
     `,
@@ -247,7 +238,7 @@ app.get("/api/postStationDate", (req, res) => {
       }else{
         const valueName = ["getDate", "passDate"][state];
         db.run(
-          `UPDATE StationState SET ${valueName} = datetime(?) WHERE stationCode = ?`,
+          `UPDATE Stations SET ${valueName} = datetime(?) WHERE stationCode = ?`,
           date, code,
           (e, d) => {
             if(e){
@@ -280,7 +271,7 @@ app.get("/api/postStationGroupDate", (req, res) => {
         res.end("error");
       }else{
         db.run(
-          `UPDATE StationGroupState SET date = datetime(?) WHERE stationGroupCode = ?`,
+          `UPDATE StationGroups SET date = datetime(?) WHERE stationGroupCode = ?`,
           date, code,
           (e, d) => {
             if(e){

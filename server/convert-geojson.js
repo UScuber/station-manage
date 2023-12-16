@@ -185,6 +185,7 @@ db.serialize(() => {
       stationName VARCHAR(32) NOT NULL,
       latitude DOUBLE PRECISION NOT NULL,
       longitude DOUBLE PRECISION NOT NULL,
+      date DATE,
       PRIMARY KEY (stationGroupCode)
     )
   `);
@@ -200,6 +201,8 @@ db.serialize(() => {
       railwayCompany VARCHAR(32) NOT NULL,
       latitude DOUBLE PRECISION NOT NULL,
       longitude DOUBLE PRECISION NOT NULL,
+      getDate DATE,
+      passDate DATE,
       PRIMARY KEY (stationCode),
       FOREIGN KEY (companyCode) REFERENCES InstitutionTypeCd(code),
       FOREIGN KEY (railwayCode) REFERENCES RailwayClassCd(code),
@@ -218,33 +221,12 @@ db.serialize(() => {
     )
   `);
 
-  // StationState
-  db.run(`
-    CREATE TABLE StationState(
-      stationCode INTEGER,
-      getDate DATE,
-      passDate DATE,
-      PRIMARY KEY (stationCode),
-      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
-    )
-  `);
-
   // StationGroupHistory
   db.run(`
     CREATE TABLE StationGroupHistory(
       stationGroupCode INTEGER,
       date DATE,
       PRIMARY KEY (stationGroupCode, date),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
-    )
-  `);
-
-  // StationGroupState
-  db.run(`
-    CREATE TABLE StationGroupState(
-      stationGroupCode INTEGER,
-      date DATE,
-      PRIMARY KEY (stationGroupCode),
       FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
     )
   `);
@@ -256,7 +238,7 @@ db.serialize(() => {
   db.parallelize(() => {
     station_group_codes.forEach((code) => {
       db.run(
-        "INSERT INTO StationGroups VALUES(?,?,?,?)",
+        "INSERT INTO StationGroups VALUES(?,?,?,?,NULL)",
         code,
         json_data[code].stationName,
         centers[code].lat,
@@ -269,7 +251,7 @@ db.serialize(() => {
     // Stations
     json_data.forEach((elem) => {
       db.run(
-        "INSERT INTO Stations VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT INTO Stations VALUES(?,?,?,?,?,?,?,?,NULL,NULL)",
         elem.stationCode,
         elem.companyCode,
         elem.railwayCode,
@@ -279,16 +261,6 @@ db.serialize(() => {
         elem.center[0],
         elem.center[1]
       );
-    });
-  
-    // StationState, StationGroupState
-    json_data.forEach((elem) => {
-      db.run("INSERT INTO StationState VALUES(?,NULL,NULL)", elem.stationCode);
-    });
-
-    // StationGroupState
-    Array.from(new Set(group_codes)).forEach((index) => {
-      db.run("INSERT INTO StationGroupState VALUES(?,NULL)", json_data[index].stationGroupCode);
     });
   });
 });
