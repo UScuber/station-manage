@@ -229,7 +229,7 @@ app.get("/api/postStationDate", (req, res) => {
   }
   date = new Date(date).toLocaleString("ja-jp", date_options).replaceAll("/", "-");
   db.run(
-    "INSERT INTO StationHistory VALUES(?,datetime(?),?)",
+    "INSERT INTO StationHistory VALUES(?,datetime(?,'utc'),?)",
     code, date, state,
     (err, data) => {
       if(err){
@@ -238,7 +238,7 @@ app.get("/api/postStationDate", (req, res) => {
       }else{
         const valueName = ["getDate", "passDate"][state];
         db.run(
-          `UPDATE Stations SET ${valueName} = datetime(?) WHERE stationCode = ?`,
+          `UPDATE Stations SET ${valueName} = datetime(?,'utc') WHERE stationCode = ?`,
           date, code,
           (e, d) => {
             if(e){
@@ -263,7 +263,7 @@ app.get("/api/postStationGroupDate", (req, res) => {
   }
   date = new Date(date).toLocaleString("ja-jp", date_options).replaceAll("/", "-");
   db.run(
-    "INSERT INTO StationGroupHistory VALUES(?,datetime(?))",
+    "INSERT INTO StationGroupHistory VALUES(?,datetime(?,'utc'))",
     code, date,
     (err, data) => {
       if(err){
@@ -271,7 +271,7 @@ app.get("/api/postStationGroupDate", (req, res) => {
         res.end("error");
       }else{
         db.run(
-          `UPDATE StationGroups SET date = datetime(?) WHERE stationGroupCode = ?`,
+          `UPDATE StationGroups SET date = datetime(?,'utc') WHERE stationGroupCode = ?`,
           date, code,
           (e, d) => {
             if(e){
