@@ -49,9 +49,10 @@ const SearchStation = () => {
       )}
       <Typography variant="h6">List</Typography>
       {infos?.map((station, index) => (
-        <Box key={index}>
+        <Box key={index} border={1} sx={{ mb: 2 }} onClick={() => window.location.href = "/station/" + station.stationCode}>
           <Typography variant="h6">駅名: {station.stationName}</Typography>
           <Typography variant="h6">路線名: {station.railwayName}</Typography>
+          <Typography variant="h6">路線運営会社: {station.railwayCompany}</Typography>
         </Box>
       ))}
     </Container>
