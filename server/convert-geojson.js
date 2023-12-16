@@ -12,7 +12,7 @@ if(!fs.existsSync(file_path)){
 }
 
 
-const max_same_station_dist = 0.37; // [km]
+const max_same_station_dist = 0.45; // [km]
 
 // [latitude, longitude]
 const distance = (p1, p2) => {
@@ -178,20 +178,21 @@ db.serialize(() => {
     db.run("INSERT INTO InstitutionTypeCd VALUES(?,?)", data.code, data.content);
   });
 
-  // StationNames
+  // StationGroups
   db.run(`
-    CREATE TABLE StationNames(
+    CREATE TABLE StationGroups(
       stationGroupCode INTEGER,
       stationName VARCHAR(32) NOT NULL,
       latitude DOUBLE PRECISION NOT NULL,
       longitude DOUBLE PRECISION NOT NULL,
+      date DATE,
       PRIMARY KEY (stationGroupCode)
     )
   `);
 
-  // StationCodes
+  // Stations
   db.run(`
-    CREATE TABLE StationCodes(
+    CREATE TABLE Stations(
       stationCode INTEGER,
       companyCode INTEGER,
       railwayCode INTEGER,
@@ -200,10 +201,12 @@ db.serialize(() => {
       railwayCompany VARCHAR(32) NOT NULL,
       latitude DOUBLE PRECISION NOT NULL,
       longitude DOUBLE PRECISION NOT NULL,
+      getDate DATE,
+      passDate DATE,
       PRIMARY KEY (stationCode),
       FOREIGN KEY (companyCode) REFERENCES InstitutionTypeCd(code),
       FOREIGN KEY (railwayCode) REFERENCES RailwayClassCd(code),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
     )
   `);
 
@@ -214,18 +217,7 @@ db.serialize(() => {
       date DATE,
       state INTEGER,
       PRIMARY KEY (stationCode, date, state),
-      FOREIGN KEY (stationCode) REFERENCES StationCodes(stationCode)
-    )
-  `);
-
-  // StationState
-  db.run(`
-    CREATE TABLE StationState(
-      stationCode INTEGER,
-      getDate DATE,
-      passDate DATE,
-      PRIMARY KEY (stationCode),
-      FOREIGN KEY (stationCode) REFERENCES StationCodes(stationCode)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
     )
   `);
 
@@ -235,28 +227,18 @@ db.serialize(() => {
       stationGroupCode INTEGER,
       date DATE,
       PRIMARY KEY (stationGroupCode, date),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
-    )
-  `);
-
-  // StationGroupState
-  db.run(`
-    CREATE TABLE StationGroupState(
-      stationGroupCode INTEGER,
-      date DATE,
-      PRIMARY KEY (stationGroupCode),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationNames(stationGroupCode)
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
     )
   `);
 
 
   console.log("Insert data");
   // data insert
-  // StationNames
+  // StationGroups
   db.parallelize(() => {
     station_group_codes.forEach((code) => {
       db.run(
-        "INSERT INTO StationNames VALUES(?,?,?,?)",
+        "INSERT INTO StationGroups VALUES(?,?,?,?,NULL)",
         code,
         json_data[code].stationName,
         centers[code].lat,
@@ -266,10 +248,10 @@ db.serialize(() => {
   });
 
   db.parallelize(() => {
-    // StationCodes
+    // Stations
     json_data.forEach((elem) => {
       db.run(
-        "INSERT INTO StationCodes VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT INTO Stations VALUES(?,?,?,?,?,?,?,?,NULL,NULL)",
         elem.stationCode,
         elem.companyCode,
         elem.railwayCode,
@@ -279,16 +261,6 @@ db.serialize(() => {
         elem.center[0],
         elem.center[1]
       );
-    });
-  
-    // StationState, StationGroupState
-    json_data.forEach((elem) => {
-      db.run("INSERT INTO StationState VALUES(?,NULL,NULL)", elem.stationCode);
-    });
-
-    // StationGroupState
-    Array.from(new Set(group_codes)).forEach((index) => {
-      db.run("INSERT INTO StationGroupState VALUES(?,NULL)", json_data[index].stationGroupCode);
     });
   });
 });
