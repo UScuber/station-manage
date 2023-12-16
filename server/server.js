@@ -36,6 +36,8 @@ app.get("/api/station/:stationCode", (req, res) => {
       INNER JOIN StationNames
         ON StationCodes.stationGroupCode = StationNames.stationGroupCode
           AND StationCodes.stationCode = ?
+      INNER JOIN StationState
+        ON StationCodes.stationCode = StationState.stationCode
     `,
     code,
     (err, data) => {
@@ -49,8 +51,13 @@ app.get("/api/station/:stationCode", (req, res) => {
 app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
   const code = req.params.stationGroupCode;
   db.get(`
-      SELECT * FROM StationNames
-        WHERE stationGroupCode = ?
+      SELECT StationNames.*, MAX(StationState.getDate) AS maxGetDate, MAX(StationState.passDate) AS maxPassDate FROM StationCodes
+      INNER JOIN StationNames
+        ON StationCodes.stationGroupCode = StationNames.stationGroupCode
+          AND StationCodes.stationGroupCode = ?
+      INNER JOIN StationState
+        ON StationCodes.stationCode = StationState.stationCode
+      GROUP BY StationCodes.stationGroupCode
     `,
     code,
     (err, data) => {
@@ -67,6 +74,8 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
       INNER JOIN StationNames
         ON StationCodes.stationGroupCode = StationNames.stationGroupCode
           AND StationCodes.stationGroupCode = ?
+      INNER JOIN StationState
+        ON StationCodes.stationCode = StationState.stationCode
     `,
     code,
     (err, data) => {
@@ -122,20 +131,22 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
   }
   db.all(`
       SELECT * FROM StationNames
-      WHERE (
-        6371 * ACOS(
-          COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-          + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
-        )
-      ) = (
-        SELECT MIN(
-          6371 * ACOS(
-            COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-            + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+      INNER JOIN StationGroupState
+        ON StationNames.stationGroupCode = StationGroupState.stationGroupCode
+          AND (
+            6371 * ACOS(
+              COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+              + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+            )
+          ) = (
+            SELECT MIN(
+              6371 * ACOS(
+                COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+                + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+              )
+            )
+            FROM StationNames
           )
-        )
-        FROM StationNames
-      )
     `,
     lat,lng,lat, lat,lng,lat,
     (err, data) => {
@@ -162,6 +173,28 @@ app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
   db.get(
     "SELECT * FROM StationGroupState WHERE stationGroupCode = ?",
     code,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
+app.get("/api/stationGroupList", (req, res) => {
+  const off = req.query.off;
+  const len = req.query.len;
+  if(off === undefined || len === undefined){
+    res.json({});
+    return;
+  }
+  db.all(`
+      SELECT * FROM StationNames
+      INNER JOIN StationGroupState
+        ON StationNames.stationGroupCode = StationGroupState.stationGroupCode
+      ORDER BY stationGroupCode
+      LIMIT ? OFFSET ?
+    `,
+    len, off,
     (err, data) => {
       if(err) console.error(err);
       res.json(data);
