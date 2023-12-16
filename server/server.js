@@ -51,10 +51,13 @@ app.get("/api/station/:stationCode", (req, res) => {
 app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
   const code = req.params.stationGroupCode;
   db.get(`
-      SELECT * FROM StationNames
-      INNER JOIN StationGroupState
-        ON StationNames.stationGroupCode = StationGroupState.stationGroupCode
-          AND StationNames.stationGroupCode = ?
+      SELECT StationNames.*, MAX(StationState.getDate) AS maxGetDate, MAX(StationState.passDate) AS maxPassDate FROM StationCodes
+      INNER JOIN StationNames
+        ON StationCodes.stationGroupCode = StationNames.stationGroupCode
+          AND StationCodes.stationGroupCode = ?
+      INNER JOIN StationState
+        ON StationCodes.stationCode = StationState.stationCode
+      GROUP BY StationCodes.stationGroupCode
     `,
     code,
     (err, data) => {
