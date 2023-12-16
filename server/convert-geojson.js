@@ -12,7 +12,7 @@ if(!fs.existsSync(file_path)){
 }
 
 
-const max_same_station_dist = 0.37; // [km]
+const max_same_station_dist = 0.45; // [km]
 
 // [latitude, longitude]
 const distance = (p1, p2) => {
