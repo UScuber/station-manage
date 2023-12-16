@@ -1,6 +1,9 @@
-import React from "react";
 import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+
+axios.defaults.baseURL = process.env.REACT_APP_API_BASEURL;
+
+const ngrok_header = { headers: { "ngrok-skip-browser-warning": "a" } };
 
 export type Station = {
   stationCode: number,
@@ -11,14 +14,16 @@ export type Station = {
   railwayName: string,
   railwayCompany: string,
   latitude: number,
-  longitude: number
+  longitude: number,
+  getDate: Date | null,
+  passDate: Date | null,
 };
 
 export const useStationInfo = (code: number): UseQueryResult<Station> => {
   return useQuery<Station>({
     queryKey: ["Station", code],
     queryFn: async() => {
-      const { data } = await axios.get<Station>("/api/station/" + code);
+      const { data } = await axios.get<Station>("/api/station/" + code, ngrok_header);
       return data;
     },
     enabled: code !== undefined,
@@ -26,18 +31,62 @@ export const useStationInfo = (code: number): UseQueryResult<Station> => {
 };
 
 
+export const useStationsInfoByGroupCode = (code: number | undefined): UseQueryResult<Station[]> => {
+  return useQuery<Station[]>({
+    queryKey: ["Stations", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Station[]>("/api/stationsByGroupCode/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+
+export type StationGroup = {
+  stationGroupCode: number,
+  stationName: string,
+  latitude: number,
+  longitude: number,
+  date: Date | null,
+};
+
+export const useStationGroupInfo = (code: number): UseQueryResult<StationGroup> => {
+  return useQuery<StationGroup>({
+    queryKey: ["StationGroup", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationGroup>("/api/stationGroup/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+export const useStationGroupList = (offset: number, length: number): UseQueryResult<StationGroup[]> => {
+  return useQuery<StationGroup[]>({
+    queryKey: ["StationGroupList", offset, length],
+    queryFn: async() => {
+      const { data } = await axios.get<StationGroup[]>(`/api/stationGroupList?off=${offset}&len=${length}`);
+      return data;
+    },
+    enabled: offset !== undefined && length !== undefined,
+  });
+};
+
+
 export type StationState = {
   stationCode: number,
-  getOnDate: Date | null,
-  getOffDate: Date | null,
-  passDate: Date | null
+  getDate: Date | null,
+  passDate: Date | null,
 };
 
 export const useStationState = (code: number): UseQueryResult<StationState> => {
   return useQuery<StationState>({
     queryKey: ["StationState", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationState>("/api/stationState/" + code);
+      const { data } = await axios.get<StationState>("/api/stationState/" + code, ngrok_header);
       return data;
     },
     enabled: code !== undefined,
@@ -47,15 +96,14 @@ export const useStationState = (code: number): UseQueryResult<StationState> => {
 
 export type StationGroupState = {
   stationGroupCode: number,
-  enterDate: Date | null,
-  getOutDate: Date | null
+  date: Date | null,
 };
 
 export const useStationGroupState = (code: number): UseQueryResult<StationGroupState> => {
   return useQuery<StationGroupState>({
     queryKey: ["StationGroupState", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroupState>("/api/stationState/" + code);
+      const { data } = await axios.get<StationGroupState>("/api/stationState/" + code, ngrok_header);
       return data;
     },
     enabled: code !== undefined,
@@ -63,11 +111,11 @@ export const useStationGroupState = (code: number): UseQueryResult<StationGroupS
 };
 
 
-export const useSearchStationName = (name: string): UseQueryResult<Station[]> => {
+export const useSearchStationName = (name: string | undefined): UseQueryResult<Station[]> => {
   return useQuery<Station[]>({
     queryKey: ["SearchStationName", name],
     queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/searchStationName?name=" + name);
+      const { data } = await axios.get<Station[]>("/api/searchStationName?name=" + name, ngrok_header);
       return data;
     },
     enabled: name !== undefined,
@@ -77,14 +125,14 @@ export const useSearchStationName = (name: string): UseQueryResult<Station[]> =>
 
 export type Coordinate = {
   lat: number,
-  lng: number
+  lng: number,
 };
 
-export const useSearchNearestStationGroup = (pos: Coordinate): UseQueryResult<number> => {
-  return useQuery<number>({
+export const useSearchNearestStationGroup = (pos: Coordinate | undefined): UseQueryResult<StationGroup> => {
+  return useQuery<StationGroup>({
     queryKey: ["SearchNearestStationGroup", pos],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/searchNearestStationGroup?lat=${pos.lat}&lng=${pos.lng}`);
+      const { data } = await axios.get<StationGroup>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}`, ngrok_header);
       return data;
     },
     enabled: pos !== undefined,
@@ -102,7 +150,7 @@ export const useStationHistoryList = (offset: number, length: number): UseQueryR
   return useQuery<StationHistory[]>({
     queryKey: ["StationHistoryList", offset, length],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}`);
+      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}`, ngrok_header);
       return data;
     },
     enabled: offset !== undefined || length !== undefined,
@@ -114,7 +162,7 @@ export const useSendStationStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${req.date.toString()}`);
+      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${req.date.toString()}`, ngrok_header);
       return data;
     },
     onSuccess: (data: string) => {
@@ -131,14 +179,13 @@ export const useSendStationStateMutation = () => {
 export type StationGroupHistory = {
   stationGroupCode: number,
   date: Date,
-  state: number,
 };
 
 export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&state=${req.state}&date=${req.date.toString()}`);
+      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&date=${req.date.toString()}`, ngrok_header);
       return data;
     },
     onSuccess: (data: string) => {
