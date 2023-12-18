@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Box,
   Button,
@@ -27,7 +28,7 @@ const HistoryContent: React.FC<Props> = (props) => {
   }
 
   return (
-    <Box border={1} onClick={() => window.location.href = "/station/" + info?.stationCode}  sx={{ display: "block", mb: 3 }}>
+    <Button component={Link} to={"/station/" + info?.stationCode} variant="outlined" color="inherit" sx={{ display: "block", mb: 3, textTransform: "none" }}>
       <Typography variant="h4" sx={{ mb: 1 }}>{info?.stationName}</Typography>
 
       <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>駅コード:</Typography>
@@ -37,14 +38,14 @@ const HistoryContent: React.FC<Props> = (props) => {
       <Typography variant="h6" sx={{ mx: 4 }}>{info?.railwayName}</Typography>
 
       <Typography variant="h6" sx={{ mx: 2 }}>{stateNames[history?.state]}: {history?.date.toString()}</Typography>
-    </Box>
+    </Button>
   );
 };
 
 
 const History = () => {
   const [page, setPage] = useState(0);
-  const [contentsNum, setContentsNum] = useState(10);
+  const [contentsNum, setContentsNum] = useState(20);
 
   const historyList = useStationHistoryList(page * contentsNum, contentsNum);
 
