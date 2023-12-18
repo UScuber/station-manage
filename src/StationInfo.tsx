@@ -6,7 +6,6 @@ import {
   Button,
   CircularProgress,
   Container,
-  Toolbar,
   Typography,
   ListItemText,
   Stack,
@@ -20,10 +19,8 @@ const StationInfo = () => {
   const station = useStationInfo(stationCode);
   const info = station.data;
 
-  const stationState = useStationState(stationCode);
-  const state = stationState.data;
-  const getDate = state?.getDate ? state.getDate.toString() : "なし";
-  const passDate = state?.passDate ? state.passDate.toString() : "なし";
+  const getDate = info?.getDate?.toString() ?? "なし";
+  const passDate = info?.passDate?.toString() ?? "なし";
 
   const mutation = useSendStationStateMutation();
 
@@ -35,7 +32,7 @@ const StationInfo = () => {
     });
   };
 
-  if(station.isLoading || stationState.isLoading){
+  if(station.isLoading){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -58,7 +55,7 @@ const StationInfo = () => {
         <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
 
         <Typography variant="h6" sx={{ color: "gray" }}>座標:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>緯度:{info?.latitude}, 経度:{info?.longitude}</Typography>
+        <Typography variant="h6" sx={{ mx: 2 }}>緯度: {info?.latitude}, 経度: {info?.longitude}</Typography>
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
         <Box sx={{ mx: 2 }}>
