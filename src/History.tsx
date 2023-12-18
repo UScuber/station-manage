@@ -28,7 +28,13 @@ const HistoryContent: React.FC<Props> = (props) => {
   }
 
   return (
-    <Button component={Link} to={"/station/" + info?.stationCode} variant="outlined" color="inherit" sx={{ display: "block", mb: 3, textTransform: "none" }}>
+    <Button
+      component={Link}
+      to={"/station/" + info?.stationCode}
+      variant="outlined"
+      color="inherit"
+      sx={{ display: "block", mb: 3, textTransform: "none" }}
+    >
       <Typography variant="h4" sx={{ mb: 1 }}>{info?.stationName}</Typography>
 
       <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>駅コード:</Typography>

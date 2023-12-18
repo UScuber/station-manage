@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Coordinate, useSearchNearestStationGroup, useStationsInfoByGroupCode } from "./Api";
 import { Box, Button, CircularProgress, Container, Typography } from "@mui/material";
 
@@ -49,11 +50,18 @@ const SearchStation = () => {
       )}
       <Typography variant="h6">List</Typography>
       {infos?.map((station, index) => (
-        <Box key={index} border={1} sx={{ mb: 2 }} onClick={() => window.location.href = "/station/" + station.stationCode}>
+        <Button
+          component={Link}
+          to={"/station/" + station.stationCode}
+          variant="outlined"
+          color="inherit"
+          key={index}
+          sx={{ display: "block", mb: 2, textTransform: "none" }}
+        >
           <Typography variant="h6">駅名: {station.stationName}</Typography>
           <Typography variant="h6">路線名: {station.railwayName}</Typography>
           <Typography variant="h6">路線運営会社: {station.railwayCompany}</Typography>
-        </Box>
+        </Button>
       ))}
     </Container>
   );
