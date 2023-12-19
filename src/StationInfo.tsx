@@ -1,6 +1,5 @@
-import React from "react";
 import { useParams } from "react-router-dom";
-import { useSendStationStateMutation, useStationInfo, useStationState } from "./Api";
+import { useSendStationStateMutation, useStationInfo } from "./Api";
 import {
   Box,
   Button,

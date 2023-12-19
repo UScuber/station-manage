@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { Box, Button, Card, CardContent, Container, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Typography
+} from "@mui/material";
 
 const links: Array<{ text: string, url: string, description: JSX.Element }> = [
   {

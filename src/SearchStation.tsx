@@ -1,7 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Coordinate, useSearchNearestStationGroup, useStationsInfoByGroupCode } from "./Api";
-import { Box, Button, CircularProgress, Container, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Typography
+} from "@mui/material";
 
 const SearchStation = () => {
   const [isAvailable, setAvailable] = useState(false);
