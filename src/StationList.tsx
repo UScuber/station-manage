@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Button, CircularProgress, Container, Toolbar, Typography } from "@mui/material";
+import { Box, CircularProgress, Container, TablePagination, Typography } from "@mui/material";
 import { StationGroup, useStationGroupList } from "./Api";
 
 	
@@ -20,21 +20,37 @@ const StationGroupContent: React.FC<Props> = (props) => {
 
 const StationList = () => {
   const [page, setPage] = useState(0);
-  const [contentsNum, setContentsNum] = useState(20);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
-  const stationGroupList = useStationGroupList(page * contentsNum, contentsNum);
+  const stationGroupList = useStationGroupList(page * rowsPerPage, rowsPerPage);
   const stationGroupsInfo = stationGroupList.data;
 
-  const handleNextPage = () => {
-    setPage(page + 1);
+  const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+    setPage(newPage);
   };
-  const handlePrevPage = () => {
-    setPage(Math.max(page - 1, 0));
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const Pagination = (): JSX.Element => {
+    return (
+      <TablePagination
+        component="div"
+        count={9036}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[10,25,50,100,200,500]}
+      />
+    );
   };
 
   if(stationGroupList.isLoading){
     return (
       <Container>
+        <Pagination />
         Loading...
         <CircularProgress />
       </Container>
@@ -43,19 +59,15 @@ const StationList = () => {
 
   return (
     <Container>
+      <Pagination />
+
       <Box sx={{ mb: 2 }}>
-        {stationGroupsInfo?.map((item, index) => (
-          <StationGroupContent key={index} data={item} />
+        {stationGroupsInfo?.map((item) => (
+          <StationGroupContent key={item.stationGroupCode} data={item} />
         ))}
       </Box>
-      <Box>
-        <Button onClick={() => handlePrevPage()}>
-          Prev
-        </Button>
-        <Button onClick={() => handleNextPage()}>
-          Next
-        </Button>
-      </Box>
+
+      <Pagination />
     </Container>
   );
 };
