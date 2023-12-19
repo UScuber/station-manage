@@ -5,15 +5,21 @@ const links: Array<{ text: string, url: string, description: JSX.Element }> = [
   {
     text: "List",
     url: "/stationList",
-    description: <p>Hello World</p>
+    description: (
+      <Typography variant="body2">Hello World</Typography>
+    )
   }, {
     text: "Search",
     url: "/searchStation",
-    description: <p>hoge hoge</p>
+    description: (
+      <Typography variant="body2">hoge hoge</Typography>
+    )
   }, {
     text: "History",
     url: "/history",
-    description: <p>huga huga</p>
+    description: (
+      <Typography variant="body2">huga huga</Typography>
+    )
   },
 ];
 
@@ -36,7 +42,7 @@ const Top = () => {
             <Card variant="outlined">
               <CardContent>
                 <Typography sx={{ fontSize: 18 }}>{item.text}</Typography>
-                <Typography variant="body2">{item.description}</Typography>
+                {item.description}
               </CardContent>
             </Card>
           </Button>
