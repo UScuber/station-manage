@@ -5,6 +5,10 @@ axios.defaults.baseURL = process.env.REACT_APP_API_BASEURL;
 
 const ngrok_header = { headers: { "ngrok-skip-browser-warning": "a" } };
 
+const convert_date = (date: Date): string => {
+  return new Date(date).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+};
+
 export type Station = {
   stationCode: number,
   stationName: string,
@@ -127,7 +131,7 @@ export const useSendStationStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${req.date.toString()}`, ngrok_header);
+      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`, ngrok_header);
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
@@ -149,7 +153,7 @@ export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&date=${req.date.toString()}`, ngrok_header);
+      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&date=${convert_date(req.date)}`, ngrok_header);
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
