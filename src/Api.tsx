@@ -76,41 +76,6 @@ export const useStationGroupList = (offset: number, length: number): UseQueryRes
 };
 
 
-export type StationState = {
-  stationCode: number,
-  getDate: Date | null,
-  passDate: Date | null,
-};
-
-export const useStationState = (code: number): UseQueryResult<StationState> => {
-  return useQuery<StationState>({
-    queryKey: ["StationState", code],
-    queryFn: async() => {
-      const { data } = await axios.get<StationState>("/api/stationState/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-  });
-};
-
-
-export type StationGroupState = {
-  stationGroupCode: number,
-  date: Date | null,
-};
-
-export const useStationGroupState = (code: number): UseQueryResult<StationGroupState> => {
-  return useQuery<StationGroupState>({
-    queryKey: ["StationGroupState", code],
-    queryFn: async() => {
-      const { data } = await axios.get<StationGroupState>("/api/stationState/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-  });
-};
-
-
 export const useSearchStationName = (name: string | undefined): UseQueryResult<Station[]> => {
   return useQuery<Station[]>({
     queryKey: ["SearchStationName", name],
@@ -166,7 +131,6 @@ export const useSendStationStateMutation = () => {
       return data;
     },
     onSuccess: (data: string) => {
-      console.log(data);
       queryClient.invalidateQueries({ queryKey: ["StationState"] });
     },
     onError: (err: Error) => {
