@@ -164,3 +164,37 @@ export const useSendStationGroupStateMutation = () => {
     }
   });
 };
+
+
+export const useDeleteStationHistoryMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: StationHistory) => {
+      const { data } = await axios.get<string>(`/api/deleteStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`, ngrok_header);
+      return data;
+    },
+    onSuccess: (data: string, variables: StationHistory) => {
+      queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    }
+  });
+};
+
+
+export const useDeleteStationGroupHistoryMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: StationGroupHistory) => {
+      const { data } = await axios.get<string>(`/api/deleteStationGroupState?code=${req.stationGroupCode}&date=${convert_date(req.date)}`, ngrok_header);
+      return data;
+    },
+    onSuccess: (data: string, variables: StationGroupHistory) => {
+      queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    }
+  });
+};
