@@ -287,6 +287,54 @@ app.get("/api/postStationGroupDate", (req, res) => {
   );
 });
 
+app.get("/api/deleteStationDate", (req, res) => {
+  const code = req.query.code;
+  let date = req.query.date;
+  const state = req.query.state;
+  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 2){
+    res.end("NG");
+    return;
+  }
+  date = new Date(date).toLocaleString("ja-jp", date_options).replaceAll("/", "-");
+  db.run(`
+    DELETE FROM StationHistory
+    WHERE stationCode = ? AND date = datetime(?) AND state = ?
+    `,
+    code, date, state,
+    (err, data) => {
+      if(err){
+        console.error(err);
+        res.end("error");
+      }else{
+        res.end("OK");
+      }
+    }
+  );
+});
+
+app.get("/api/deleteStationGroupState", (req, res) => {
+  const code = req.query.code;
+  let date = req.query.date;
+  if(code === undefined || date === undefined){
+    res.end("NG");
+    return;
+  }
+  date = new Date(date).toLocaleString("ja-jp", date_options).replaceAll("/", "-");
+  db.run(`
+    DELETE FROM StationGroupHistory
+    WHERE stationCode = ? AND date = datetime(?)
+    `,
+    code, date,
+    (err, data) => {
+      if(err){
+        console.error(err);
+        res.end("error");
+      }else{
+        res.end("OK");
+      }
+    }
+  );
+});
 
 app.listen(PORT);
 console.log(`Server running at ${PORT}`);
