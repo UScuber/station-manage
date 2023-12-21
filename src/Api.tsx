@@ -54,6 +54,7 @@ export type StationGroup = {
   latitude: number,
   longitude: number,
   date: Date | null,
+  distance?: number,
 };
 
 export const useStationGroupInfo = (code: number | undefined): UseQueryResult<StationGroup> => {
@@ -101,7 +102,19 @@ export const useSearchNearestStationGroup = (pos: Coordinate | undefined): UseQu
   return useQuery<StationGroup>({
     queryKey: ["SearchNearestStationGroup", pos],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}`, ngrok_header);
+      const { data } = await axios.get<StationGroup[]>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}`, ngrok_header);
+      return data[0];
+    },
+    enabled: pos !== undefined,
+  });
+};
+
+
+export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?: number): UseQueryResult<StationGroup[]> => {
+  return useQuery<StationGroup[]>({
+    queryKey: ["SearchKNearestStationGroups", pos, num ?? 0],
+    queryFn: async() => {
+      const { data } = await axios.get<StationGroup[]>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}&num=${num ?? ""}`, ngrok_header);
       return data;
     },
     enabled: pos !== undefined,

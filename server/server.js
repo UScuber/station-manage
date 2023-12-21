@@ -119,31 +119,26 @@ app.get("/api/searchStationName", (req, res) => {
 app.get("/api/searchNearestStationGroup", (req, res) => {
   const lat = req.query.lat;
   const lng = req.query.lng;
+  const num = req.query.num ? Math.min(Number(req.query.num), 20) : 20;
   if(lat === undefined || lng == undefined){
     res.json({});
     return;
   }
   db.all(`
-      SELECT * FROM StationGroups
-      WHERE (
+      SELECT StationGroups.*, (
         6371 * ACOS(
           COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
           + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
         )
-      ) = (
-        SELECT MIN(
-          6371 * ACOS(
-            COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-            + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
-          )
-        )
-        FROM StationGroups
-      )
+      ) AS distance
+      FROM StationGroups
+      ORDER BY distance
+      LIMIT ?
     `,
-    lat,lng,lat, lat,lng,lat,
+    lat,lng,lat, num,
     (err, data) => {
       if(err) console.error(err);
-      res.json(data[0]);
+      res.json(data);
     }
   );
 });
