@@ -301,7 +301,24 @@ app.get("/api/deleteStationDate", (req, res) => {
         console.error(err);
         res.end("error");
       }else{
-        res.end("OK");
+        const value_name = ["getDate", "passDate"][state];
+        db.run(`
+          UPDATE Stations SET ${value_name} = (
+            SELECT MIN(date) FROM StationHistory
+            WHERE stationCode = ? AND state = ?
+          )
+          WHERE stationCode = ? AND ${value_name} = datetime(?)
+        `,
+        code, state, code, date,
+        (e, d) => {
+          if(e){
+            console.error(e);
+            res.end("error");
+          }else{
+            res.end("OK");
+          }
+        }
+        );
       }
     }
   );
@@ -324,7 +341,23 @@ app.get("/api/deleteStationGroupState", (req, res) => {
         console.error(err);
         res.end("error");
       }else{
-        res.end("OK");
+        db.run(`
+          UPDATE StationGroupHistory SET date = (
+            SELECT MIN(date) FROM StationGroupHistory
+            WHERE stationGroupCode = ?
+          )
+          WHERE stationGroupCode = ? AND date = datetime(?)
+          `,
+          code, code, date,
+          (e, d) => {
+            if(e){
+              console.error(e);
+              res.end("error");
+            }else{
+              res.end("OK");
+            }
+          }
+        );
       }
     }
   );
