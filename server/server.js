@@ -233,9 +233,9 @@ app.get("/api/postStationDate", (req, res) => {
         console.error(err);
         res.end("error");
       }else{
-        const valueName = ["getDate", "passDate"][state];
+        const value_name = ["getDate", "passDate"][state];
         db.run(
-          `UPDATE Stations SET ${valueName} = datetime(?) WHERE stationCode = ?`,
+          `UPDATE Stations SET ${value_name} = MAX(${value_name}, datetime(?)) WHERE stationCode = ?`,
           date, code,
           (e, d) => {
             if(e){
@@ -267,7 +267,7 @@ app.get("/api/postStationGroupDate", (req, res) => {
         res.end("error");
       }else{
         db.run(
-          `UPDATE StationGroups SET date = datetime(?) WHERE stationGroupCode = ?`,
+          `UPDATE StationGroups SET date = MAX(date, datetime(?)) WHERE stationGroupCode = ?`,
           date, code,
           (e, d) => {
             if(e){
