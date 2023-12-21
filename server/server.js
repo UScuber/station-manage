@@ -304,7 +304,7 @@ app.get("/api/deleteStationDate", (req, res) => {
         const value_name = ["getDate", "passDate"][state];
         db.run(`
           UPDATE Stations SET ${value_name} = (
-            SELECT MIN(date) FROM StationHistory
+            SELECT MAX(date) FROM StationHistory
             WHERE stationCode = ? AND state = ?
           )
           WHERE stationCode = ? AND ${value_name} = datetime(?)
@@ -343,7 +343,7 @@ app.get("/api/deleteStationGroupState", (req, res) => {
       }else{
         db.run(`
           UPDATE StationGroupHistory SET date = (
-            SELECT MIN(date) FROM StationGroupHistory
+            SELECT MAX(date) FROM StationGroupHistory
             WHERE stationGroupCode = ?
           )
           WHERE stationGroupCode = ? AND date = datetime(?)
