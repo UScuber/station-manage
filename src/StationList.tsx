@@ -6,7 +6,7 @@ import {
   TablePagination,
   Typography
 } from "@mui/material";
-import { StationGroup, useStationGroupList } from "./Api";
+import { StationGroup, useStationGroupCount, useStationGroupList } from "./Api";
 
 	
 type Props = {
@@ -31,6 +31,8 @@ const StationList = () => {
   const stationGroupList = useStationGroupList(page * rowsPerPage, rowsPerPage);
   const stationGroupsInfo = stationGroupList.data;
 
+  const stationGroupCount = useStationGroupCount();
+
   const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
     setPage(newPage);
   };
@@ -43,7 +45,7 @@ const StationList = () => {
     return (
       <TablePagination
         component="div"
-        count={9036}
+        count={stationGroupCount.data!}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
@@ -56,7 +58,7 @@ const StationList = () => {
   if(stationGroupList.isLoading){
     return (
       <Container>
-        <Pagination />
+        {!stationGroupCount.isLoading && <Pagination />}
         Loading...
         <CircularProgress />
       </Container>
