@@ -51,7 +51,7 @@ const HistoryContent: React.FC<Props> = (props) => {
 
 const History = () => {
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const historyList = useStationHistoryList(page * rowsPerPage, rowsPerPage);
 
