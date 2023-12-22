@@ -5,10 +5,10 @@ import {
   Button,
   CircularProgress,
   Container,
-  Toolbar,
+  TablePagination,
   Typography
 } from "@mui/material";
-import { StationHistory, useStationInfo, useStationHistoryList } from "./Api";
+import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
 
 type Props = {
   history: StationHistory,
@@ -51,20 +51,38 @@ const HistoryContent: React.FC<Props> = (props) => {
 
 const History = () => {
   const [page, setPage] = useState(0);
-  const [contentsNum, setContentsNum] = useState(20);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
 
-  const historyList = useStationHistoryList(page * contentsNum, contentsNum);
+  const historyList = useStationHistoryList(page * rowsPerPage, rowsPerPage);
 
-  const handleNextPage = () => {
-    setPage(page + 1);
+  const historyListCount = useStationHistoryCount();
+
+  const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+    setPage(newPage);
   };
-  const handlePrevPage = () => {
-    setPage(Math.max(page - 1, 0));
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const Pagination = (): JSX.Element => {
+    return (
+      <TablePagination
+        component="div"
+        count={historyListCount.data!}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[10,25,50,100,200,500]}
+      />
+    );
   };
 
   if(historyList.isLoading){
     return (
       <Container>
+        {!historyListCount.isLoading && <Pagination />}
         Loading ...
         <CircularProgress />
       </Container>
@@ -73,20 +91,15 @@ const History = () => {
 
   return (
     <Container>
+      <Pagination />
+
       <Box>
         {historyList.data?.map((item, index) => (
           <HistoryContent key={index} history={item}/>
         ))}
       </Box>
-      <Toolbar />
-      <Box>
-        <Button onClick={() => handlePrevPage()}>
-          Prev
-        </Button>
-        <Button onClick={() => handleNextPage()}>
-          Next
-        </Button>
-      </Box>
+
+      <Pagination />
     </Container>
   )
 };
