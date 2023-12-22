@@ -36,8 +36,9 @@ const create_station_history = (station) => {
 };
 
 db.all(`
-  SELECT Stations.* FROM StationHistory
+  SELECT Stations.*, StationGroups.stationName FROM StationHistory
   INNER JOIN Stations ON StationHistory.stationCode = Stations.stationCode
+  INNER JOIN StationGroups ON Stations.stationGroupCode = StationGroups.stationGroupCode
   GROUP BY StationHistory.stationCode
   `,
   (err, data) => {
