@@ -183,7 +183,17 @@ app.get("/api/stationGroupList", (req, res) => {
     len, off,
     (err, data) => {
       if(err) console.error(err);
-      res.json(data);
+      db.get(
+        "SELECT COUNT(*) AS count FROM StationGroups",
+        (e, d) => {
+          if(err) console.error(err);
+          data = {
+            list: data,
+            count: d.count,
+          };
+          res.json(data);
+        }
+      );
     }
   );
 });
@@ -200,7 +210,17 @@ app.get("/api/stationHistory", (req, res) => {
     len, off,
     (err, data) => {
       if(err) console.error(err);
-      res.json(data);
+      db.get(
+        "SELECT COUNT(*) AS count FROM StationHistory",
+        (e, d) => {
+          if(err) console.error(err);
+          data = {
+            history: data,
+            count: d.count,
+          };
+          res.json(data);
+        }
+      )
     }
   );
 });

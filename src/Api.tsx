@@ -69,11 +69,16 @@ export const useStationGroupInfo = (code: number | undefined): UseQueryResult<St
 };
 
 
-export const useStationGroupList = (offset: number, length: number): UseQueryResult<StationGroup[]> => {
-  return useQuery<StationGroup[]>({
+export type StationGroupList = {
+  list: StationGroup[],
+  count: number, // 駅の総数
+};
+
+export const useStationGroupList = (offset: number, length: number): UseQueryResult<StationGroupList> => {
+  return useQuery<StationGroupList>({
     queryKey: ["StationGroupList", offset, length],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/stationGroupList?off=${offset}&len=${length}`, ngrok_header);
+      const { data } = await axios.get<StationGroupList>(`/api/stationGroupList?off=${offset}&len=${length}`, ngrok_header);
       return data;
     },
     enabled: offset !== undefined && length !== undefined,
@@ -127,12 +132,16 @@ export type StationHistory = {
   date: Date,
   state: number,
 };
+export type StationHistoryList = {
+  history: StationHistory[],
+  count: number, // 履歴の総数
+};
 
-export const useStationHistoryList = (offset: number, length: number): UseQueryResult<StationHistory[]> => {
-  return useQuery<StationHistory[]>({
+export const useStationHistoryList = (offset: number, length: number): UseQueryResult<StationHistoryList> => {
+  return useQuery<StationHistoryList>({
     queryKey: ["StationHistoryList", offset, length],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}`, ngrok_header);
+      const { data } = await axios.get<StationHistoryList>(`/api/stationHistory?off=${offset}&len=${length}`, ngrok_header);
       return data;
     },
     enabled: offset !== undefined || length !== undefined,
