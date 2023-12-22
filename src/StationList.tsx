@@ -1,27 +1,22 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  Box,
   CircularProgress,
   Container,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
   TablePagination,
-  Typography
+  TableRow,
 } from "@mui/material";
 import { StationGroup, useStationGroupCount, useStationGroupList } from "./Api";
 
 	
 type Props = {
   data: StationGroup,
-};
-
-const StationGroupContent: React.FC<Props> = (props) => {
-  const { data } = props;
-
-  return (
-    <Box sx={{ mb: 2 }} border={1} onClick={() => window.location.href = "/stationGroup/" + data.stationGroupCode}>
-      <Typography variant="h6" sx={{ color: "gray" }}>駅名:</Typography>
-      <Typography variant="h6" sx={{ mx: 2 }}>{data.stationName}</Typography>
-    </Box>
-  );
 };
 
 const StationList = () => {
@@ -68,12 +63,35 @@ const StationList = () => {
   return (
     <Container>
       <Pagination />
-
-      <Box sx={{ mb: 2 }}>
-        {stationGroupsInfo?.map((item) => (
-          <StationGroupContent key={item.stationGroupCode} data={item} />
-        ))}
-      </Box>
+      
+      <TableContainer component={Paper}>
+        <Table sx={{}} aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Group Code</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Date</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {stationGroupsInfo?.map(item => (
+              <TableRow key={item.stationGroupCode}>
+                <TableCell>
+                  <Link
+                    color="primary"
+                    to={"/stationGroup/" + item.stationGroupCode}
+                    style={{ textDecoration: "none" }}
+                  >
+                    {item.stationGroupCode}
+                  </Link>
+                </TableCell>
+                <TableCell>{item.stationName}</TableCell>
+                <TableCell>{item.date?.toDateString()}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       <Pagination />
     </Container>
