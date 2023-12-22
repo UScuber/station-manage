@@ -2,7 +2,7 @@ const fs = require("fs");
 const sqlite3 = require("sqlite3");
 
 if(process.argv.length <= 2){
-  console.error("Argument Error: node convert-sql.js [json-file-name]");
+  console.error("Argument Error: node export-sql.js [json-file-name]");
   process.exit(1);
 }
 
@@ -98,5 +98,5 @@ db.close(() => {
     station_history: station_history,
     station_group_history: station_group_history,
   };
-  fs.writeFileSync(file_path, JSON.stringify(result_json, null, "  "));
+  fs.writeFileSync(file_path, JSON.stringify(result_json, null, " "));
 });
