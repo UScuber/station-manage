@@ -1,8 +1,8 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Box, Container } from "@mui/system";
-import { CircularProgress, Typography } from "@mui/material";
-import { useStationGroupInfo, useStationInfo, useStationsInfoByGroupCode } from "./Api";
+import { Button, CircularProgress, Typography } from "@mui/material";
+import { useSendStationGroupStateMutation, useStationGroupInfo, useStationInfo, useStationsInfoByGroupCode } from "./Api";
 
 
 type Props = {
@@ -45,6 +45,15 @@ const StationGroupInfo = () => {
   const groupStationQuery = useStationGroupInfo(stationGroupCode);
   const groupStationData = groupStationQuery.data;
 
+  const mutation = useSendStationGroupStateMutation();
+
+  const handleSubmit = () => {
+    mutation.mutate({
+      stationGroupCode: stationGroupCode,
+      date: new Date(),
+    });
+  };
+
   if(groupStations.isLoading || groupStationQuery.isLoading){
     return (
       <Container>
@@ -58,6 +67,9 @@ const StationGroupInfo = () => {
     <Container>
       <Typography variant="h3" sx={{ mb: 2 }}>{groupStationData?.stationName}</Typography>
       <Typography variant="h6">立ち寄り: {groupStationData?.date?.toString() ?? "なし"}</Typography>
+      <Button variant="outlined" onClick={handleSubmit} sx={{ textAlign: "center", mb: 2 }}>
+        立ち寄り
+      </Button>
       <Box>
         {stationList?.map((item) => (
           <StationItem key={item.stationCode} code={item.stationCode} />
