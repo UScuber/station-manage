@@ -188,7 +188,7 @@ export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationGroupState?code=${req.stationGroupCode}&date=${convert_date(req.date)}`, ngrok_header);
+      const { data } = await axios.get<string>(`/api/postStationGroupDate?code=${req.stationGroupCode}&date=${convert_date(req.date)}`, ngrok_header);
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
