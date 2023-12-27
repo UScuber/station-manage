@@ -4,7 +4,7 @@ const cors = require("cors");
 const sqlite3 = require("sqlite3");
 require("dotenv").config();
 
-const db_path = "./station.db";
+const db_path = __dirname + "/station.db";
 if(!fs.existsSync(db_path)){
   console.error(`Error: ${db_path} does not exist`);
   process.exit(1);
@@ -21,15 +21,44 @@ app.use(cors({
 
 const db = new sqlite3.Database(db_path);
 
-app.get("/", (req, res) => {
+const convert_date = (date) => {
+  const date_options = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+  return date ? new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-") : undefined;
+};
+
+
+// manage access log
+const log_file = __dirname + "/info.log";
+if(!fs.existsSync(log_file)) fs.writeFileSync(log_file, "");
+let log_data = fs.readFileSync(log_file).toString();
+const write_log_data = () => fs.writeFileSync(log_file, log_data);
+process.on("exit", () => write_log_data());
+process.on("SIGINT", () => process.exit(0));
+process.on("SIGHUP", () => process.exit(0));
+
+const accessLog = (req, res, next) => {
+  log_data += `[${convert_date(new Date())}] ${req.method} ${req.originalUrl}\n`;
+  write_log_data();
+  next();
+};
+
+app.get("/", accessLog, (req, res) => {
   res.end("OK");
 });
 
-app.get("/api", (req, res) => {
+app.get("/api", accessLog, (req, res) => {
   res.json({ res: "OK" });
 });
 
-app.get("/api/station/:stationCode", (req, res) => {
+
+app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   const code = req.params.stationCode;
   db.get(`
       SELECT Stations.*, StationGroups.stationName FROM Stations
@@ -39,14 +68,20 @@ app.get("/api/station/:stationCode", (req, res) => {
     `,
     code,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else if(!data){
+        next(new RangeError("Invalid input"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
 
-app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
+app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   db.get(`
       SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate FROM Stations
@@ -57,13 +92,19 @@ app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
     `,
     code,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else if(!data){
+        next(new RangeError("Invalid input"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
+app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   db.all(`
       SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
@@ -73,16 +114,22 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
     `,
     code,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else if(!data.length){
+        next(new RangeError("Invalid input"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchStationName", (req, res) => {
+app.get("/api/searchStationName", accessLog, (req, res, next) => {
   const name = req.query.name;
   if(name === undefined){
-    res.json({});
+    next(new Error("Invalid Input"));
     return;
   }
   db.all(`
@@ -106,22 +153,22 @@ app.get("/api/searchStationName", (req, res) => {
     `,
     name,`${name}_%`,`_%${name}`,`_%${name}_%`,
     (err, data) => {
-      if(err) console.error(err);
-      data = data.map((item) => {
-        delete item.ord;
-        return item;
-      });
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchNearestStationGroup", (req, res) => {
+app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   const lat = req.query.lat;
   const lng = req.query.lng;
   const num = req.query.num ? Math.min(Number(req.query.num), 20) : 20;
   if(lat === undefined || lng == undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(`
@@ -137,42 +184,21 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
     `,
     lat,lng,lat, num,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-// check
-app.get("/api/stationState/:stationCode", (req, res) => {
-  const code = req.params.stationCode;
-  db.get(
-    "SELECT * FROM Stations WHERE stationCode = ?",
-    code,
-    (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
-    }
-  );
-});
-
-app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
-  const code = req.params.stationGroupCode;
-  db.get(
-    "SELECT * FROM StationGroups WHERE stationGroupCode = ?",
-    code,
-    (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
-    }
-  );
-});
-
-app.get("/api/stationGroupList", (req, res) => {
+app.get("/api/stationGroupList", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
   if(off === undefined || len === undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(`
@@ -182,18 +208,22 @@ app.get("/api/stationGroupList", (req, res) => {
     `,
     len, off,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchStationGroupList", (req, res) => {
+app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
   const name = req.query.name ?? "";
   if(off === undefined || len === undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(`
@@ -214,13 +244,17 @@ app.get("/api/searchStationGroupList", (req, res) => {
     name,`${name}_%`,`_%${name}`,`_%${name}_%`,
     len, off,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchStationGroupCount", (req, res) => {
+app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
   const name = req.query.name ?? "";
   db.get(`
     SELECT COUNT(*) AS count FROM StationGroups
@@ -231,85 +265,93 @@ app.get("/api/searchStationGroupCount", (req, res) => {
     `,
     name,`${name}_%`,`_%${name}`,`_%${name}_%`,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data.count);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data.count);
+      }
     }
   );
 });
 
-app.get("/api/stationGroupCount", (req, res) => {
+app.get("/api/stationGroupCount", accessLog, (req, res, next) => {
   db.get(
     "SELECT COUNT(*) AS count FROM StationGroups",
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data.count);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data.count);
+      }
     }
   );
 });
 
-app.get("/api/stationHistory", (req, res) => {
+app.get("/api/stationHistory", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
   if(off === undefined || len === undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(
     "SELECT * FROM StationHistory ORDER BY date DESC LIMIT ? OFFSET ?",
     len, off,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/stationHistoryCount", (req, res) => {
+app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   db.get(
     "SELECT COUNT(*) AS count FROM StationHistory",
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data.count);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data.count);
+      }
     }
   );
 });
 
-const convert_date = (date) => {
-  const date_options = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  };
-  return date ? new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-") : undefined;
-};
-
-app.get("/api/postStationDate", (req, res) => {
+app.get("/api/postStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
-  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 2){
-    res.end("NG");
+  if(code === undefined || date === undefined || state === undefined){
+    next(new Error("Invalid input"));
+    return;
+  }
+  if(state < 0 || state >= 2){
+    next(new RangeError("Invalid input"));
     return;
   }
   db.run(
-    "INSERT INTO StationHistory VALUES(?,datetime(?),?)",
+    "INSERT INTO StationHistory VALUES(?, datetime(?), ?)",
     code, date, state,
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         const value_name = ["getDate", "passDate"][state];
         db.run(
-          `UPDATE Stations SET ${value_name} = MAX(${value_name}, datetime(?)) WHERE stationCode = ?`,
+          `UPDATE Stations SET ${value_name} = MAX(IFNULL(${value_name}, 0), datetime(?)) WHERE stationCode = ?`,
           date, code,
           (e, d) => {
             if(e){
               console.error(e);
-              res.end("error");
+              next(new Error("Server Error"));
             }else{
               res.end("OK");
             }
@@ -320,28 +362,28 @@ app.get("/api/postStationDate", (req, res) => {
   );
 });
 
-app.get("/api/postStationGroupDate", (req, res) => {
+app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   if(code === undefined || date === undefined){
-    res.end("NG");
+    next(new Error("Invalid input"));
     return;
   }
   db.run(
-    "INSERT INTO StationGroupHistory VALUES(?,datetime(?))",
+    "INSERT INTO StationGroupHistory VALUES(?, datetime(?))",
     code, date,
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         db.run(
-          `UPDATE StationGroups SET date = MAX(date, datetime(?)) WHERE stationGroupCode = ?`,
+          `UPDATE StationGroups SET date = MAX(IFNULL(date, 0), datetime(?)) WHERE stationGroupCode = ?`,
           date, code,
           (e, d) => {
             if(e){
               console.error(e);
-              res.end("error");
+              next(new Error("Server Error"));
             }else{
               res.end("OK");
             }
@@ -352,12 +394,16 @@ app.get("/api/postStationGroupDate", (req, res) => {
   );
 });
 
-app.get("/api/deleteStationDate", (req, res) => {
+app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
-  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 2){
-    res.end("NG");
+  if(code === undefined || date === undefined || state === undefined){
+    next(new Error("Invalid input"));
+    return;
+  }
+  if(state < 0 || state >= 2){
+    next(new RangeError("Invalid input"));
     return;
   }
   db.run(`
@@ -368,7 +414,7 @@ app.get("/api/deleteStationDate", (req, res) => {
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         const value_name = ["getDate", "passDate"][state];
         db.run(`
@@ -382,7 +428,7 @@ app.get("/api/deleteStationDate", (req, res) => {
         (e, d) => {
           if(e){
             console.error(e);
-            res.end("error");
+            next(new Error("Server Error"));
           }else{
             res.end("OK");
           }
@@ -393,11 +439,11 @@ app.get("/api/deleteStationDate", (req, res) => {
   );
 });
 
-app.get("/api/deleteStationGroupState", (req, res) => {
+app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   if(code === undefined || date === undefined){
-    res.end("NG");
+    next(new Error("Invalid input"));
     return;
   }
   db.run(`
@@ -408,7 +454,7 @@ app.get("/api/deleteStationGroupState", (req, res) => {
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         db.run(`
           UPDATE StationGroupHistory SET date = (
@@ -421,7 +467,7 @@ app.get("/api/deleteStationGroupState", (req, res) => {
           (e, d) => {
             if(e){
               console.error(e);
-              res.end("error");
+              next(new Error("Server Error"));
             }else{
               res.end("OK");
             }
@@ -430,6 +476,14 @@ app.get("/api/deleteStationGroupState", (req, res) => {
       }
     }
   );
+});
+
+
+app.use((err, req, res, next) => {
+  console.error(`\x1b[31m[${err.name}] ${err.message}\x1b[39m`, err.stack.substr(err.stack.indexOf("\n")));
+  log_data += `[${err.name}] ${err.message} ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
+  write_log_data();
+  res.status(500).send(err.message);
 });
 
 app.listen(PORT);
