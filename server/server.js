@@ -39,11 +39,11 @@ const accessLog = (req, res, next) => {
   next();
 };
 
-app.get("/", (req, res) => {
+app.get("/", accessLog, (req, res) => {
   res.end("OK");
 });
 
-app.get("/api", (req, res) => {
+app.get("/api", accessLog, (req, res) => {
   res.json({ res: "OK" });
 });
 
@@ -71,7 +71,7 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
 });
 
 
-app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
+app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res) => {
   const code = req.params.stationGroupCode;
   db.get(`
       SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate FROM Stations
@@ -88,7 +88,7 @@ app.get("/api/stationGroup/:stationGroupCode", (req, res) => {
   );
 });
 
-app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
+app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res) => {
   const code = req.params.stationGroupCode;
   db.all(`
       SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
@@ -104,7 +104,7 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", (req, res) => {
   );
 });
 
-app.get("/api/searchStationName", (req, res) => {
+app.get("/api/searchStationName", accessLog, (req, res) => {
   const name = req.query.name;
   if(name === undefined){
     res.json({});
@@ -141,7 +141,7 @@ app.get("/api/searchStationName", (req, res) => {
   );
 });
 
-app.get("/api/searchNearestStationGroup", (req, res) => {
+app.get("/api/searchNearestStationGroup", accessLog, (req, res) => {
   const lat = req.query.lat;
   const lng = req.query.lng;
   const num = req.query.num ? Math.min(Number(req.query.num), 20) : 20;
@@ -169,7 +169,7 @@ app.get("/api/searchNearestStationGroup", (req, res) => {
 });
 
 // check
-app.get("/api/stationState/:stationCode", (req, res) => {
+app.get("/api/stationState/:stationCode", accessLog, (req, res) => {
   const code = req.params.stationCode;
   db.get(
     "SELECT * FROM Stations WHERE stationCode = ?",
@@ -181,7 +181,7 @@ app.get("/api/stationState/:stationCode", (req, res) => {
   );
 });
 
-app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
+app.get("/api/stationGroupState/:stationGroupCode", accessLog, (req, res) => {
   const code = req.params.stationGroupCode;
   db.get(
     "SELECT * FROM StationGroups WHERE stationGroupCode = ?",
@@ -193,7 +193,7 @@ app.get("/api/stationGroupState/:stationGroupCode", (req, res) => {
   );
 });
 
-app.get("/api/stationGroupList", (req, res) => {
+app.get("/api/stationGroupList", accessLog, (req, res) => {
   const off = req.query.off;
   const len = req.query.len;
   if(off === undefined || len === undefined){
@@ -213,7 +213,7 @@ app.get("/api/stationGroupList", (req, res) => {
   );
 });
 
-app.get("/api/searchStationGroupList", (req, res) => {
+app.get("/api/searchStationGroupList", accessLog, (req, res) => {
   const off = req.query.off;
   const len = req.query.len;
   const name = req.query.name ?? "";
@@ -245,7 +245,7 @@ app.get("/api/searchStationGroupList", (req, res) => {
   );
 });
 
-app.get("/api/searchStationGroupCount", (req, res) => {
+app.get("/api/searchStationGroupCount", accessLog, (req, res) => {
   const name = req.query.name ?? "";
   db.get(`
     SELECT COUNT(*) AS count FROM StationGroups
@@ -262,7 +262,7 @@ app.get("/api/searchStationGroupCount", (req, res) => {
   );
 });
 
-app.get("/api/stationGroupCount", (req, res) => {
+app.get("/api/stationGroupCount", accessLog, (req, res) => {
   db.get(
     "SELECT COUNT(*) AS count FROM StationGroups",
     (err, data) => {
@@ -272,7 +272,7 @@ app.get("/api/stationGroupCount", (req, res) => {
   );
 });
 
-app.get("/api/stationHistory", (req, res) => {
+app.get("/api/stationHistory", accessLog, (req, res) => {
   const off = req.query.off;
   const len = req.query.len;
   if(off === undefined || len === undefined){
@@ -289,7 +289,7 @@ app.get("/api/stationHistory", (req, res) => {
   );
 });
 
-app.get("/api/stationHistoryCount", (req, res) => {
+app.get("/api/stationHistoryCount", accessLog, (req, res) => {
   db.get(
     "SELECT COUNT(*) AS count FROM StationHistory",
     (err, data) => {
@@ -299,7 +299,7 @@ app.get("/api/stationHistoryCount", (req, res) => {
   );
 });
 
-app.get("/api/postStationDate", (req, res) => {
+app.get("/api/postStationDate", accessLog, (req, res) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
@@ -333,7 +333,7 @@ app.get("/api/postStationDate", (req, res) => {
   );
 });
 
-app.get("/api/postStationGroupDate", (req, res) => {
+app.get("/api/postStationGroupDate", accessLog, (req, res) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   if(code === undefined || date === undefined){
@@ -365,7 +365,7 @@ app.get("/api/postStationGroupDate", (req, res) => {
   );
 });
 
-app.get("/api/deleteStationDate", (req, res) => {
+app.get("/api/deleteStationDate", accessLog, (req, res) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
@@ -406,7 +406,7 @@ app.get("/api/deleteStationDate", (req, res) => {
   );
 });
 
-app.get("/api/deleteStationGroupState", (req, res) => {
+app.get("/api/deleteStationGroupState", accessLog, (req, res) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   if(code === undefined || date === undefined){
