@@ -21,6 +21,24 @@ app.use(cors({
 
 const db = new sqlite3.Database(db_path);
 
+const convert_date = (date) => {
+  const date_options = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+  return date ? new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-") : undefined;
+};
+
+
+const accessLog = (req, res, next) => {
+  console.log(`\x1b[33m[${convert_date(new Date())}]\x1b[39m`, req.method, req.originalUrl);
+  next();
+};
+
 app.get("/", (req, res) => {
   res.end("OK");
 });
@@ -29,7 +47,8 @@ app.get("/api", (req, res) => {
   res.json({ res: "OK" });
 });
 
-app.get("/api/station/:stationCode", (req, res) => {
+
+app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   const code = req.params.stationCode;
   db.get(`
       SELECT Stations.*, StationGroups.stationName FROM Stations
@@ -39,8 +58,14 @@ app.get("/api/station/:stationCode", (req, res) => {
     `,
     code,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else if(!data){
+        next(new Error("Server Error: Invalid input"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
@@ -274,18 +299,6 @@ app.get("/api/stationHistoryCount", (req, res) => {
   );
 });
 
-const convert_date = (date) => {
-  const date_options = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  };
-  return date ? new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-") : undefined;
-};
-
 app.get("/api/postStationDate", (req, res) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -430,6 +443,12 @@ app.get("/api/deleteStationGroupState", (req, res) => {
       }
     }
   );
+});
+
+
+app.use((err, req, res, next) => {
+  console.error(`\x1b[31m[${err.name}] ${err.message}\x1b[39m`, err.stack.substr(err.stack.indexOf("\n")));
+  res.status(500).send(err.message);
 });
 
 app.listen(PORT);
