@@ -76,7 +76,6 @@ export const useStationGroupList = (offset: number, length: number): UseQueryRes
       const { data } = await axios.get<StationGroup[]>(`/api/stationGroupList?off=${offset}&len=${length}`, ngrok_header);
       return data;
     },
-    enabled: offset !== undefined && length !== undefined,
   });
 };
 
@@ -178,7 +177,6 @@ export const useStationHistoryList = (offset: number, length: number): UseQueryR
       const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}`, ngrok_header);
       return data;
     },
-    enabled: offset !== undefined || length !== undefined,
   });
 };
 
