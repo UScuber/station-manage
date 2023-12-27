@@ -22,7 +22,9 @@ import { useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
 const StationList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
-  const [searchName, setName] = useState("");
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
+  const [inputName, setInputName] = useState("");
+  const [searchName, setSearchName] = useState("");
 
   const stationGroupList = useSearchStationGroupList({
     offset: page * rowsPerPage,
@@ -41,8 +43,14 @@ const StationList = () => {
     setPage(0);
   };
 
+  // 500[ms]遅延して検索が更新される
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setName(event.target.value);
+    setInputName(event.target.value);
+    const text = event.target.value;
+    clearInterval(timeoutId);
+    setTimeoutId(
+      setTimeout(() => setSearchName(text), 500)
+    );
   };
 
   const Pagination = (): JSX.Element => {
@@ -67,7 +75,7 @@ const StationList = () => {
           id="name"
           label="name"
           variant="standard"
-          value={searchName}
+          value={inputName}
           sx={{ maxWidth: "50%" }}
           onChange={handleChangeText}
           InputProps={{
@@ -93,7 +101,7 @@ const StationList = () => {
         id="name"
         label="name"
         variant="standard"
-        value={searchName}
+        value={inputName}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
         InputProps={{
