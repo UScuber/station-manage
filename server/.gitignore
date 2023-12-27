@@ -1,3 +1,4 @@
 /node_modules
 station.db
 .env
+info.log

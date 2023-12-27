@@ -1,13 +1,14 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Box,
   Button,
   CircularProgress,
   Container,
-  Toolbar,
+  TablePagination,
   Typography
 } from "@mui/material";
-import { StationHistory, useStationInfo, useStationHistoryList } from "./Api";
+import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
 
 type Props = {
   history: StationHistory,
@@ -27,7 +28,13 @@ const HistoryContent: React.FC<Props> = (props) => {
   }
 
   return (
-    <Box border={1} onClick={() => window.location.href = "/station/" + info?.stationCode}  sx={{ display: "block", mb: 3 }}>
+    <Button
+      component={Link}
+      to={"/station/" + info?.stationCode}
+      variant="outlined"
+      color="inherit"
+      sx={{ display: "block", mb: 3, textTransform: "none" }}
+    >
       <Typography variant="h4" sx={{ mb: 1 }}>{info?.stationName}</Typography>
 
       <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>駅コード:</Typography>
@@ -37,27 +44,54 @@ const HistoryContent: React.FC<Props> = (props) => {
       <Typography variant="h6" sx={{ mx: 4 }}>{info?.railwayName}</Typography>
 
       <Typography variant="h6" sx={{ mx: 2 }}>{stateNames[history?.state]}: {history?.date.toString()}</Typography>
-    </Box>
+    </Button>
   );
 };
 
 
 const History = () => {
   const [page, setPage] = useState(0);
-  const [contentsNum, setContentsNum] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const historyList = useStationHistoryList(page * contentsNum, contentsNum);
+  const historyList = useStationHistoryList(page * rowsPerPage, rowsPerPage);
 
-  const handleNextPage = () => {
-    setPage(page + 1);
+  const historyListCount = useStationHistoryCount();
+
+  const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+    setPage(newPage);
   };
-  const handlePrevPage = () => {
-    setPage(Math.max(page - 1, 0));
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
+
+  const Pagination = (): JSX.Element => {
+    return (
+      <TablePagination
+        component="div"
+        count={historyListCount.data!}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[10,25,50,100,200,500]}
+      />
+    );
+  };
+
+
+  if(historyList.isError){
+    return (
+      <Container>
+        <Typography variant="h5">Error</Typography>
+      </Container>
+    );
+  }
 
   if(historyList.isLoading){
     return (
       <Container>
+        {!historyListCount.isLoading && <Pagination />}
         Loading ...
         <CircularProgress />
       </Container>
@@ -66,20 +100,15 @@ const History = () => {
 
   return (
     <Container>
+      <Pagination />
+
       <Box>
         {historyList.data?.map((item, index) => (
           <HistoryContent key={index} history={item}/>
         ))}
       </Box>
-      <Toolbar />
-      <Box>
-        <Button onClick={() => handlePrevPage()}>
-          Prev
-        </Button>
-        <Button onClick={() => handleNextPage()}>
-          Next
-        </Button>
-      </Box>
+
+      <Pagination />
     </Container>
   )
 };
