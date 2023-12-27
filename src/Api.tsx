@@ -81,11 +81,43 @@ export const useStationGroupList = (offset: number, length: number): UseQueryRes
 };
 
 
+export const useSearchStationGroupList = (
+  que: {
+    offset: number,
+    length: number,
+    name: string | undefined,
+  }
+): UseQueryResult<StationGroup[]> => {
+  return useQuery<StationGroup[]>({
+    queryKey: ["StationGroupList", que.offset, que.length, que.name],
+    queryFn: async() => {
+      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${que.offset}&len=${que.length}&name=${que.name ?? ""}`, ngrok_header);
+      return data;
+    },
+  });
+};
+
+
 export const useStationGroupCount = (): UseQueryResult<number> => {
   return useQuery<number>({
     queryKey: ["StationGroupCount"],
     queryFn: async() => {
       const { data } = await axios.get<number>("/api/stationGroupCount", ngrok_header);
+      return data;
+    },
+  });
+};
+
+
+export const useSearchStationGroupCount = (
+  que: {
+    name: string | undefined,
+  }
+): UseQueryResult<number> => {
+  return useQuery<number>({
+    queryKey: ["StationGroupCount", que.name],
+    queryFn: async() => {
+      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${que.name ?? ""}`, ngrok_header);
       return data;
     },
   });
