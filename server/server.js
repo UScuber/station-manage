@@ -295,7 +295,7 @@ app.get("/api/postStationDate", (req, res) => {
     return;
   }
   db.run(
-    "INSERT INTO StationHistory VALUES(?,datetime(?),?)",
+    "INSERT INTO StationHistory VALUES(?, datetime(?), ?)",
     code, date, state,
     (err, data) => {
       if(err){
@@ -304,7 +304,7 @@ app.get("/api/postStationDate", (req, res) => {
       }else{
         const value_name = ["getDate", "passDate"][state];
         db.run(
-          `UPDATE Stations SET ${value_name} = MAX(${value_name}, datetime(?)) WHERE stationCode = ?`,
+          `UPDATE Stations SET ${value_name} = MAX(IFNULL(${value_name}, 0), datetime(?)) WHERE stationCode = ?`,
           date, code,
           (e, d) => {
             if(e){
@@ -328,7 +328,7 @@ app.get("/api/postStationGroupDate", (req, res) => {
     return;
   }
   db.run(
-    "INSERT INTO StationGroupHistory VALUES(?,datetime(?))",
+    "INSERT INTO StationGroupHistory VALUES(?, datetime(?))",
     code, date,
     (err, data) => {
       if(err){
@@ -336,7 +336,7 @@ app.get("/api/postStationGroupDate", (req, res) => {
         res.end("error");
       }else{
         db.run(
-          `UPDATE StationGroups SET date = MAX(date, datetime(?)) WHERE stationGroupCode = ?`,
+          `UPDATE StationGroups SET date = MAX(IFNULL(date, 0), datetime(?)) WHERE stationGroupCode = ?`,
           date, code,
           (e, d) => {
             if(e){
