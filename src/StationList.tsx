@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  Box,
   CircularProgress,
   Container,
+  InputAdornment,
   Paper,
   Table,
   TableBody,
@@ -11,22 +13,25 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TextField,
 } from "@mui/material";
-import { StationGroup, useStationGroupCount, useStationGroupList } from "./Api";
+import SearchIcon from "@mui/icons-material/Search";
+import { useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
 
-	
-type Props = {
-  data: StationGroup,
-};
 
 const StationList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [searchName, setName] = useState("");
 
-  const stationGroupList = useStationGroupList(page * rowsPerPage, rowsPerPage);
+  const stationGroupList = useSearchStationGroupList({
+    offset: page * rowsPerPage,
+    length: rowsPerPage,
+    name: searchName,
+  });
   const stationGroupsInfo = stationGroupList.data;
 
-  const stationGroupCount = useStationGroupCount();
+  const stationGroupCount = useSearchStationGroupCount({ name: searchName });
 
   const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
     setPage(newPage);
@@ -34,6 +39,10 @@ const StationList = () => {
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
   };
 
   const Pagination = (): JSX.Element => {
@@ -50,18 +59,51 @@ const StationList = () => {
     );
   };
 
-  if(stationGroupList.isLoading){
+
+  if(stationGroupList.isLoading || stationGroupCount.isLoading){
     return (
       <Container>
+        <TextField
+          id="name"
+          label="name"
+          variant="standard"
+          value={searchName}
+          sx={{ maxWidth: "50%" }}
+          onChange={handleChangeText}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
         {!stationGroupCount.isLoading && <Pagination />}
-        Loading...
-        <CircularProgress />
+        <Box>
+          Loading...
+          <CircularProgress />
+        </Box>
       </Container>
     );
   }
 
   return (
     <Container>
+      <TextField
+        id="name"
+        label="name"
+        variant="standard"
+        value={searchName}
+        sx={{ maxWidth: "50%" }}
+        onChange={handleChangeText}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        }}
+      />
       <Pagination />
       
       <TableContainer component={Paper}>
