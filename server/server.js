@@ -62,7 +62,7 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
         console.error(err);
         next(new Error("Server Error"));
       }else if(!data){
-        next(new Error("Server Error: Invalid input"));
+        next(new RangeError("Invalid input"));
       }else{
         res.json(data);
       }
@@ -71,7 +71,7 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
 });
 
 
-app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res) => {
+app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   db.get(`
       SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate FROM Stations
@@ -82,13 +82,19 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res) => {
     `,
     code,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else if(!data){
+        next(new RangeError("Invalid input"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res) => {
+app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   db.all(`
       SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
@@ -98,16 +104,22 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res) => {
     `,
     code,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else if(!data.length){
+        next(new RangeError("Invalid input"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchStationName", accessLog, (req, res) => {
+app.get("/api/searchStationName", accessLog, (req, res, next) => {
   const name = req.query.name;
   if(name === undefined){
-    res.json({});
+    next(new Error("Invalid Input"));
     return;
   }
   db.all(`
@@ -131,22 +143,22 @@ app.get("/api/searchStationName", accessLog, (req, res) => {
     `,
     name,`${name}_%`,`_%${name}`,`_%${name}_%`,
     (err, data) => {
-      if(err) console.error(err);
-      data = data.map((item) => {
-        delete item.ord;
-        return item;
-      });
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchNearestStationGroup", accessLog, (req, res) => {
+app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   const lat = req.query.lat;
   const lng = req.query.lng;
   const num = req.query.num ? Math.min(Number(req.query.num), 20) : 20;
   if(lat === undefined || lng == undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(`
@@ -162,8 +174,12 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res) => {
     `,
     lat,lng,lat, num,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
@@ -193,11 +209,11 @@ app.get("/api/stationGroupState/:stationGroupCode", accessLog, (req, res) => {
   );
 });
 
-app.get("/api/stationGroupList", accessLog, (req, res) => {
+app.get("/api/stationGroupList", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
   if(off === undefined || len === undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(`
@@ -207,18 +223,22 @@ app.get("/api/stationGroupList", accessLog, (req, res) => {
     `,
     len, off,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchStationGroupList", accessLog, (req, res) => {
+app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
   const name = req.query.name ?? "";
   if(off === undefined || len === undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(`
@@ -239,13 +259,17 @@ app.get("/api/searchStationGroupList", accessLog, (req, res) => {
     name,`${name}_%`,`_%${name}`,`_%${name}_%`,
     len, off,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/searchStationGroupCount", accessLog, (req, res) => {
+app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
   const name = req.query.name ?? "";
   db.get(`
     SELECT COUNT(*) AS count FROM StationGroups
@@ -256,55 +280,75 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res) => {
     `,
     name,`${name}_%`,`_%${name}`,`_%${name}_%`,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data.count);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data.count);
+      }
     }
   );
 });
 
-app.get("/api/stationGroupCount", accessLog, (req, res) => {
+app.get("/api/stationGroupCount", accessLog, (req, res, next) => {
   db.get(
     "SELECT COUNT(*) AS count FROM StationGroups",
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data.count);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data.count);
+      }
     }
   );
 });
 
-app.get("/api/stationHistory", accessLog, (req, res) => {
+app.get("/api/stationHistory", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
   if(off === undefined || len === undefined){
-    res.json({});
+    next(new Error("Invalid input"));
     return;
   }
   db.all(
     "SELECT * FROM StationHistory ORDER BY date DESC LIMIT ? OFFSET ?",
     len, off,
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data);
+      }
     }
   );
 });
 
-app.get("/api/stationHistoryCount", accessLog, (req, res) => {
+app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   db.get(
     "SELECT COUNT(*) AS count FROM StationHistory",
     (err, data) => {
-      if(err) console.error(err);
-      res.json(data.count);
+      if(err){
+        console.error(err);
+        next(new Error("Server Error"));
+      }else{
+        res.json(data.count);
+      }
     }
   );
 });
 
-app.get("/api/postStationDate", accessLog, (req, res) => {
+app.get("/api/postStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
-  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 2){
-    res.end("NG");
+  if(code === undefined || date === undefined || state === undefined){
+    next(new Error("Invalid input"));
+    return;
+  }
+  if(state < 0 || state >= 2){
+    next(new RangeError("Invalid input"));
     return;
   }
   db.run(
@@ -313,7 +357,7 @@ app.get("/api/postStationDate", accessLog, (req, res) => {
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         const value_name = ["getDate", "passDate"][state];
         db.run(
@@ -322,7 +366,7 @@ app.get("/api/postStationDate", accessLog, (req, res) => {
           (e, d) => {
             if(e){
               console.error(e);
-              res.end("error");
+              next(new Error("Server Error"));
             }else{
               res.end("OK");
             }
@@ -333,11 +377,11 @@ app.get("/api/postStationDate", accessLog, (req, res) => {
   );
 });
 
-app.get("/api/postStationGroupDate", accessLog, (req, res) => {
+app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   if(code === undefined || date === undefined){
-    res.end("NG");
+    next(new Error("Invalid input"));
     return;
   }
   db.run(
@@ -346,7 +390,7 @@ app.get("/api/postStationGroupDate", accessLog, (req, res) => {
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         db.run(
           `UPDATE StationGroups SET date = MAX(IFNULL(date, 0), datetime(?)) WHERE stationGroupCode = ?`,
@@ -354,7 +398,7 @@ app.get("/api/postStationGroupDate", accessLog, (req, res) => {
           (e, d) => {
             if(e){
               console.error(e);
-              res.end("error");
+              next(new Error("Server Error"));
             }else{
               res.end("OK");
             }
@@ -365,12 +409,16 @@ app.get("/api/postStationGroupDate", accessLog, (req, res) => {
   );
 });
 
-app.get("/api/deleteStationDate", accessLog, (req, res) => {
+app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
-  if(code === undefined || date === undefined || state === undefined || state < 0 || state >= 2){
-    res.end("NG");
+  if(code === undefined || date === undefined || state === undefined){
+    next(new Error("Invalid input"));
+    return;
+  }
+  if(state < 0 || state >= 2){
+    next(new RangeError("Invalid input"));
     return;
   }
   db.run(`
@@ -381,7 +429,7 @@ app.get("/api/deleteStationDate", accessLog, (req, res) => {
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         const value_name = ["getDate", "passDate"][state];
         db.run(`
@@ -395,7 +443,7 @@ app.get("/api/deleteStationDate", accessLog, (req, res) => {
         (e, d) => {
           if(e){
             console.error(e);
-            res.end("error");
+            next(new Error("Server Error"));
           }else{
             res.end("OK");
           }
@@ -406,11 +454,11 @@ app.get("/api/deleteStationDate", accessLog, (req, res) => {
   );
 });
 
-app.get("/api/deleteStationGroupState", accessLog, (req, res) => {
+app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   if(code === undefined || date === undefined){
-    res.end("NG");
+    next(new Error("Invalid input"));
     return;
   }
   db.run(`
@@ -421,7 +469,7 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res) => {
     (err, data) => {
       if(err){
         console.error(err);
-        res.end("error");
+        next(new Error("Server Error"));
       }else{
         db.run(`
           UPDATE StationGroupHistory SET date = (
@@ -434,7 +482,7 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res) => {
           (e, d) => {
             if(e){
               console.error(e);
-              res.end("error");
+              next(new Error("Server Error"));
             }else{
               res.end("OK");
             }
