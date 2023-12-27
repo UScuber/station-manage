@@ -188,6 +188,55 @@ app.get("/api/stationGroupList", (req, res) => {
   );
 });
 
+app.get("/api/searchStationGroupList", (req, res) => {
+  const off = req.query.off;
+  const len = req.query.len;
+  const name = req.query.name ?? "";
+  if(off === undefined || len === undefined){
+    res.json({});
+    return;
+  }
+  db.all(`
+        SELECT 0 AS ord, StationGroups.* FROM StationGroups
+          WHERE stationName = ?
+      UNION ALL
+        SELECT 1 AS ord, StationGroups.* FROM StationGroups
+          WHERE stationName LIKE ?
+      UNION ALL
+        SELECT 2 AS ord, StationGroups.* FROM StationGroups
+          WHERE stationName LIKE ?
+      UNION ALL
+        SELECT 3 AS ord, StationGroups.* FROM StationGroups
+          WHERE stationName LIKE ?
+      ORDER BY ord
+      LIMIT ? OFFSET ?
+    `,
+    name,`${name}_%`,`_%${name}`,`_%${name}_%`,
+    len, off,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data);
+    }
+  );
+});
+
+app.get("/api/searchStationGroupCount", (req, res) => {
+  const name = req.query.name ?? "";
+  db.get(`
+    SELECT COUNT(*) AS count FROM StationGroups
+      WHERE stationName = ?
+        OR stationName LIKE ?
+        OR stationName LIKE ?
+        OR stationName LIKE ?
+    `,
+    name,`${name}_%`,`_%${name}`,`_%${name}_%`,
+    (err, data) => {
+      if(err) console.error(err);
+      res.json(data.count);
+    }
+  );
+});
+
 app.get("/api/stationGroupCount", (req, res) => {
   db.get(
     "SELECT COUNT(*) AS count FROM StationGroups",
