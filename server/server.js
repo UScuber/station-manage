@@ -4,7 +4,7 @@ const cors = require("cors");
 const sqlite3 = require("sqlite3");
 require("dotenv").config();
 
-const db_path = "./station.db";
+const db_path = __dirname + "/station.db";
 if(!fs.existsSync(db_path)){
   console.error(`Error: ${db_path} does not exist`);
   process.exit(1);
@@ -34,8 +34,18 @@ const convert_date = (date) => {
 };
 
 
+// manage access log
+const log_file = __dirname + "/info.log";
+if(!fs.existsSync(log_file)) fs.writeFileSync(log_file, "");
+let log_data = fs.readFileSync(log_file).toString();
+const write_log_data = () => fs.writeFileSync(log_file, log_data);
+process.on("exit", () => write_log_data());
+process.on("SIGINT", () => process.exit(0));
+process.on("SIGHUP", () => process.exit(0));
+
 const accessLog = (req, res, next) => {
-  console.log(`\x1b[33m[${convert_date(new Date())}]\x1b[39m`, req.method, req.originalUrl);
+  log_data += `[${convert_date(new Date())}] ${req.method} ${req.originalUrl}\n`;
+  write_log_data();
   next();
 };
 
@@ -471,6 +481,8 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
 
 app.use((err, req, res, next) => {
   console.error(`\x1b[31m[${err.name}] ${err.message}\x1b[39m`, err.stack.substr(err.stack.indexOf("\n")));
+  log_data += `[${err.name}] ${err.message} ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
+  write_log_data();
   res.status(500).send(err.message);
 });
 
