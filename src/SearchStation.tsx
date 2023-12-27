@@ -73,6 +73,15 @@ const SearchStation = () => {
     }
   }, []);
 
+
+  if(nearestStationGroups.isError){
+    return (
+      <Container>
+        <Typography variant="h5">Error</Typography>
+      </Container>
+    );
+  }
+
   if(isFirstRef.current || nearestStationGroups.isLoading){
     return (
       <Container>

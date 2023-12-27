@@ -54,6 +54,15 @@ const StationGroupInfo = () => {
     });
   };
 
+
+  if(groupStations.isError || groupStationQuery.isError){
+    return (
+      <Container>
+        <Typography variant="h5">Error</Typography>
+      </Container>
+    );
+  }
+
   if(groupStations.isLoading || groupStationQuery.isLoading){
     return (
       <Container>

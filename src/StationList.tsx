@@ -14,6 +14,7 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
@@ -67,6 +68,14 @@ const StationList = () => {
     );
   };
 
+
+  if(stationGroupList.isError || stationGroupCount.isError){
+    return (
+      <Container>
+        <Typography variant="h5">Error</Typography>
+      </Container>
+    );
+  }
 
   if(stationGroupList.isLoading || stationGroupCount.isLoading){
     return (

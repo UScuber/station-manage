@@ -31,6 +31,15 @@ const StationInfo = () => {
     });
   };
 
+
+  if(station.isError){
+    return (
+      <Container>
+        <Typography variant="h5">Error</Typography>
+      </Container>
+    );
+  }
+
   if(station.isLoading){
     return (
       <Container>

@@ -79,6 +79,15 @@ const History = () => {
     );
   };
 
+
+  if(historyList.isError){
+    return (
+      <Container>
+        <Typography variant="h5">Error</Typography>
+      </Container>
+    );
+  }
+
   if(historyList.isLoading){
     return (
       <Container>
