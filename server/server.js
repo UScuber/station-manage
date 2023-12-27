@@ -184,31 +184,6 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   );
 });
 
-// check
-app.get("/api/stationState/:stationCode", accessLog, (req, res) => {
-  const code = req.params.stationCode;
-  db.get(
-    "SELECT * FROM Stations WHERE stationCode = ?",
-    code,
-    (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
-    }
-  );
-});
-
-app.get("/api/stationGroupState/:stationGroupCode", accessLog, (req, res) => {
-  const code = req.params.stationGroupCode;
-  db.get(
-    "SELECT * FROM StationGroups WHERE stationGroupCode = ?",
-    code,
-    (err, data) => {
-      if(err) console.error(err);
-      res.json(data);
-    }
-  );
-});
-
 app.get("/api/stationGroupList", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
