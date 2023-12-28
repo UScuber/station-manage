@@ -30,6 +30,7 @@ const distance = (p1, p2) => {
 
 db.function("dist", (lat1,lng1,lat2,lng2) => distance([lat1,lng1],[lat2,lng2]));
 
+
 // 現在の履歴の削除
 db.prepare("DELETE FROM StationHistory").run();
 db.prepare("DELETE FROM StationGroupHistory").run();
@@ -46,7 +47,7 @@ input_json.station_history.forEach(data => {
     .get(data.info.stationName, data.info.railwayName, data.info.railwayCompany);
   if(res){
     data.history.forEach(elem => {
-      db.prepare("INSERT INTO StationHistory VALUES(?,datetime(?),?)")
+      db.prepare("INSERT INTO StationHistory VALUES(?, datetime(?), ?)")
         .run(res.stationCode, elem.date, elem.state);
     });
   }else{
@@ -62,7 +63,7 @@ input_json.station_history.forEach(data => {
         data.info.latitude, data.info.longitude
       );
     data.history.forEach(elem => {
-      db.prepare("INSERT INTO StationHistory VALUES(?,datetime(?),?)")
+      db.prepare("INSERT INTO StationHistory VALUES(?, datetime(?), ?)")
         .run(nearest.stationCode, elem.date, elem.state);
     });
   }
@@ -117,12 +118,30 @@ input_json.station_group_history.forEach(data => {
     );
   if(res){
     data.history.forEach(elem => {
-      db.prepare("INSERT INTO StationGroupHistory VALUES(?,datetime(?))")
+      db.prepare("INSERT INTO StationGroupHistory VALUES(?, datetime(?))")
         .run(res.stationGroupCode, elem.date);
     });
   }else{
-    console.error("ERROR");
-    process.exit(1);
+    // 駅名関係なく座標が一番近いものを探す
+    const res = db.prepare(`
+      SELECT * FROM StationGroups
+      WHERE dist(latitude,longitude,?,?) = (
+        SELECT MIN(dist(latitude,longitude,?,?)) FROM StationGroups
+      )
+    `)
+      .get(
+        data.info.latitude, data.info.longitude,
+        data.info.latitude, data.info.longitude
+      );
+    if(res){
+      data.history.forEach(elem => {
+        db.prepare("INSERT INTO StationGroupHistory VALUES(?, datetime(?))")
+          .run(res.stationGroupCode, elem.date);
+      });
+    }else{
+      console.log("ERROR");
+      process.exit(1);
+    }
   }
 });
 
