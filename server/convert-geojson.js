@@ -1,5 +1,5 @@
 const fs = require("fs");
-const sqlite3 = require("sqlite3");
+const sqlite3 = require("better-sqlite3");
 
 if(process.argv.length <= 2){
   console.error("Argument Error: node convert-geojson.js [geojson-file-name]");
@@ -126,7 +126,7 @@ centers = centers.map((pos) => {
 
 if(fs.existsSync("./station.db")) fs.rmSync("./station.db");
 
-const db = new sqlite3.Database("./station.db");
+const db = sqlite3("./station.db");
 
 const railway_class_cd_data = [
   { code: 11, content: "普通鉄道JR", definition: "" },
@@ -152,118 +152,117 @@ const institution_type_cd_data = [
 
 console.log("Create tables");
 
-db.serialize(() => {
+db.transaction(() => {
   // RailwayClassCd
-  db.run(`
-    CREATE TABLE RailwayClassCd(
-      code INTEGER,
-      content VARCHAR(8),
-      definition VARCHAR(64),
-      PRIMARY KEY (code)
-    )
-  `);
-  railway_class_cd_data.forEach((data) => {
-    db.run("INSERT INTO RailwayClassCd VALUES(?,?,?)", data.code, data.content, data.definition);
+  db.prepare(`
+  CREATE TABLE RailwayClassCd(
+    code INTEGER,
+    content VARCHAR(8),
+    definition VARCHAR(64),
+    PRIMARY KEY (code)
+  )
+  `).run();
+  railway_class_cd_data.forEach(data => {
+    db.prepare("INSERT INTO RailwayClassCd VALUES(?,?,?)").run(data.code, data.content, data.definition);
   });
 
   // InstitutionTypeCd
-  db.run(`
-    CREATE TABLE InstitutionTypeCd(
-      code INTEGER,
-      content VARCHAR(8),
-      PRIMARY KEY (code)
-    )
-  `);
-  institution_type_cd_data.forEach((data) => {
-    db.run("INSERT INTO InstitutionTypeCd VALUES(?,?)", data.code, data.content);
+  db.prepare(`
+  CREATE TABLE InstitutionTypeCd(
+    code INTEGER,
+    content VARCHAR(8),
+    PRIMARY KEY (code)
+  )
+  `).run();
+  institution_type_cd_data.forEach(data => {
+    db.prepare("INSERT INTO InstitutionTypeCd VALUES(?,?)").run(data.code, data.content);
   });
 
   // StationGroups
-  db.run(`
-    CREATE TABLE StationGroups(
-      stationGroupCode INTEGER,
-      stationName VARCHAR(32) NOT NULL,
-      latitude DOUBLE PRECISION NOT NULL,
-      longitude DOUBLE PRECISION NOT NULL,
-      date DATE,
-      PRIMARY KEY (stationGroupCode)
-    )
-  `);
+  db.prepare(`
+  CREATE TABLE StationGroups(
+    stationGroupCode INTEGER,
+    stationName VARCHAR(32) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    date DATE,
+    PRIMARY KEY (stationGroupCode)
+  )
+  `).run();
 
   // Stations
-  db.run(`
-    CREATE TABLE Stations(
-      stationCode INTEGER,
-      companyCode INTEGER,
-      railwayCode INTEGER,
-      stationGroupCode INTEGER,
-      railwayName VARCHAR(32) NOT NULL,
-      railwayCompany VARCHAR(32) NOT NULL,
-      latitude DOUBLE PRECISION NOT NULL,
-      longitude DOUBLE PRECISION NOT NULL,
-      getDate DATE,
-      passDate DATE,
-      PRIMARY KEY (stationCode),
-      FOREIGN KEY (companyCode) REFERENCES InstitutionTypeCd(code),
-      FOREIGN KEY (railwayCode) REFERENCES RailwayClassCd(code),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
-    )
-  `);
+  db.prepare(`
+  CREATE TABLE Stations(
+    stationCode INTEGER,
+    companyCode INTEGER,
+    railwayCode INTEGER,
+    stationGroupCode INTEGER,
+    railwayName VARCHAR(32) NOT NULL,
+    railwayCompany VARCHAR(32) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    getDate DATE,
+    passDate DATE,
+    PRIMARY KEY (stationCode),
+    FOREIGN KEY (companyCode) REFERENCES InstitutionTypeCd(code),
+    FOREIGN KEY (railwayCode) REFERENCES RailwayClassCd(code),
+    FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
+  )
+  `).run();
 
   // StationHistory
-  db.run(`
-    CREATE TABLE StationHistory(
-      stationCode INTEGER,
-      date DATE,
-      state INTEGER,
-      PRIMARY KEY (stationCode, date, state),
-      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
-    )
-  `);
+  db.prepare(`
+  CREATE TABLE StationHistory(
+    stationCode INTEGER,
+    date DATE,
+    state INTEGER,
+    PRIMARY KEY (stationCode, date, state),
+    FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+  )
+  `).run();
 
   // StationGroupHistory
-  db.run(`
-    CREATE TABLE StationGroupHistory(
-      stationGroupCode INTEGER,
-      date DATE,
-      PRIMARY KEY (stationGroupCode, date),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
-    )
-  `);
+  db.prepare(`
+  CREATE TABLE StationGroupHistory(
+    stationGroupCode INTEGER,
+    date DATE,
+    PRIMARY KEY (stationGroupCode, date),
+    FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
+  )
+  `).run();
+})();
 
 
-  console.log("Insert data");
-  // data insert
+console.log("Insert data");
+
+// data insert
+db.transaction(() => {
   // StationGroups
-  db.parallelize(() => {
-    station_group_codes.forEach((code) => {
-      db.run(
-        "INSERT INTO StationGroups VALUES(?,?,?,?,NULL)",
+  station_group_codes.forEach(code => {
+    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,NULL)")
+      .run(
         code,
         json_data[code].stationName,
-        centers[code].lat,
-        centers[code].lng
+        centers[code].lat.toFixed(5),
+        centers[code].lng.toFixed(5)
       );
-    });
   });
 
-  db.parallelize(() => {
-    // Stations
-    json_data.forEach((elem) => {
-      db.run(
-        "INSERT INTO Stations VALUES(?,?,?,?,?,?,?,?,NULL,NULL)",
+  // Stations
+  json_data.forEach(elem => {
+    db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?,?,?,?,NULL,NULL)")
+      .run(
         elem.stationCode,
         elem.companyCode,
         elem.railwayCode,
         elem.stationGroupCode,
         elem.railwayName,
         elem.railwayCompany,
-        elem.center[0],
-        elem.center[1]
+        elem.center[0].toFixed(5),
+        elem.center[1].toFixed(5)
       );
-    });
   });
-});
+})();
 
 db.close();
 
