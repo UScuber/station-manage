@@ -57,8 +57,8 @@ db.all(`
 
 const create_station_group_history = (station) => {
   db.all(`
-    SELECT date, state FROM StationGroupHistory
-    WHERE stationCode = ?
+    SELECT date FROM StationGroupHistory
+    WHERE stationGroupCode = ?
     `,
     station.stationGroupCode,
     (err, data) => {
