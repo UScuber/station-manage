@@ -243,8 +243,8 @@ db.transaction(() => {
       .run(
         code,
         json_data[code].stationName,
-        centers[code].lat,
-        centers[code].lng
+        centers[code].lat.toFixed(5),
+        centers[code].lng.toFixed(5)
       );
   });
 
@@ -258,8 +258,8 @@ db.transaction(() => {
         elem.stationGroupCode,
         elem.railwayName,
         elem.railwayCompany,
-        elem.center[0],
-        elem.center[1]
+        elem.center[0].toFixed(5),
+        elem.center[1].toFixed(5)
       );
   });
 })();
