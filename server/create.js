@@ -94,7 +94,7 @@ buffer += Object.keys(railway_id).length + "\n";
 for(let i = 0; i < station_data.length; i++){
   buffer += station_data[i].center[0].toFixed(5) + " " + station_data[i].center[1].toFixed(5) + "\n";
   buffer += station_data[i].railwayId + "\n";
-  buffer += station_data[i].stationName + "\n";
+  buffer += station_data[i].railwayName + " " + station_data[i].railwayCompany + " " + station_data[i].stationName + "\n";
 }
 
 // write railway info
@@ -115,8 +115,3 @@ for(let i = 0; i < json_data.length; i++){
 }
 
 fs.writeFileSync(output_file, buffer);
-
-for(let i = 0; i < station_data.length; i++){
-  if(station_data[i].railwayId !== 433) continue;
-  console.log(station_data[i].stationCode, station_data[i].stationName);
-}

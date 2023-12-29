@@ -38,8 +38,9 @@ struct Pos {
 struct Station {
   Pos pos;
   int railway_id;
-  std::string name;
-  Station(const Pos &p, const int r, const std::string &s) : pos(p), railway_id(r), name(s){}
+  std::string railway_name, railway_company, station_name;
+  Station(const Pos &p, const int r, const std::string &rn, const std::string &rc, const std::string &sn) :
+    pos(p), railway_id(r), railway_name(rn), railway_company(rc), station_name(sn){}
 };
 
 struct Path {
@@ -59,9 +60,9 @@ void input(){
   for(int i = 0; i < station_num; i++){
     const Pos p(get_double(), get_double());
     int id;
-    std::string name;
-    std::cin >> id >> name;
-    stations.emplace_back(p, id, name);
+    std::string railway_name, company, station_name;
+    std::cin >> id >> railway_name >> company >> station_name;
+    stations.emplace_back(p, id, railway_name, company, station_name);
   }
 
   std::cin >> path_num;
@@ -119,7 +120,7 @@ void search_next_station(const int search_id){
   std::vector<std::string> station_name(root.size());
   for(int i = 0; i < (int)station_indices.size(); i++){
     has_station[station_indices[i]] = 1;
-    station_name[station_indices[i]] = railway_stations[i].name;
+    station_name[station_indices[i]] = railway_stations[i].station_name;
   }
   // ひとつずつ探索していく
   for(int i = 0; i < (int)railway_stations.size(); i++){
@@ -142,7 +143,7 @@ void search_next_station(const int search_id){
         }
       }
     }
-    std::cout << railway_stations[i].name << ": $ ";
+    std::cout << railway_stations[i].station_name << ": $ ";
     for(const int v : next_stations) std::cout << station_name[v] << " $ ";
     std::cout << "\n";
   }
