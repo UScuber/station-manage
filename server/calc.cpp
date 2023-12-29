@@ -16,8 +16,9 @@ struct Pos {
   Pos() : lat(0), lng(0){}
   Pos(const double a, const double b) : lat(a), lng(b){}
   double dist(const Pos &a) const{
-    static constexpr double R = M_PI / 180;
-    return acos(cos(lat*R) * cos(a.lat*R) * cos(a.lng*R - lng*R) + sin(lat*R) * sin(a.lat*R)) * 6371;
+    // static constexpr double R = M_PI / 180;
+    // return acos(cos(lat*R) * cos(a.lat*R) * cos(a.lng*R - lng*R) + sin(lat*R) * sin(a.lat*R)) * 6371;
+    return sqrt((lat-a.lat)*(lat-a.lat) + (lng-a.lng)*(lng-a.lng));
   }
   inline constexpr bool operator<(const Pos &a) const{
     if(lat != a.lat) return lat < a.lat;
@@ -38,7 +39,6 @@ struct Station {
   Pos pos;
   int railway_id;
   std::string name;
-  // Station() : pos(), railway_id(-1){}
   Station(const Pos &p, const int r) : pos(p), railway_id(r){}
 };
 
@@ -77,10 +77,7 @@ void input(){
   }
 }
 
-int main(){
-  input();
-
-  const int search_id = 433;
+void search_next_station(const int search_id){
   std::vector<Pos> pos_data;
   std::map<Pos,int> index;
   std::vector<std::vector<int>> root;
@@ -147,6 +144,16 @@ int main(){
     }
     std::cout << railway_stations[i].name << ": $ ";
     for(const int v : next_stations) std::cout << station_name[v] << " $ ";
+    std::cout << "\n";
+  }
+}
+
+int main(){
+  input();
+
+  for(int i = 0; i < railway_num; i++){
+    std::cout << i << "\n";
+    search_next_station(i);
     std::cout << "\n";
   }
 }
