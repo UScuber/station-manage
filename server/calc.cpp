@@ -39,7 +39,7 @@ struct Station {
   Pos pos;
   int railway_id;
   std::string name;
-  Station(const Pos &p, const int r) : pos(p), railway_id(r){}
+  Station(const Pos &p, const int r, const std::string &s) : pos(p), railway_id(r), name(s){}
 };
 
 struct Path {
@@ -59,9 +59,9 @@ void input(){
   for(int i = 0; i < station_num; i++){
     const Pos p(get_double(), get_double());
     int id;
-    std::cin >> id;
-    stations.emplace_back(p, id);
-    std::cin >> stations.back().name;
+    std::string name;
+    std::cin >> id >> name;
+    stations.emplace_back(p, id, name);
   }
 
   std::cin >> path_num;
@@ -149,6 +149,8 @@ void search_next_station(const int search_id){
 }
 
 int main(){
+  std::cin.tie(nullptr);
+  std::ios::sync_with_stdio(false);
   input();
 
   for(int i = 0; i < railway_num; i++){
