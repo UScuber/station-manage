@@ -124,11 +124,11 @@ int main(){
     has_station[station_indices[i]] = 1;
     station_name[station_indices[i]] = railway_stations[i].name;
   }
-  // for(const int index : station_indices) has_station[index] = 1;
   // ひとつずつ探索していく
   for(int i = 0; i < (int)railway_stations.size(); i++){
     std::vector<int> next_stations;
     std::vector<int> visited(root.size(), -1);
+    std::vector<Pos> prev(root.size(), Pos(-1,-1));
     std::queue<int> que;
     que.push(station_indices[i]);
     visited[station_indices[i]] = 0;
@@ -137,9 +137,12 @@ int main(){
       que.pop();
       for(const int x : root[pos]){
         if(visited[x] != -1) continue;
-        visited[x] = visited[pos] + 1;
-        if(!has_station[x]) que.push(x);
-        else next_stations.push_back(x);
+        if(prev[pos].lat < 0 || (pos_data[x]-pos_data[pos]).dot(prev[pos]-pos_data[pos]) <= 0){
+          visited[x] = visited[pos] + 1;
+          prev[x] = pos_data[pos];
+          if(!has_station[x]) que.push(x);
+          else next_stations.push_back(x);
+        }
       }
     }
     std::cout << railway_stations[i].name << ": $ ";
