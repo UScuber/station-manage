@@ -33,14 +33,20 @@ struct Pos {
   inline constexpr double cross(const Pos &a) const{
     return lat*a.lng - lng*a.lat;
   }
+  inline constexpr double abs() const{
+    return sqrt(lat*lat + lng*lng);
+  }
+  inline constexpr double arg_cos(const Pos &a) const{
+    return (dot(a) / (abs() * a.abs()));
+  }
 };
 
 struct Station {
   Pos pos;
-  int railway_id;
+  int station_code, railway_id;
   std::string railway_name, railway_company, station_name;
-  Station(const Pos &p, const int r, const std::string &rn, const std::string &rc, const std::string &sn) :
-    pos(p), railway_id(r), railway_name(rn), railway_company(rc), station_name(sn){}
+  Station(const Pos &p, const int s, const int r, const std::string &rn, const std::string &rc, const std::string &sn) :
+    pos(p), station_code(s), railway_id(r), railway_name(rn), railway_company(rc), station_name(sn){}
 };
 
 struct Path {
@@ -59,10 +65,10 @@ void input(){
   std::cin >> station_num >> railway_num;
   for(int i = 0; i < station_num; i++){
     const Pos p(get_double(), get_double());
-    int id;
+    int code, id;
     std::string railway_name, company, station_name;
-    std::cin >> id >> railway_name >> company >> station_name;
-    stations.emplace_back(p, id, railway_name, company, station_name);
+    std::cin >> code >> id >> railway_name >> company >> station_name;
+    stations.emplace_back(p, code, id, railway_name, company, station_name);
   }
 
   std::cin >> path_num;
@@ -135,7 +141,7 @@ void search_next_station(const int search_id){
       que.pop();
       for(const int x : root[pos]){
         if(visited[x] != -1) continue;
-        if(prev[pos].lat < 0 || (pos_data[x]-pos_data[pos]).dot(prev[pos]-pos_data[pos]) <= 0){
+        if(prev[pos].lat < 0 || ((pos_data[x]-pos_data[pos]).arg_cos(prev[pos]-pos_data[pos])) < 0.33){
           visited[x] = visited[pos] + 1;
           prev[x] = pos_data[pos];
           if(!has_station[x]) que.push(x);

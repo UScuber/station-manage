@@ -93,7 +93,7 @@ buffer += Object.keys(railway_id).length + "\n";
 // write station info
 for(let i = 0; i < station_data.length; i++){
   buffer += station_data[i].center[0].toFixed(5) + " " + station_data[i].center[1].toFixed(5) + "\n";
-  buffer += station_data[i].railwayId + "\n";
+  buffer += station_data[i].stationCode + " " + station_data[i].railwayId + "\n";
   buffer += station_data[i].railwayName + " " + station_data[i].railwayCompany + " " + station_data[i].stationName + "\n";
 }
 
