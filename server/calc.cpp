@@ -18,9 +18,11 @@ struct Pos {
   double lat,lng;
   Pos() : lat(0), lng(0){}
   Pos(const double a, const double b) : lat(a), lng(b){}
+  double dist_km(const Pos &a) const{
+    static constexpr double R = PI / 180;
+    return acos(cos(lat*R) * cos(a.lat*R) * cos(a.lng*R - lng*R) + sin(lat*R) * sin(a.lat*R)) * 6371;
+  }
   double dist(const Pos &a) const{
-    // static constexpr double R = PI / 180;
-    // return acos(cos(lat*R) * cos(a.lat*R) * cos(a.lng*R - lng*R) + sin(lat*R) * sin(a.lat*R)) * 6371;
     return sqrt((lat-a.lat)*(lat-a.lat) + (lng-a.lng)*(lng-a.lng));
   }
   inline constexpr bool operator<(const Pos &a) const{
@@ -138,12 +140,23 @@ void search_next_station(const int search_id){
   }
 
   // 駅がある頂点をメモ
-  std::vector<int> has_station(root.size());
+  std::vector<int> has_station(root.size(), -1);
   std::vector<std::string> station_name(root.size());
   for(int i = 0; i < station_num; i++){
     for(const int idx : station_indices[i]){
-      has_station[idx] = 1;
+      has_station[idx] = i;
       station_name[idx] = railway_stations[i].station_name;
+    }
+  }
+  // 駅のホームの隣を通ってる線路も駅があるように見せかける
+  for(int i = 0; i < station_num; i++){
+    for(const auto &path : railway_stations[i].geometry){
+      const Pos middle = path[path.size() / 2];
+      for(int j = 0; j < (int)pos_data.size(); j++){
+        if(middle.dist_km(pos_data[j]) > 0.40) continue;
+        has_station[j] = i;
+        station_name[j] = railway_stations[i].station_name;
+      }
     }
   }
 
@@ -162,16 +175,14 @@ void search_next_station(const int search_id){
       que.pop();
       for(const int x : root[pos]){
         if(visited[x] != -1) continue;
-        if(prev[pos] < 0 || (int)root[pos].size() == 2 || ((pos_data[x]-pos_data[pos]).arg_cos(pos_data[prev[pos]]-pos_data[pos])) < 0.33-0.25){
+        if(prev[pos] < 0 || (int)root[pos].size() == 2 || ((pos_data[x]-pos_data[pos]).arg_cos(pos_data[prev[pos]]-pos_data[pos])) < 0.10){
           visited[x] = visited[pos] + 1;
           prev[x] = pos;
-          if(!has_station[x]) que.push(x);
+          if(has_station[x] < 0 || has_station[x] == i) que.push(x);
           else next_stations.push_back(x);
         }
       }
     }
-    std::sort(next_stations.begin(), next_stations.end());
-    next_stations.erase(std::unique(next_stations.begin(), next_stations.end()), next_stations.end());
     // next stationsの方向を計算
     const int next_num = next_stations.size();
     std::vector<double> args(next_num);
@@ -184,17 +195,21 @@ void search_next_station(const int search_id){
     std::vector<int> dir1_next_stations, dir2_next_stations;
     if(next_num){
       for(int j = 0; j < next_num; j++){
-        if(abs(args[0] - args[j]) < 0.7 || abs(PI*2 - abs(args[0] - args[j])) < 0.7){
-          dir1_next_stations.push_back(next_stations[j]);
+        if(abs(args[0] - args[j]) < 0.1 || abs(PI*2 - abs(args[0] - args[j])) < 0.1){
+          dir1_next_stations.push_back(has_station[next_stations[j]]);
         }else{
-          dir2_next_stations.push_back(next_stations[j]);
+          dir2_next_stations.push_back(has_station[next_stations[j]]);
         }
       }
+      std::sort(dir1_next_stations.begin(), dir1_next_stations.end());
+      dir1_next_stations.erase(std::unique(dir1_next_stations.begin(), dir1_next_stations.end()), dir1_next_stations.end());
+      std::sort(dir2_next_stations.begin(), dir2_next_stations.end());
+      dir2_next_stations.erase(std::unique(dir2_next_stations.begin(), dir2_next_stations.end()), dir2_next_stations.end());
     }
     std::cout << railway_stations[i].station_name << ": $ ";
-    for(const int v : dir1_next_stations) std::cout << station_name[v] << " $ ";
+    for(const int v : dir1_next_stations) std::cout << railway_stations[v].station_name << " $ ";
     std::cout << "||||| $ ";
-    for(const int v : dir2_next_stations) std::cout << station_name[v] << " $ ";
+    for(const int v : dir2_next_stations) std::cout << railway_stations[v].station_name << " $ ";
     std::cout << "\n";
   }
 }
