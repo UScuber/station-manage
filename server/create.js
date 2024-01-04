@@ -52,23 +52,6 @@ const calc_station_codes = () => {
   });
   json_data = json_data.filter(elem => elem !== null);
 
-  // 重心を求める
-  json_data = json_data.map(elem => {
-    let latitude = 0, longitude = 0;
-    elem.coordinates.forEach(pos => {
-      // [経度, 緯度]
-      latitude += (pos[0][1] + pos[pos.length-1][1]) * 0.5;
-      longitude += (pos[0][0] + pos[pos.length-1][0]) * 0.5;
-    });
-    latitude /= elem.coordinates.length;
-    longitude /= elem.coordinates.length;
-
-    elem["center"] = [latitude, longitude];
-    delete elem.coordinates;
-
-    return elem;
-  });
-
   let counter = 0;
   let railway_id = {};
   json_data = json_data.map(elem => {
@@ -92,7 +75,13 @@ buffer += Object.keys(railway_id).length + "\n";
 
 // write station info
 for(let i = 0; i < station_data.length; i++){
-  buffer += station_data[i].center[0].toFixed(5) + " " + station_data[i].center[1].toFixed(5) + "\n";
+  const geometry = station_data[i].coordinates;
+  buffer += geometry.length + "\n";
+  for(let j = 0; j < geometry.length; j++){
+    buffer += geometry[j].length + "\n";
+    buffer += geometry[j].map(pos => pos[1].toFixed(5) + " " + pos[0].toFixed(5)).join(" ");
+    buffer += "\n";
+  }
   buffer += station_data[i].stationCode + " " + station_data[i].railwayId + "\n";
   buffer += station_data[i].railwayName + " " + station_data[i].railwayCompany + " " + station_data[i].stationName + "\n";
 }

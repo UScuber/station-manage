@@ -1,9 +1,12 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <cmath>
 #include <queue>
 #include <map>
 #include <cassert>
+
+constexpr double PI = 3.14159265358979323846;
 
 double get_double(){
   int a; char c; int b;
@@ -16,7 +19,7 @@ struct Pos {
   Pos() : lat(0), lng(0){}
   Pos(const double a, const double b) : lat(a), lng(b){}
   double dist(const Pos &a) const{
-    // static constexpr double R = M_PI / 180;
+    // static constexpr double R = PI / 180;
     // return acos(cos(lat*R) * cos(a.lat*R) * cos(a.lng*R - lng*R) + sin(lat*R) * sin(a.lat*R)) * 6371;
     return sqrt((lat-a.lat)*(lat-a.lat) + (lng-a.lng)*(lng-a.lng));
   }
@@ -42,11 +45,11 @@ struct Pos {
 };
 
 struct Station {
-  Pos pos;
+  std::vector<std::vector<Pos>> geometry;
   int station_code, railway_id;
   std::string railway_name, railway_company, station_name;
-  Station(const Pos &p, const int s, const int r, const std::string &rn, const std::string &rc, const std::string &sn) :
-    pos(p), station_code(s), railway_id(r), railway_name(rn), railway_company(rc), station_name(sn){}
+  Station(const std::vector<std::vector<Pos>> &g, const int s, const int r, const std::string &rn, const std::string &rc, const std::string &sn) :
+    geometry(g), station_code(s), railway_id(r), railway_name(rn), railway_company(rc), station_name(sn){}
 };
 
 struct Path {
@@ -55,20 +58,28 @@ struct Path {
   Path(const std::vector<Pos> &p, const int r) : path(p), railway_id(r){}
 };
 
-int station_num;
 int railway_num;
-int path_num;
 std::vector<Station> stations;
 std::vector<std::vector<std::vector<Pos>>> railway_paths;
 
 void input(){
+  int station_num, path_num;
   std::cin >> station_num >> railway_num;
   for(int i = 0; i < station_num; i++){
-    const Pos p(get_double(), get_double());
+    int line_num;
+    std::cin >> line_num;
+    std::vector<std::vector<Pos>> geo(line_num);
+    for(int j = 0; j < line_num; j++){
+      int num;
+      std::cin >> num;
+      for(int k = 0; k < num; k++){
+        geo[j].push_back(Pos(get_double(), get_double()));
+      }
+    }
     int code, id;
     std::string railway_name, company, station_name;
     std::cin >> code >> id >> railway_name >> company >> station_name;
-    stations.emplace_back(p, code, id, railway_name, company, station_name);
+    stations.emplace_back(geo, code, id, railway_name, company, station_name);
   }
 
   std::cin >> path_num;
@@ -108,49 +119,82 @@ void search_next_station(const int search_id){
   for(const auto &st : stations){
     if(st.railway_id == search_id) railway_stations.push_back(st);
   }
-  std::vector<int> station_indices;
-  for(const auto &station : railway_stations){
-    double min_dist = 1e9;
-    int min_idx = -1;
-    for(int i = 0; i < (int)pos_data.size(); i++){
-      const double d = station.pos.dist(pos_data[i]);
-      if(min_dist > d){
-        min_dist = d;
-        min_idx = i;
+  const int station_num = railway_stations.size();
+  std::vector<std::vector<int>> station_indices(station_num);
+  for(int i = 0; i < station_num; i++){
+    for(const auto &path : railway_stations[i].geometry){
+      const Pos middle = path[path.size() / 2];
+      double min_dist = 1e9;
+      int min_idx = -1;
+      for(int j = 0; j < (int)pos_data.size(); j++){
+        const double d = middle.dist(pos_data[j]);
+        if(min_dist > d){
+          min_dist = d;
+          min_idx = j;
+        }
       }
+      station_indices[i].push_back(min_idx);
     }
-    station_indices.push_back(min_idx);
   }
+
   // 駅がある頂点をメモ
   std::vector<int> has_station(root.size());
   std::vector<std::string> station_name(root.size());
-  for(int i = 0; i < (int)station_indices.size(); i++){
-    has_station[station_indices[i]] = 1;
-    station_name[station_indices[i]] = railway_stations[i].station_name;
+  for(int i = 0; i < station_num; i++){
+    for(const int idx : station_indices[i]){
+      has_station[idx] = 1;
+      station_name[idx] = railway_stations[i].station_name;
+    }
   }
+
   // ひとつずつ探索していく
-  for(int i = 0; i < (int)railway_stations.size(); i++){
+  for(int i = 0; i < station_num; i++){
     std::vector<int> next_stations;
     std::vector<int> visited(root.size(), -1);
-    std::vector<Pos> prev(root.size(), Pos(-1,-1));
+    std::vector<int> prev(root.size(), -1);
     std::queue<int> que;
-    que.push(station_indices[i]);
-    visited[station_indices[i]] = 0;
+    for(const int idx : station_indices[i]){
+      visited[idx] = 0;
+      que.push(idx);
+    }
     while(!que.empty()){
       const int pos = que.front();
       que.pop();
       for(const int x : root[pos]){
         if(visited[x] != -1) continue;
-        if(prev[pos].lat < 0 || ((pos_data[x]-pos_data[pos]).arg_cos(prev[pos]-pos_data[pos])) < 0.33){
+        if(prev[pos] < 0 || (int)root[pos].size() == 2 || ((pos_data[x]-pos_data[pos]).arg_cos(pos_data[prev[pos]]-pos_data[pos])) < 0.33-0.25){
           visited[x] = visited[pos] + 1;
-          prev[x] = pos_data[pos];
+          prev[x] = pos;
           if(!has_station[x]) que.push(x);
           else next_stations.push_back(x);
         }
       }
     }
+    std::sort(next_stations.begin(), next_stations.end());
+    next_stations.erase(std::unique(next_stations.begin(), next_stations.end()), next_stations.end());
+    // next stationsの方向を計算
+    const int next_num = next_stations.size();
+    std::vector<double> args(next_num);
+    for(int j = 0; j < next_num; j++){
+      int p = next_stations[j];
+      while(prev[prev[p]] != -1) p = prev[p];
+      const Pos sub = pos_data[p] - pos_data[prev[p]];
+      args[j] = atan2(sub.lng, sub.lat);
+    }
+    std::vector<int> dir1_next_stations, dir2_next_stations;
+    if(next_num){
+      for(int j = 0; j < next_num; j++){
+        if(abs(args[0] - args[j]) < 0.7 || abs(PI*2 - abs(args[0] - args[j])) < 0.7){
+          dir1_next_stations.push_back(next_stations[j]);
+        }else{
+          dir2_next_stations.push_back(next_stations[j]);
+        }
+      }
+    }
     std::cout << railway_stations[i].station_name << ": $ ";
-    for(const int v : next_stations) std::cout << station_name[v] << " $ ";
+    for(const int v : dir1_next_stations) std::cout << station_name[v] << " $ ";
+    std::cout << "||||| $ ";
+    for(const int v : dir2_next_stations) std::cout << station_name[v] << " $ ";
     std::cout << "\n";
   }
 }
