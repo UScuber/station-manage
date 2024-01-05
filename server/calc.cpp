@@ -155,7 +155,11 @@ void search_next_station(const int search_id){
           if((path[k]-path[k+1]).dot(pos-path[k+1]) < 0) continue;
           const double d = std::abs((path[k+1]-path[k]).cross(pos-path[k]) / (path[k+1]-path[k]).abs());
           if(d < 1e-6){
-            railway_paths[search_id][j].insert(railway_paths[search_id][j].begin() + k+1, pos);
+            auto &sep_path = railway_paths[search_id][j];
+            railway_paths[search_id].push_back({ pos });
+            railway_paths[search_id].back().insert(railway_paths[search_id].back().end(), sep_path.begin(), sep_path.end());
+            sep_path.erase(sep_path.begin() + k+1, sep_path.end());
+            sep_path.push_back(pos);
             through = true;
             break;
           }
@@ -164,6 +168,8 @@ void search_next_station(const int search_id){
       }
     }
   }
+
+  // build graph
   for(const auto &path : railway_paths[search_id]){
     int prev_idx = -1;
     for(const Pos &p : path){
@@ -207,16 +213,6 @@ void search_next_station(const int search_id){
   for(int i = 0; i < station_num; i++){
     for(const int idx : station_indices[i]){
       has_station[idx] = i;
-    }
-  }
-  // 駅のホームの隣を通ってる線路も駅があるように見せかける
-  for(int i = 0; i < station_num; i++){
-    for(const auto &path : railway_stations[i].geometry){
-      const Pos middle = path[path.size() / 2];
-      for(int j = 0; j < (int)pos_data.size(); j++){
-        if(middle.dist_km(pos_data[j]) > 0.2) continue;
-        has_station[j] = i;
-      }
     }
   }
 
