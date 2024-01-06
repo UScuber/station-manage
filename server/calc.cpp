@@ -134,9 +134,6 @@ void input(){
 }
 
 void search_next_station(const int search_id){
-  std::vector<Pos> pos_data;
-  std::map<Pos,int> index;
-  std::vector<std::vector<int>> root;
   const auto &paths = railway_paths[search_id];
   const int path_num = paths.size();
   // データに記述されていない交点を探す
@@ -156,8 +153,8 @@ void search_next_station(const int search_id){
           const double d = std::abs((path[k+1]-path[k]).cross(pos-path[k]) / (path[k+1]-path[k]).abs());
           if(d < 1e-6){
             auto &sep_path = railway_paths[search_id][j];
-            railway_paths[search_id].push_back({ pos });
-            railway_paths[search_id].back().insert(railway_paths[search_id].back().end(), sep_path.begin(), sep_path.end());
+            railway_paths[search_id].emplace_back(sep_path.begin() + k, sep_path.end());
+            railway_paths[search_id].back()[0] = pos;
             sep_path.erase(sep_path.begin() + k+1, sep_path.end());
             sep_path.push_back(pos);
             through = true;
@@ -170,6 +167,9 @@ void search_next_station(const int search_id){
   }
 
   // build graph
+  std::vector<Pos> pos_data;
+  std::map<Pos, int> index;
+  std::vector<std::vector<int>> root;
   for(const auto &path : railway_paths[search_id]){
     int prev_idx = -1;
     for(const Pos &p : path){
