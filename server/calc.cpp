@@ -248,6 +248,19 @@ void search_next_station(const int search_id){
     }
   }
 
+  // 先端まで何もないpathを削除する,スイッチバックがある程度解決される
+  for(int i = 0; i < (int)root.size(); i++){
+    int p = i;
+    while((int)root[p].size() == 1 && has_station[p] < 0){
+      const int nxt = root[p][0];
+      root[p].clear();
+      root[nxt].erase(std::remove_if(root[nxt].begin(), root[nxt].end(), [&p](const int i){
+        return i == p; // filter
+      }), root[nxt].end());
+      p = nxt;
+    }
+  }
+
   // ひとつずつ探索していく
   UnionFind tree(station_num); // 連結性の確認(後でスイッチバック判定をする)
   std::vector<std::pair<std::vector<int>, std::vector<int>>> next_station_data(station_num);
