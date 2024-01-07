@@ -262,7 +262,6 @@ void search_next_station(const int search_id){
   }
 
   // ひとつずつ探索していく
-  UnionFind tree(station_num); // 連結性の確認(後でスイッチバック判定をする)
   std::vector<std::pair<std::vector<int>, std::vector<int>>> next_station_data(station_num);
 
   for(int i = 0; i < station_num; i++){
@@ -310,73 +309,9 @@ void search_next_station(const int search_id){
       std::sort(dir2_next_stations.begin(), dir2_next_stations.end());
       dir2_next_stations.erase(std::unique(dir2_next_stations.begin(), dir2_next_stations.end()), dir2_next_stations.end());
     }
-    for(const int p : dir1_next_stations) tree.unite(i, p);
-    for(const int p : dir2_next_stations) tree.unite(i, p);
     next_station_data[i] = std::minmax(dir1_next_stations, dir2_next_stations);
-    // std::cout << railway_stations[i].station_name << ": $ ";
-    // for(const int v : dir1_next_stations) std::cout << railway_stations[v].station_name << " $ ";
-    // std::cout << "||||| $ ";
-    // for(const int v : dir2_next_stations) std::cout << railway_stations[v].station_name << " $ ";
-    // std::cout << "\n";
   }
 
-  if(tree.size(0) == station_num || 1){
-    for(int i = 0; i < station_num; i++){
-      std::cout << railway_stations[i].station_name << ": $ ";
-      for(const int v : next_station_data[i].first) std::cout << railway_stations[v].station_name << " $ ";
-      std::cout << "||||| $ ";
-      for(const int v : next_station_data[i].second) std::cout << railway_stations[v].station_name << " $ ";
-      std::cout << "\n";
-    }
-    return;
-  }
-
-  // 鋭角の移動も可能な探索をやる
-  for(int i = 0; i < station_num; i++){
-    std::vector<int> next_stations;
-    std::vector<int> visited(root.size(), -1);
-    std::vector<int> prev(root.size(), -1);
-    std::queue<int> que;
-    for(const int idx : station_indices[i]){
-      visited[idx] = 0;
-      que.push(idx);
-    }
-    while(!que.empty()){
-      const int pos = que.front();
-      que.pop();
-      for(const int x : root[pos]){
-        if(visited[x] != -1) continue;
-        visited[x] = visited[pos] + 1;
-        prev[x] = pos;
-        if(has_station[x] < 0 || has_station[x] == i) que.push(x);
-        else next_stations.push_back(x);
-      }
-    }
-    // next stationsの方向を計算
-    const int next_num = next_stations.size();
-    std::vector<double> args(next_num);
-    for(int j = 0; j < next_num; j++){
-      int p = next_stations[j];
-      while(prev[prev[p]] != -1) p = prev[p];
-      const Pos sub = pos_data[p] - pos_data[prev[p]];
-      args[j] = atan2(sub.lng, sub.lat);
-    }
-    std::vector<int> dir1_next_stations, dir2_next_stations;
-    if(next_num){
-      for(int j = 0; j < next_num; j++){
-        if(abs(args[0] - args[j]) < 0.1 || abs(PI*2 - abs(args[0] - args[j])) < 0.1){
-          dir1_next_stations.push_back(has_station[next_stations[j]]);
-        }else{
-          dir2_next_stations.push_back(has_station[next_stations[j]]);
-        }
-      }
-      std::sort(dir1_next_stations.begin(), dir1_next_stations.end());
-      dir1_next_stations.erase(std::unique(dir1_next_stations.begin(), dir1_next_stations.end()), dir1_next_stations.end());
-      std::sort(dir2_next_stations.begin(), dir2_next_stations.end());
-      dir2_next_stations.erase(std::unique(dir2_next_stations.begin(), dir2_next_stations.end()), dir2_next_stations.end());
-    }
-    next_station_data[i] = { dir1_next_stations, dir2_next_stations };
-  }
   for(int i = 0; i < station_num; i++){
     std::cout << railway_stations[i].station_name << ": $ ";
     for(const int v : next_station_data[i].first) std::cout << railway_stations[v].station_name << " $ ";
