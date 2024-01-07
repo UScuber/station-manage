@@ -5,6 +5,7 @@
 #include <queue>
 #include <map>
 #include <cassert>
+#include <iomanip>
 
 constexpr double PI = 3.14159265358979323846;
 
@@ -74,6 +75,12 @@ struct Pos {
   inline constexpr double arg_cos(const Pos &a) const{
     return (dot(a) / (abs() * a.abs()));
   }
+  inline constexpr double arg() const{
+    return atan2(lng, lat);
+  }
+  inline constexpr double arc(const Pos &a) const{
+    return acos(arg_cos(a));
+  }
 };
 
 Pos get_coordinate(){
@@ -131,6 +138,11 @@ void input(){
     }
     railway_paths[id].push_back(path);
   }
+
+  for(auto &path : railway_paths){
+    std::sort(path.begin(), path.end());
+    path.erase(std::unique(path.begin(), path.end()), path.end());
+  }
 }
 
 void search_next_station(const int search_id){
@@ -170,6 +182,7 @@ void search_next_station(const int search_id){
   std::vector<Pos> pos_data;
   std::map<Pos, int> index;
   std::vector<std::vector<int>> root;
+  std::vector<int> path_kinds_num;
   for(const auto &path : railway_paths[search_id]){
     int prev_idx = -1;
     for(const Pos &p : path){
@@ -177,15 +190,34 @@ void search_next_station(const int search_id){
         index[p] = (int)pos_data.size();
         pos_data.push_back(p);
         root.push_back({});
+        path_kinds_num.push_back(0);
       }
       const int idx = index[p];
       if(prev_idx != -1){
         root[idx].push_back(prev_idx);
         root[prev_idx].push_back(idx);
       }
+      path_kinds_num[idx]++;
       prev_idx = idx;
     }
   }
+  // 特定のX状のpathを分離する
+  for(int i = 0; i < (int)root.size(); i++){
+    if((int)root[i].size() != 4) continue;
+    if(path_kinds_num[i] >= 4) continue;
+    // 分離
+    const int last = root.size();
+    for(int &x : root[root[i][2]]){
+      if(x == i) x = last;
+    }
+    for(int &x : root[root[i][3]]){
+      if(x == i) x = last;
+    }
+    root.push_back({ root[i][2], root[i][3] });
+    root[i].pop_back(); root[i].pop_back();
+    pos_data.push_back(pos_data[i]);
+  }
+
   std::vector<Station> railway_stations;
   for(const auto &st : stations){
     if(st.railway_id == search_id) railway_stations.push_back(st);
