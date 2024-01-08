@@ -103,6 +103,31 @@ struct Path {
   Path(const std::vector<Pos> &p, const int r) : path(p), railway_id(r){}
 };
 
+enum class RailwayType {
+  LinearList,
+  Circle,
+  WithLoop,
+  WithBranches,
+  None,
+};
+
+struct NextStaInfo {
+  const Station &station;
+  int index;
+  std::vector<int> left, right;
+  NextStaInfo(const Station &sta, const int idx, const std::vector<int> &dir1, const std::vector<int> &dir2) :
+    station(sta), index(idx), left(dir1), right(dir2){}
+  
+  std::vector<int> next_list() const{
+    std::vector<int> temp = left;
+    temp.insert(temp.end(), right.begin(), right.end());
+    return temp;
+  }
+  inline int size() const{
+    return left.size() + right.size();
+  }
+};
+
 int railway_num;
 std::vector<Station> stations;
 std::vector<std::vector<std::vector<Pos>>> railway_paths;
@@ -145,8 +170,7 @@ void input(){
   }
 }
 
-void search_next_station(const int search_id){
-  const auto &paths = railway_paths[search_id];
+void search_next_station(const std::vector<Station> &railway_stations, std::vector<NextStaInfo> &next_station_data, std::vector<std::vector<Pos>> &paths){
   const int path_num = paths.size();
   // データに記述されていない交点を探す
   for(int i = 0; i < path_num; i++){
@@ -164,9 +188,9 @@ void search_next_station(const int search_id){
           if((path[k]-path[k+1]).dot(pos-path[k+1]) < 0) continue;
           const double d = std::abs((path[k+1]-path[k]).cross(pos-path[k]) / (path[k+1]-path[k]).abs());
           if(d < 1e-6){
-            auto &sep_path = railway_paths[search_id][j];
-            railway_paths[search_id].emplace_back(sep_path.begin() + k, sep_path.end());
-            railway_paths[search_id].back()[0] = pos;
+            auto &sep_path = paths[j];
+            paths.emplace_back(sep_path.begin() + k, sep_path.end());
+            paths.back()[0] = pos;
             sep_path.erase(sep_path.begin() + k+1, sep_path.end());
             sep_path.push_back(pos);
             through = true;
@@ -183,7 +207,7 @@ void search_next_station(const int search_id){
   std::map<Pos, int> index;
   std::vector<std::vector<int>> root;
   std::vector<int> path_kinds_num;
-  for(const auto &path : railway_paths[search_id]){
+  for(const auto &path : paths){
     int prev_idx = -1;
     for(const Pos &p : path){
       if(!index.count(p)){
@@ -218,10 +242,6 @@ void search_next_station(const int search_id){
     pos_data.push_back(pos_data[i]);
   }
 
-  std::vector<Station> railway_stations;
-  for(const auto &st : stations){
-    if(st.railway_id == search_id) railway_stations.push_back(st);
-  }
   const int station_num = railway_stations.size();
   std::vector<std::vector<int>> station_indices(station_num);
   for(int i = 0; i < station_num; i++){
@@ -262,8 +282,6 @@ void search_next_station(const int search_id){
   }
 
   // ひとつずつ探索していく
-  std::vector<std::pair<std::vector<int>, std::vector<int>>> next_station_data(station_num);
-
   for(int i = 0; i < station_num; i++){
     std::vector<int> next_stations;
     std::vector<int> visited(root.size(), -1);
@@ -309,14 +327,432 @@ void search_next_station(const int search_id){
       std::sort(dir2_next_stations.begin(), dir2_next_stations.end());
       dir2_next_stations.erase(std::unique(dir2_next_stations.begin(), dir2_next_stations.end()), dir2_next_stations.end());
     }
-    next_station_data[i] = std::minmax(dir1_next_stations, dir2_next_stations);
+    next_station_data.emplace_back(railway_stations[i], i, dir1_next_stations, dir2_next_stations);
+  }
+}
+
+std::vector<std::vector<NextStaInfo>> separate_to_connected_graph(const std::vector<NextStaInfo> &next_station_data){
+  const int station_num = next_station_data.size();
+  UnionFind tree(station_num);
+  for(const auto &data : next_station_data){
+    for(const auto &sta : data.next_list()){
+      tree.unite(data.index, sta);
+    }
+  }
+  if(tree.size(0) == station_num){
+    return { next_station_data };
   }
 
+  std::map<int, std::vector<NextStaInfo>> group;
+  for(const auto &data : next_station_data){
+    group[tree.root(data.index)].push_back(data);
+  }
+  std::vector<std::vector<NextStaInfo>> next_station_graph_data;
+  for(const auto &elem : group){
+    std::map<int, int> indices;
+    int count = 0;
+    for(const auto &data : elem.second){
+      indices[data.index] = count;
+      count++;
+    }
+    std::vector<NextStaInfo> compressed_data;
+    for(const auto &data : elem.second){
+      NextStaInfo info = data;
+      info.index = indices[info.index];
+      for(int &x : info.left) x = indices[x];
+      for(int &x : info.right) x = indices[x];
+      compressed_data.push_back(info);
+    }
+    next_station_graph_data.push_back(compressed_data);
+  }
+  return next_station_graph_data;
+}
+
+std::vector<NextStaInfo> calc_linear_list_graph(std::vector<NextStaInfo> graph){
+  const int station_num = graph.size();
+  int st = -1;
   for(int i = 0; i < station_num; i++){
-    std::cout << railway_stations[i].station_name << ": $ ";
-    for(const int v : next_station_data[i].first) std::cout << railway_stations[v].station_name << " $ ";
+    if((int)graph[i].size() == 1){
+      st = i;
+      break;
+    }
+  }
+  assert(st != -1);
+  int cur = st, prev = -1;
+  while(prev == -1 || (int)graph[cur].size() == 2){
+    for(const int x : graph[cur].next_list()){
+      if(x == prev) continue;
+      if(prev != -1) graph[cur].left = { prev };
+      else graph[cur].left = {};
+      graph[cur].right = { x };
+      prev = cur;
+      cur = x;
+      break;
+    }
+  }
+  graph[cur].left = { prev };
+  graph[cur].right = {};
+  return graph;
+}
+
+std::vector<NextStaInfo> calc_circle_graph(std::vector<NextStaInfo> graph){
+  int cur = graph[0].next_list()[0], prev = 0;
+  graph[0].right = { cur };
+  while(cur != 0){
+    for(const int x : graph[cur].next_list()){
+      if(x == prev) continue;
+      graph[cur].left = { prev };
+      graph[cur].right = { x };
+      prev = cur;
+      cur = x;
+      break;
+    }
+  }
+  graph[0].left = { prev };
+  return graph;
+}
+
+std::vector<NextStaInfo> calc_with_loop_graph(std::vector<NextStaInfo> graph){
+  const int station_num = graph.size();
+  int st = -1;
+  for(int i = 0; i < station_num; i++){
+    if(graph[i].size() == 1){
+      st = i;
+      break;
+    }
+  }
+  assert(st != -1);
+  int cur = st, prev = -1;
+  bool visited_branch = false;
+  while(true){
+    if(graph[cur].size() <= 2){
+      for(const int x : graph[cur].next_list()){
+        if(x == prev) continue;
+        if(prev != -1) graph[cur].left = { prev };
+        else graph[cur].left = {};
+        graph[cur].right = { x };
+        prev = cur;
+        cur = x;
+        break;
+      }
+    }else{
+      if(visited_branch) break;
+      int a = -1, b = -1;
+      for(const int x : graph[cur].next_list()){
+        if(x == prev) continue;
+        if(a < 0) a = x;
+        else b = x;
+      }
+      if(graph[a].station.geometry[0][0] < graph[b].station.geometry[0][0]) std::swap(a, b);
+      visited_branch = true;
+      assert(prev != -1);
+      graph[cur].left = { prev };
+      graph[cur].right = { a, b };
+      prev = cur;
+      cur = a;
+    }
+  }
+  return graph;
+}
+
+std::vector<NextStaInfo> calc_with_branches_graph(std::vector<NextStaInfo> graph){
+  const int station_num = graph.size();
+  // create dag
+  std::vector<std::vector<int>> root(station_num);
+  {
+    std::queue<std::tuple<int, int, int>> que;
+    std::vector<int> used(station_num);
+    for(const int x : graph[0].right){
+      root[0].push_back(x);
+      que.push({ x, 0, 0 });
+    }
+    for(const int x : graph[0].left){
+      que.push({ x, 0, 1 });
+    }
+    used[0] = 1;
+    while(!que.empty()){
+      int pos, prev, dir;
+      std::tie(pos, prev, dir) = que.front();
+      que.pop();
+      if(used[pos]) continue;
+      used[pos] = 1;
+      int prev_dir = 0; // 0:left,1:right
+      for(const int x : graph[pos].right){
+        if(x == prev){
+          prev_dir = 1;
+          break;
+        }
+      }
+      // prevから頂点が向けられている
+      if(!dir){
+        for(const int x : (prev_dir ? graph[pos].right : graph[pos].left)){
+          if(x == prev) continue;
+          que.push({ x, pos, 1 });
+        }
+        for(const int x : (prev_dir ? graph[pos].left : graph[pos].right)){
+          root[pos].push_back(x);
+          que.push({ x, pos, 0 });
+        }
+      }else{
+        for(const int x : (prev_dir ? graph[pos].right : graph[pos].left)){
+          root[pos].push_back(x);
+          if(x == prev) continue;
+          que.push({ x, pos, 0 });
+        }
+        for(const int x : (prev_dir ? graph[pos].left : graph[pos].right)){
+          que.push({ x, pos, 1 });
+        }
+      }
+    }
+  }
+
+  // tp-sort
+  std::vector<int> dag(station_num);
+  std::vector<int> ord;
+  std::queue<int> que;
+  for(int i = 0; i < station_num; i++){
+    for(const int x : root[i]) dag[x]++;
+  }
+  for(int i = 0; i < station_num; i++){
+    if(!dag[i]) que.push(i);
+  }
+  while(!que.empty()){
+    const int pos = que.front();
+    que.pop();
+    ord.push_back(pos);
+    for(const int x : root[pos]){
+      if(!--dag[x]) que.push(x);
+    }
+  }
+
+  // loop detected
+  if((int)ord.size() != station_num){
+    for(int i = 0; i < station_num; i++){
+      if((int)graph[i].left.size() == 0 && (int)graph[i].right.size() == 2){
+        std::swap(graph[i].left, graph[i].right);
+      }
+      if((int)graph[i].left.size() == 2 && (int)graph[i].right.size() == 0){
+        graph[i].right.push_back(graph[i].left.back());
+        graph[i].left.pop_back();
+      }
+    }
+
+    root.assign(station_num, {});
+    dag.assign(station_num, 0);
+    ord.clear();
+    while(!que.empty()) que.pop();
+
+    // create dag
+    {
+      std::queue<std::tuple<int, int, int>> que;
+      std::vector<int> used(station_num);
+      for(const int x : graph[0].right){
+        root[0].push_back(x);
+        que.push({ x, 0, 0 });
+      }
+      for(const int x : graph[0].left){
+        que.push({ x, 0, 1 });
+      }
+      used[0] = 1;
+      while(!que.empty()){
+        int pos, prev, dir;
+        std::tie(pos, prev, dir) = que.front();
+        que.pop();
+        if(used[pos]) continue;
+        used[pos] = 1;
+        int prev_dir = 0; // 0:left,1:right
+        for(const int x : graph[pos].right){
+          if(x == prev){
+            prev_dir = 1;
+            break;
+          }
+        }
+        // prevから頂点が向けられている
+        if(!dir){
+          for(const int x : (prev_dir ? graph[pos].right : graph[pos].left)){
+            if(x == prev) continue;
+            que.push({ x, pos, 1 });
+          }
+          for(const int x : (prev_dir ? graph[pos].left : graph[pos].right)){
+            root[pos].push_back(x);
+            que.push({ x, pos, 0 });
+          }
+        }else{
+          for(const int x : (prev_dir ? graph[pos].right : graph[pos].left)){
+            root[pos].push_back(x);
+            if(x == prev) continue;
+            que.push({ x, pos, 0 });
+          }
+          for(const int x : (prev_dir ? graph[pos].left : graph[pos].right)){
+            que.push({ x, pos, 1 });
+          }
+        }
+      }
+    }
+
+    // tp-sort
+    for(int i = 0; i < station_num; i++){
+      for(const int x : root[i]) dag[x]++;
+    }
+    for(int i = 0; i < station_num; i++){
+      if(!dag[i]) que.push(i);
+    }
+    while(!que.empty()){
+      const int pos = que.front();
+      que.pop();
+      ord.push_back(pos);
+      for(const int x : root[pos]){
+        if(!--dag[x]) que.push(x);
+      }
+    }
+  }
+
+  // for(int i = 0; i < station_num; i++) std::cerr << ord[i] << " ";
+  // std::cerr << "\n";
+  // for(int i = 0; i < station_num; i++){
+  //   std::cerr << i << ": ";
+  //   for(const int x : graph[i].left) std::cerr << x << " ";
+  //   std::cerr << " ";
+  //   for(const int x : graph[i].right) std::cerr << x << " ";
+  //   std::cerr << "\n";
+  // }
+  // for(int i = 0; i < station_num; i++){
+  //   std::cerr << i << ": ";
+  //   for(const int x : root[i]) std::cerr << x << " ";
+  //   std::cerr << "\n";
+  // }
+
+  assert((int)ord.size() == station_num);
+
+  std::vector<int> dp(station_num), prev(station_num, -1);
+  for(const int i : ord){
+    for(const int x : root[i]){
+      if(dp[x] < dp[i] + 1){
+        dp[x] = dp[i] + 1;
+        prev[x] = i;
+      }
+    }
+  }
+  const int mx_idx = std::max_element(dp.begin(), dp.end()) - dp.begin();
+  std::vector<std::vector<int>> aligned_root(station_num);
+  std::vector<int> visited(station_num);
+  {
+    int cur = mx_idx;
+    visited[cur] = 1;
+    while(prev[cur] != -1){
+      const int pre = prev[cur];
+      aligned_root[pre].push_back(cur);
+      visited[pre] = 1;
+      cur = pre;
+    }
+  }
+  while(true){
+    bool all_visited = true;
+    for(int i = 0; i < station_num; i++){
+      if(!visited[i]){
+        all_visited = false;
+        break;
+      }
+    }
+    if(all_visited) break;
+    std::vector<int> dp(station_num), prev(station_num, -1);
+    for(const int i : ord){
+      for(const int x : root[i]){
+        if(visited[i] && visited[x]) continue;
+        if(dp[x] < dp[i] + 1){
+          dp[x] = dp[i] + 1;
+          prev[x] = i;
+        }
+      }
+    }
+    const int mx_idx = std::max_element(dp.begin(), dp.end()) - dp.begin();
+    assert(dp[mx_idx] >= 1);
+    int cur = mx_idx;
+    visited[cur] = 1;
+    while(prev[cur] != -1){
+      const int pre = prev[cur];
+      aligned_root[pre].push_back(cur);
+      visited[pre] = 1;
+      cur = pre;
+    }
+  }
+
+  // build
+  std::vector<std::vector<int>> aligned_root_in(station_num);
+  for(int i = 0; i < station_num; i++){
+    for(const int x : aligned_root[i]){
+      aligned_root_in[x].push_back(i);
+    }
+  }
+  for(int i = 0; i < station_num; i++){
+    graph[i].left = aligned_root_in[i];
+    graph[i].right = aligned_root[i];
+  }
+  return graph;
+}
+
+// sが含まれるgraph
+RailwayType find_railway_type(const std::vector<NextStaInfo> &graph){
+  const int station_num = graph.size();
+  if(station_num == 1) return RailwayType::None;
+  std::vector<int> dirs_count(4);
+  for(const auto &data : graph){
+    const int dirs = data.size();
+    if(dirs <= 3) dirs_count[dirs]++;
+  }
+  if(dirs_count[1] == 2 && dirs_count[2] == station_num-2) return RailwayType::LinearList;
+  if(dirs_count[1] == 0 && dirs_count[2] == station_num) return RailwayType::Circle;
+  if(dirs_count[1] == 1 && dirs_count[3] == 1 && dirs_count[2] == station_num-2) return RailwayType::WithLoop;
+  return RailwayType::WithBranches;
+}
+
+void calculate_next_station(const int search_id){
+  std::vector<NextStaInfo> next_station_data;
+  std::vector<Station> railway_stations;
+  for(const auto &sta : stations){
+    if(sta.railway_id == search_id) railway_stations.push_back(sta);
+  }
+  search_next_station(railway_stations, next_station_data, railway_paths[search_id]);
+
+  std::vector<NextStaInfo> result_next_station;
+  int tot_station_num = 0;
+  for(const auto &graph : separate_to_connected_graph(next_station_data)){
+    for(int i = 0; i < (int)graph.size(); i++){
+      assert(graph[i].index == i);
+    }
+    const RailwayType type = find_railway_type(graph);
+    std::vector<NextStaInfo> directed_data;
+    // std::cerr << search_id << " " << (int)type << "\n";
+    if(type == RailwayType::None){
+      directed_data.push_back(graph[0]);
+    }else if(type == RailwayType::LinearList){
+      directed_data = calc_linear_list_graph(graph);
+    }else if(type == RailwayType::Circle){
+      directed_data = calc_circle_graph(graph);
+    }else if(type == RailwayType::WithLoop){
+      directed_data = calc_with_loop_graph(graph);
+    }else{ // RailwayType::WithBranches
+      directed_data = calc_with_branches_graph(graph);
+    }
+    for(auto &data : directed_data){
+      data.index += tot_station_num;
+      for(int &x : data.left) x += tot_station_num;
+      for(int &x : data.right) x += tot_station_num;
+    }
+    assert(directed_data.size() == graph.size());
+    for(const auto &data : directed_data){
+      result_next_station.push_back(data);
+    }
+    tot_station_num += graph.size();
+  }
+
+  assert(result_next_station.size() == next_station_data.size());
+
+  for(const auto &data : result_next_station){
+    std::cout << data.station.station_name << ": $ ";
+    for(const int v : data.left) std::cout << result_next_station[v].station.station_name << " $ ";
     std::cout << "||||| $ ";
-    for(const int v : next_station_data[i].second) std::cout << railway_stations[v].station_name << " $ ";
+    for(const int v : data.right) std::cout << result_next_station[v].station.station_name << " $ ";
     std::cout << "\n";
   }
 }
@@ -328,7 +764,7 @@ int main(){
 
   for(int i = 0; i < railway_num; i++){
     std::cout << i << "\n";
-    search_next_station(i);
+    calculate_next_station(i);
     std::cout << "\n";
   }
 }
