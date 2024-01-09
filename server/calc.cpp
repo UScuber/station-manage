@@ -112,7 +112,7 @@ enum class RailwayType {
 };
 
 struct NextStaInfo {
-  const Station &station;
+  const Station station;
   int index;
   std::vector<int> left, right;
   NextStaInfo(const Station &sta, const int idx, const std::vector<int> &dir1, const std::vector<int> &dir2) :
@@ -706,7 +706,7 @@ RailwayType find_railway_type(const std::vector<NextStaInfo> &graph){
   return RailwayType::WithBranches;
 }
 
-void calculate_next_station(const int search_id){
+std::vector<NextStaInfo> calculate_next_station(const int search_id){
   std::vector<NextStaInfo> next_station_data;
   std::vector<Station> railway_stations;
   for(const auto &sta : stations){
@@ -748,12 +748,38 @@ void calculate_next_station(const int search_id){
 
   assert(result_next_station.size() == next_station_data.size());
 
-  for(const auto &data : result_next_station){
-    std::cout << data.station.station_name << ": $ ";
-    for(const int v : data.left) std::cout << result_next_station[v].station.station_name << " $ ";
-    std::cout << "||||| $ ";
-    for(const int v : data.right) std::cout << result_next_station[v].station.station_name << " $ ";
-    std::cout << "\n";
+  return result_next_station;
+}
+
+
+void output(const std::vector<NextStaInfo> &next_station_data){
+  auto get_stations_json = [&](const std::vector<int> &indices, const std::string &indent){
+    bool first = true;
+    for(const int x : indices){
+      if(!first) std::cout << ",\n";
+      first = false;
+      std::cout << indent << "{\n";
+      std::cout << indent << "  \"stationCode\": \"" << next_station_data[x].station.station_code << "\",\n";
+      std::cout << indent << "  \"stationName\": \"" << next_station_data[x].station.station_name << "\"\n";
+      std::cout << indent << "}\n";
+    }
+  };
+  bool first = true;
+  for(const auto &data : next_station_data){
+    if(!first) std::cout << ",\n";
+    first = false;
+    std::cout << "  {\n";
+    std::cout << "    \"railwayName\": \"" << data.station.railway_name << "\",\n";
+    std::cout << "    \"railwayCompany\": \"" << data.station.railway_company << "\",\n";
+    std::cout << "    \"stationCode\": \"" << data.station.station_code << "\",\n";
+    std::cout << "    \"stationName\": \"" << data.station.station_name << "\",\n";
+    std::cout << "    \"left\": [\n";
+    get_stations_json(data.left, "      ");
+    std::cout << "    ],\n";
+    std::cout << "    \"right\": [\n";
+    get_stations_json(data.right, "      ");
+    std::cout << "    ]\n";
+    std::cout << "  }";
   }
 }
 
@@ -762,9 +788,12 @@ int main(){
   std::ios::sync_with_stdio(false);
   input();
 
+  std::cout << "[\n";
   for(int i = 0; i < railway_num; i++){
-    std::cout << i << "\n";
-    calculate_next_station(i);
+    const auto next_station_data = calculate_next_station(i);
+    output(next_station_data);
+    if(i != railway_num - 1) std::cout << ",";
     std::cout << "\n";
   }
+  std::cout << "]\n";
 }
