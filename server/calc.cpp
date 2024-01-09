@@ -756,7 +756,7 @@ void output(const std::vector<NextStaInfo> &next_station_data){
   auto get_stations_json = [&](const std::vector<int> &indices, const std::string &indent){
     bool first = true;
     for(const int x : indices){
-      if(!first) std::cout << ",\n";
+      if(!first) std::cout << indent << ",\n";
       first = false;
       std::cout << indent << "{\n";
       std::cout << indent << "  \"stationCode\": \"" << next_station_data[x].station.station_code << "\",\n";
