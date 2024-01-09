@@ -5,7 +5,6 @@
 #include <queue>
 #include <map>
 #include <cassert>
-#include <iomanip>
 
 constexpr double PI = 3.14159265358979323846;
 
@@ -80,6 +79,8 @@ struct Pos {
   }
 };
 
+using Path = std::vector<Pos>;
+
 Pos get_coordinate(){
   const double lat = get_double();
   const double lng = get_double();
@@ -87,17 +88,11 @@ Pos get_coordinate(){
 }
 
 struct Station {
-  std::vector<std::vector<Pos>> geometry;
+  std::vector<Path> geometry;
   int station_code, railway_id;
   std::string railway_name, railway_company, station_name;
-  Station(const std::vector<std::vector<Pos>> &g, const int s, const int r, const std::string &rn, const std::string &rc, const std::string &sn) :
+  Station(const std::vector<Path> &g, const int s, const int r, const std::string &rn, const std::string &rc, const std::string &sn) :
     geometry(g), station_code(s), railway_id(r), railway_name(rn), railway_company(rc), station_name(sn){}
-};
-
-struct Path {
-  std::vector<Pos> path;
-  int railway_id;
-  Path(const std::vector<Pos> &p, const int r) : path(p), railway_id(r){}
 };
 
 enum class RailwayType {
@@ -114,7 +109,7 @@ struct NextStaInfo {
   std::vector<int> left, right;
   NextStaInfo(const Station &sta, const int idx, const std::vector<int> &dir1, const std::vector<int> &dir2) :
     station(sta), index(idx), left(dir1), right(dir2){}
-  
+
   std::vector<int> next_list() const{
     std::vector<int> temp = left;
     temp.insert(temp.end(), right.begin(), right.end());
@@ -127,7 +122,7 @@ struct NextStaInfo {
 
 int railway_num;
 std::vector<Station> stations;
-std::vector<std::vector<std::vector<Pos>>> railway_paths;
+std::vector<std::vector<Path>> railway_paths;
 
 void input(){
   int station_num, path_num;
@@ -135,7 +130,7 @@ void input(){
   for(int i = 0; i < station_num; i++){
     int line_num;
     std::cin >> line_num;
-    std::vector<std::vector<Pos>> geo(line_num);
+    std::vector<Path> geo(line_num);
     for(int j = 0; j < line_num; j++){
       int num;
       std::cin >> num;
@@ -154,7 +149,7 @@ void input(){
   for(int i = 0; i < path_num; i++){
     int id, num;
     std::cin >> id >> num;
-    std::vector<Pos> path;
+    Path path;
     for(int j = 0; j < num; j++){
       path.push_back(get_coordinate());
     }
@@ -167,11 +162,11 @@ void input(){
   }
 }
 
-void search_next_station(const std::vector<Station> &railway_stations, std::vector<NextStaInfo> &next_station_data, std::vector<std::vector<Pos>> &paths){
+void search_next_station(const std::vector<Station> &railway_stations, std::vector<NextStaInfo> &next_station_data, std::vector<Path> &paths){
   const int path_num = paths.size();
   // データに記述されていない交点を探す
   for(int i = 0; i < path_num; i++){
-    for(const Pos &pos : std::vector<Pos>{ paths[i][0], paths[i].back() }){
+    for(const Pos &pos : Path{ paths[i][0], paths[i].back() }){
       for(int j = 0; j < path_num; j++) if(i != j){
         const auto &path = paths[j];
         bool through = false;

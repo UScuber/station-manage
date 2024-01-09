@@ -18,6 +18,8 @@ if(!fs.existsSync(station_file_path)){
   process.exit(1);
 }
 
+console.log("Create input data");
+
 const calc_station_codes = () => {
   let json_data = JSON.parse(fs.readFileSync(station_file_path));
   json_data = json_data.features;
@@ -70,8 +72,6 @@ const calc_station_codes = () => {
 const [station_data, railway_id] = calc_station_codes();
 
 
-console.log("Create input data");
-
 let buffer = "";
 
 buffer += station_data.length + "\n";
@@ -81,11 +81,10 @@ buffer += Object.keys(railway_id).length + "\n";
 for(let i = 0; i < station_data.length; i++){
   const geometry = station_data[i].coordinates;
   buffer += geometry.length + "\n";
-  for(let j = 0; j < geometry.length; j++){
-    buffer += geometry[j].length + "\n";
-    buffer += geometry[j].map(pos => pos[1].toFixed(5) + " " + pos[0].toFixed(5)).join(" ");
-    buffer += "\n";
-  }
+  buffer += geometry.map(geo => (
+    geo.length + "\n" + geo.map(pos => pos[1].toFixed(5) + " " + pos[0].toFixed(5)).join(" ")
+  )).join("\n");
+  buffer += "\n";
   buffer += station_data[i].stationCode + " " + station_data[i].railwayId + "\n";
   buffer += station_data[i].railwayName + " " + station_data[i].railwayCompany + " " + station_data[i].stationName + "\n";
 }
@@ -97,15 +96,12 @@ json_data = json_data.features;
 buffer += json_data.length + "\n"; // pathの個数
 for(let i = 0; i < json_data.length; i++){
   const s = `${json_data[i].properties.N02_003}|${json_data[i].properties.N02_004}`;
-  const id = railway_id[s];
-  // if(s.indexOf("中央線") !== -1) console.log(s, id);
   const geometry = json_data[i].geometry.coordinates;
-  buffer += id + " " + geometry.length + "\n";
-  for(let j = 0; j < geometry.length; j++){
-    buffer += geometry[j][1].toFixed(5) + " " + geometry[j][0].toFixed(5) + " ";
-  }
+  buffer += railway_id[s] + " " + geometry.length + "\n";
+  buffer += geometry.map(geo => geo[1].toFixed(5) + " " + geo[0].toFixed(5)).join(" ");
   buffer += "\n";
 }
+buffer += "\n";
 
 fs.writeFileSync(output_file, buffer);
 
@@ -114,7 +110,7 @@ console.log("Compile & Run");
 
 const run_and_get_json = async() => {
   try{
-    await execShPromise("g++ calc.cpp -o calc -O2");
+    await execShPromise("g++ calc.cpp -o calc -O2", true);
   }catch(err){
     console.error(err);
     process.exit(1);
