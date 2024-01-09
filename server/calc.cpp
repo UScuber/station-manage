@@ -78,9 +78,6 @@ struct Pos {
   inline constexpr double arg() const{
     return atan2(lng, lat);
   }
-  inline constexpr double arc(const Pos &a) const{
-    return acos(arg_cos(a));
-  }
 };
 
 Pos get_coordinate(){
@@ -310,8 +307,7 @@ void search_next_station(const std::vector<Station> &railway_stations, std::vect
     for(int j = 0; j < next_num; j++){
       int p = next_stations[j];
       while(prev[prev[p]] != -1) p = prev[p];
-      const Pos sub = pos_data[p] - pos_data[prev[p]];
-      args[j] = atan2(sub.lng, sub.lat);
+      args[j] = (pos_data[p] - pos_data[prev[p]]).arg();
     }
     std::vector<int> dir1_next_stations, dir2_next_stations;
     if(next_num){
@@ -540,7 +536,6 @@ std::vector<NextStaInfo> calc_with_branches_graph(std::vector<NextStaInfo> graph
     root.assign(station_num, {});
     dag.assign(station_num, 0);
     ord.clear();
-    while(!que.empty()) que.pop();
 
     // create dag
     {
@@ -607,45 +602,11 @@ std::vector<NextStaInfo> calc_with_branches_graph(std::vector<NextStaInfo> graph
     }
   }
 
-  // for(int i = 0; i < station_num; i++) std::cerr << ord[i] << " ";
-  // std::cerr << "\n";
-  // for(int i = 0; i < station_num; i++){
-  //   std::cerr << i << ": ";
-  //   for(const int x : graph[i].left) std::cerr << x << " ";
-  //   std::cerr << " ";
-  //   for(const int x : graph[i].right) std::cerr << x << " ";
-  //   std::cerr << "\n";
-  // }
-  // for(int i = 0; i < station_num; i++){
-  //   std::cerr << i << ": ";
-  //   for(const int x : root[i]) std::cerr << x << " ";
-  //   std::cerr << "\n";
-  // }
-
   assert((int)ord.size() == station_num);
 
-  std::vector<int> dp(station_num), prev(station_num, -1);
-  for(const int i : ord){
-    for(const int x : root[i]){
-      if(dp[x] < dp[i] + 1){
-        dp[x] = dp[i] + 1;
-        prev[x] = i;
-      }
-    }
-  }
-  const int mx_idx = std::max_element(dp.begin(), dp.end()) - dp.begin();
   std::vector<std::vector<int>> aligned_root(station_num);
   std::vector<int> visited(station_num);
-  {
-    int cur = mx_idx;
-    visited[cur] = 1;
-    while(prev[cur] != -1){
-      const int pre = prev[cur];
-      aligned_root[pre].push_back(cur);
-      visited[pre] = 1;
-      cur = pre;
-    }
-  }
+
   while(true){
     bool all_visited = true;
     for(int i = 0; i < station_num; i++){
@@ -722,7 +683,7 @@ std::vector<NextStaInfo> calculate_next_station(const int search_id){
     }
     const RailwayType type = find_railway_type(graph);
     std::vector<NextStaInfo> directed_data;
-    // std::cerr << search_id << " " << (int)type << "\n";
+
     if(type == RailwayType::None){
       directed_data.push_back(graph[0]);
     }else if(type == RailwayType::LinearList){
@@ -756,23 +717,20 @@ void output(const std::vector<NextStaInfo> &next_station_data){
   auto get_stations_json = [&](const std::vector<int> &indices, const std::string &indent){
     bool first = true;
     for(const int x : indices){
-      if(!first) std::cout << indent << ",\n";
+      if(!first) std::cout << ",\n";
       first = false;
-      std::cout << indent << "{\n";
-      std::cout << indent << "  \"stationCode\": \"" << next_station_data[x].station.station_code << "\",\n";
-      std::cout << indent << "  \"stationName\": \"" << next_station_data[x].station.station_name << "\"\n";
-      std::cout << indent << "}";
+      std::cout << indent << "{";
+      std::cout << " \"stationCode\": \"" << next_station_data[x].station.station_code << "\" ";
+      std::cout << "}";
     }
+    if(!first) std::cout << "\n";
   };
   bool first = true;
   for(const auto &data : next_station_data){
     if(!first) std::cout << ",\n";
     first = false;
     std::cout << "  {\n";
-    std::cout << "    \"railwayName\": \"" << data.station.railway_name << "\",\n";
-    std::cout << "    \"railwayCompany\": \"" << data.station.railway_company << "\",\n";
     std::cout << "    \"stationCode\": \"" << data.station.station_code << "\",\n";
-    std::cout << "    \"stationName\": \"" << data.station.station_name << "\",\n";
     std::cout << "    \"left\": [\n";
     get_stations_json(data.left, "      ");
     std::cout << "    ],\n";
