@@ -761,7 +761,7 @@ void output(const std::vector<NextStaInfo> &next_station_data){
       std::cout << indent << "{\n";
       std::cout << indent << "  \"stationCode\": \"" << next_station_data[x].station.station_code << "\",\n";
       std::cout << indent << "  \"stationName\": \"" << next_station_data[x].station.station_name << "\"\n";
-      std::cout << indent << "}\n";
+      std::cout << indent << "}";
     }
   };
   bool first = true;
