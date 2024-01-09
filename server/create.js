@@ -1,4 +1,6 @@
 const fs = require("fs");
+const execShPromise = require("exec-sh").promise;
+const sqlite3 = require("better-sqlite3");
 
 if(process.argv.length <= 3){
   console.error("Argument Error: node create.js [station-geojson-file-name] [railroad-geojson-file-name]");
@@ -68,6 +70,8 @@ const calc_station_codes = () => {
 const [station_data, railway_id] = calc_station_codes();
 
 
+console.log("Create input data");
+
 let buffer = "";
 
 buffer += station_data.length + "\n";
@@ -104,3 +108,59 @@ for(let i = 0; i < json_data.length; i++){
 }
 
 fs.writeFileSync(output_file, buffer);
+
+
+console.log("Compile & Run");
+
+const run_and_get_json = async() => {
+  try{
+    await execShPromise("g++ calc.cpp -o calc -O2");
+  }catch(err){
+    console.error(err);
+    process.exit(1);
+  }
+  try{
+    await execShPromise("./calc < railroad.txt > result.json");
+  }catch(err){
+    console.error(err);
+    process.exit(1);
+  }
+  return JSON.parse(fs.readFileSync("result.json"));
+};
+
+const write_DB = async() => {
+  const next_station_data = await run_and_get_json();
+
+  console.log("Write DB");
+  const db = sqlite3("./station.db");
+
+  // create table
+  db.prepare(`
+    CREATE TABLE NextStations(
+      stationCode INTEGER,
+      nextStationCode INTEGER,
+      direction INTEGER,
+      PRIMARY KEY (stationCode, nextStationCode, direction)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+      FOREIGN KEY (nextStationCode) REFERENCES Stations(stationCode)
+    )
+  `).run();
+
+  // data insert
+  db.transaction(() => {
+    const stmt = db.prepare("INSERT INTO NextStations VALUES(?,?,?)");
+    next_station_data.forEach(data => {
+      data.left.forEach(next => {
+        stmt.run(data.stationCode, next.stationCode, 0);
+      });
+      data.right.forEach(next => {
+        stmt.run(data.stationCode, next.stationCode, 1);
+      });
+    });
+  })();
+
+  db.close();
+
+  console.log("Finished");
+};
+write_DB();
