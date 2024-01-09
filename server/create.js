@@ -119,13 +119,14 @@ const run_and_get_json = async() => {
     console.error(err);
     process.exit(1);
   }
+  let result;
   try{
-    await execShPromise("./calc < railroad.txt > result.json");
+    result = await execShPromise("./calc < railroad.txt", true);
   }catch(err){
     console.error(err);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync("result.json"));
+  return JSON.parse(result.stdout);
 };
 
 const write_DB = async() => {
@@ -135,6 +136,7 @@ const write_DB = async() => {
   const db = sqlite3("./station.db");
 
   // create table
+  db.prepare("DROP TABLE IF EXISTS NextStations").run();
   db.prepare(`
     CREATE TABLE NextStations(
       stationCode INTEGER,
