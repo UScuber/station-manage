@@ -363,10 +363,9 @@ std::vector<NextStaInfo> calc_linear_list_graph(std::vector<NextStaInfo> graph){
   const int station_num = graph.size();
   int st = -1;
   for(int i = 0; i < station_num; i++){
-    if((int)graph[i].size() == 1){
-      st = i;
-      break;
-    }
+    if((int)graph[i].size() != 1) continue;
+    if(st == -1) st = i;
+    else if(graph[st].station.geometry[0][0].lng > graph[i].station.geometry[0][0].lng) st = i;
   }
   assert(st != -1);
   int cur = st, prev = -1;
@@ -639,6 +638,9 @@ std::vector<NextStaInfo> calc_with_branches_graph(std::vector<NextStaInfo> graph
     for(const int x : aligned_root[i]){
       aligned_root_in[x].push_back(i);
     }
+  }
+  if(graph[ord[0]].station.geometry[0][0].lng > graph[ord.back()].station.geometry[0][0].lng){
+    std::swap(aligned_root, aligned_root_in);
   }
   for(int i = 0; i < station_num; i++){
     graph[i].left = aligned_root_in[i];
