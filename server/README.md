@@ -15,3 +15,31 @@ node convert-geojson.js [geojsonへのファイルパス]
 ```
 node server.js
 ```
+
+
+
+# 隣駅を計算するプログラム
+
+## railroad.txtの内容
+
+```
+駅の総数
+路線の総数(路線名と路線会社をセットとして考える)
+<駅1のホームの線路数>
+<駅1の線路1の線の数>
+<駅1の線路1のpathのlist(lat1 lng 1 lat2 lng2 ...)>
+...
+<駅1の線路nの線の数>
+<駅1の線路nのpathのlist(lat1 lng 1 lat2 lng2 ...)>
+<駅1の駅コード> <駅1の路線id>
+<駅1の路線名> <駅1の路線会社> <駅1の駅名>
+...
+駅n
+
+pathの個数
+<path 1のid> <path 1の線の数>
+path 1のlist(lat1 lng1 lat2 lng2 ...)
+...
+<path nのid> <path nの線の数>
+path nのlist(lat1 lng1 lat2 lng2...)
+```
