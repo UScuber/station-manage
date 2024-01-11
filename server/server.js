@@ -493,7 +493,7 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
 
 app.use((err, req, res, next) => {
   console.error(`\x1b[31m[${err.name}] ${err.message}\x1b[39m`, err.stack.substr(err.stack.indexOf("\n")));
-  log_data += `[${err.name}] ${err.message} ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
+  log_data += `[${err.name}] ${err.message} (${req.method} ${req.originalUrl}) ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
   write_log_data();
   res.status(500).send(err.message);
 });
