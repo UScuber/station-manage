@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Setup env
+        run: echo -e "REACT_APP_API_BASEURL=${{ secrets.REACT_APP_API_BASEURL }}\nWDS_SOCKET_PORT=0" > .env
+
       - name: Build step
         run: "npm install && npm run build" # 📝 Update the build command(s) if necessary
 
