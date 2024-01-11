@@ -13,8 +13,20 @@ if(!fs.existsSync(db_path)){
 const PORT = process.env.PORT || 3001;
 const app = express();
 
+const reg = (() => {
+  const split_url = process.env.REACT_URL.split(".");
+  const regExpEscape = (str) => str.replace(/[-\\^$*+?.()|\[\]{}]/g, "\\$&");
+  return new RegExp(regExpEscape(split_url[0])+(split_url.length > 1 ? "(?:\\-[0-9a-z]{12})?\\." : "") + regExpEscape(split_url.slice(1).join(".")));
+})();
+
 app.use(cors({
-  origin: [process.env.REACT_URL, "http://localhost:3000"],
+  origin: (origin, callback) => {
+    if(reg.test(origin)){
+      callback(null, true);
+    }else{
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 }));
