@@ -145,7 +145,7 @@ const StationList = () => {
                   </Link>
                 </TableCell>
                 <TableCell>{item.stationName}</TableCell>
-                <TableCell>{item.date?.toDateString()}</TableCell>
+                <TableCell>{item.date?.toString() ?? ""}</TableCell>
               </TableRow>
             ))}
           </TableBody>
