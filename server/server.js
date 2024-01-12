@@ -13,8 +13,20 @@ if(!fs.existsSync(db_path)){
 const PORT = process.env.PORT || 3001;
 const app = express();
 
+const reg = (() => {
+  const split_url = process.env.REACT_URL.split(".");
+  const regExpEscape = (str) => str.replace(/[-\\^$*+?.()|\[\]{}]/g, "\\$&");
+  return new RegExp(regExpEscape(split_url[0])+(split_url.length > 1 ? "(?:\\-[0-9a-z]{12})?\\." : "") + regExpEscape(split_url.slice(1).join(".")));
+})();
+
 app.use(cors({
-  origin: [process.env.REACT_URL, "http://localhost:3000"],
+  origin: (origin, callback) => {
+    if(reg.test(origin)){
+      callback(null, true);
+    }else{
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 }));
@@ -481,7 +493,7 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
 
 app.use((err, req, res, next) => {
   console.error(`\x1b[31m[${err.name}] ${err.message}\x1b[39m`, err.stack.substr(err.stack.indexOf("\n")));
-  log_data += `[${err.name}] ${err.message} ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
+  log_data += `[${err.name}] ${err.message} (${req.method} ${req.originalUrl}) ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
   write_log_data();
   res.status(500).send(err.message);
 });
