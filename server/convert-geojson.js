@@ -1,5 +1,6 @@
 const fs = require("fs");
 const sqlite3 = require("better-sqlite3");
+const { search_station_name, get_pref_code } = require("./searchAttr");
 
 if(process.argv.length <= 3){
   console.error("Argument Error: node convert-geojson.js [geojson-file-name] [json-station-name]");
@@ -22,12 +23,12 @@ if(!fs.existsSync(station_name_file_path)){
 const max_same_station_dist = 0.45; // [km]
 
 // [latitude, longitude]
-const distance = (p1, p2) => {
+const distance = (a, b) => {
   const R = Math.PI / 180;
-  return Math.acos(Math.cos(p1[0]*R) * Math.cos(p2[0]*R) * Math.cos(p2[1]*R - p1[1]*R) + Math.sin(p1[0]*R) * Math.sin(p2[0]*R)) * 6371;
+  return Math.acos(Math.cos(a.lat*R) * Math.cos(b.lat*R) * Math.cos(b.lng*R - a.lng*R) + Math.sin(a.lat*R) * Math.sin(b.lat*R)) * 6371;
 };
 
-let json_data = JSON.parse(fs.readFileSync(geojson_file_path).toString());
+let json_data = JSON.parse(fs.readFileSync(geojson_file_path));
 json_data = json_data.features;
 
 json_data = json_data.map(elem => {
@@ -74,7 +75,8 @@ json_data = json_data.map(elem => {
   latitude /= elem.coordinates.length;
   longitude /= elem.coordinates.length;
 
-  elem["center"] = [latitude, longitude];
+  elem["lat"] = latitude;
+  elem["lng"] = longitude;
   delete elem.coordinates;
 
   return elem;
@@ -91,7 +93,7 @@ json_data.forEach((elem, index) => {
   if(station_name in station_group_map){
     const station_name_indices = station_group_map[station_name];
     for(let i = 0; i < station_name_indices.length; i++){
-      let dist = distance(json_data[index].center, json_data[station_name_indices[i][0]].center);
+      let dist = distance(json_data[index], json_data[station_name_indices[i][0]]);
       if(isNaN(dist)){
         dist = 0;
       }
@@ -121,8 +123,8 @@ const station_group_codes = Array.from(new Set(group_codes));
 let centers = new Array(json_data.length);
 for(let i = 0; i < json_data.length; i++) centers[i] = { lat:0, lng:0, cnt:0 };
 group_codes.forEach((code, index) => {
-  centers[code].lat += json_data[index].center[0];
-  centers[code].lng += json_data[index].center[1];
+  centers[code].lat += json_data[index].lat;
+  centers[code].lng += json_data[index].lng;
   centers[code].cnt++;
 });
 centers = centers.map((pos) => {
@@ -151,9 +153,25 @@ station_name_data.forEach(elem => {
   station_name_maps[elem.name].push(elem);
 });
 
-station_group_codes.forEach(code => {
-  const name = json_data[code].stationName;
-});
+(async() => {
+
+await Promise.all(station_group_codes.map(async(code) => {
+  let elem = json_data[code];
+  const name = elem.stationName;
+  if(name in station_name_maps){
+    const nearest_data = station_name_maps[name].reduce((a, b) => {
+      if(distance(a, elem) < distance(b, elem)) return a;
+      return b;
+    });
+    elem["kana"] = nearest_data.name_kana;
+    elem["pref"] = nearest_data.pref;
+  }else{
+    elem["kana"] = await search_station_name(name);
+    elem["pref"] = await get_pref_code(elem);
+  }
+}));
+
+if(fs.existsSync("./__temp.txt")) fs.rmSync("./__temp.txt");
 
 
 if(fs.existsSync("./station.db")) fs.rmSync("./station.db");
@@ -225,9 +243,9 @@ db.transaction(() => {
   // Prefectures
   db.prepare(`
   CREATE TABLE Prefectures(
-    prefCode INTEGER,
-    prefName VARCHAR(4),
-    PRIMARY KEY (prefCode)
+    code INTEGER,
+    name VARCHAR(4),
+    PRIMARY KEY (code)
   )
   `).run();
   prefecture.forEach(data => {
@@ -238,11 +256,14 @@ db.transaction(() => {
   db.prepare(`
   CREATE TABLE StationGroups(
     stationGroupCode INTEGER,
-    stationName VARCHAR(32) NOT NULL,
+    stationName VARCHAR(80) NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
+    prefCode INTEGER,
+    kana VARCHAR(80),
     date DATE,
     PRIMARY KEY (stationGroupCode)
+    FOREIGN KEY (prefCode) REFERENCES Prefectures(code)
   )
   `).run();
 
@@ -295,12 +316,14 @@ console.log("Insert data");
 db.transaction(() => {
   // StationGroups
   station_group_codes.forEach(code => {
-    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,NULL)")
+    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,?,?,NULL)")
       .run(
         code,
         json_data[code].stationName,
         centers[code].lat.toFixed(5),
-        centers[code].lng.toFixed(5)
+        centers[code].lng.toFixed(5),
+        json_data[code].pref,
+        json_data[code].kana,
       );
   });
 
@@ -314,8 +337,8 @@ db.transaction(() => {
         elem.stationGroupCode,
         elem.railwayName,
         elem.railwayCompany,
-        elem.center[0].toFixed(5),
-        elem.center[1].toFixed(5)
+        elem.lat.toFixed(5),
+        elem.lng.toFixed(5)
       );
   });
 })();
@@ -323,3 +346,5 @@ db.transaction(() => {
 db.close();
 
 console.log("Finished");
+
+})();
