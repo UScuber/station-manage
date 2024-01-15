@@ -20,6 +20,8 @@ if(!fs.existsSync(station_name_file_path)){
 
 // geojson
 
+console.log("Calc geojson");
+
 const max_same_station_dist = 0.45; // [km]
 
 // [latitude, longitude]
@@ -131,6 +133,8 @@ centers = centers.map(pos => {
 
 
 // station name
+
+console.log("Import station names");
 
 let station_name_data = JSON.parse(fs.readFileSync(station_name_file_path));
 station_name_data = station_name_data.map(elem => ({
