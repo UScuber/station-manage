@@ -63,7 +63,9 @@ exports.search_station_name = async(name) => {
 
 
 let muniData;
+let prepared = false;
 exports.get_pref_code = async(pos) => {
+  while(!prepared) await new Promise(resolve => setTimeout(resolve, 200));
   // 緯度・経度からmuniCdを取得
   const getMuniCdFromLatLon = async(pos) => {
     const response = await fetch(
@@ -92,4 +94,5 @@ exports.get_pref_code = async(pos) => {
   let text = await res.text();
   text = text.replaceAll("GSI.MUNI_ARRAY", "muniData");
   eval(text);
+  prepared = true;
 })();
