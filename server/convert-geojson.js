@@ -1,6 +1,6 @@
 const fs = require("fs");
 const sqlite3 = require("better-sqlite3");
-const { search_station_name, get_pref_code } = require("./searchAttr");
+const { SearchAttribute } = require("./searchAttr");
 
 if(process.argv.length <= 3){
   console.error("Argument Error: node convert-geojson.js [geojson-file-name] [json-station-name]");
@@ -155,6 +155,8 @@ station_name_data.forEach(elem => {
 
 (async() => {
 
+let sattr = await SearchAttribute.build();
+
 await Promise.all(station_group_codes.map(async(code) => {
   let elem = json_data[code];
   const name = elem.stationName;
@@ -166,8 +168,8 @@ await Promise.all(station_group_codes.map(async(code) => {
     elem["kana"] = nearest_data.name_kana;
     elem["pref"] = nearest_data.pref;
   }else{
-    elem["kana"] = await search_station_name(name);
-    elem["pref"] = await get_pref_code(elem);
+    elem["kana"] = await sattr.search_station_name(name);
+    elem["pref"] = await sattr.get_pref_code(elem);
   }
 }));
 
