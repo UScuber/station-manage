@@ -66,17 +66,15 @@ json_data = json_data.filter(elem => elem !== null);
 
 // 重心を求める
 json_data = json_data.map(elem => {
-  let latitude = 0, longitude = 0;
-  elem.coordinates.forEach((pos) => {
-    // [経度, 緯度]
-    latitude += (pos[0][1] + pos[pos.length-1][1]) * 0.5;
-    longitude += (pos[0][0] + pos[pos.length-1][0]) * 0.5;
-  });
-  latitude /= elem.coordinates.length;
-  longitude /= elem.coordinates.length;
+  const lat = elem.coordinates.reduce((tot, pos) => (
+    tot + (pos[0][1] + pos[pos.length-1][1]) * 0.5
+  ), 0) / elem.coordinates.length;
+  const lng = elem.coordinates.reduce((tot, pos) => (
+    tot + (pos[0][0] + pos[pos.length-1][0]) * 0.5
+  ), 0) / elem.coordinates.length;
 
-  elem["lat"] = latitude;
-  elem["lng"] = longitude;
+  elem["lat"] = lat;
+  elem["lng"] = lng;
   delete elem.coordinates;
 
   return elem;
@@ -86,8 +84,7 @@ json_data = json_data.map(elem => {
 // 駅の集合を探す
 const black_list = ["堀田"];
 let station_group_map = {};
-let group_codes = [];
-for(let i = 0; i < json_data.length; i++) group_codes.push(-1);
+let group_codes = new Array(json_data.length).fill(-1);
 json_data.forEach((elem, index) => {
   const station_name = elem.stationName;
   if(station_name in station_group_map){
@@ -120,14 +117,13 @@ json_data = json_data.map((elem, index) => {
 
 // calc center
 const station_group_codes = Array.from(new Set(group_codes));
-let centers = new Array(json_data.length);
-for(let i = 0; i < json_data.length; i++) centers[i] = { lat:0, lng:0, cnt:0 };
+let centers = new Array(json_data.length).fill().map(e => ({ lat:0, lng:0, cnt:0 }));
 group_codes.forEach((code, index) => {
   centers[code].lat += json_data[index].lat;
   centers[code].lng += json_data[index].lng;
   centers[code].cnt++;
 });
-centers = centers.map((pos) => {
+centers = centers.map(pos => {
   if(!pos.cnt) return {};
   return { lat: pos.lat/pos.cnt, lng: pos.lng/pos.cnt };
 });
