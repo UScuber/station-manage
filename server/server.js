@@ -72,10 +72,12 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT Stations.*, StationGroups.stationName FROM Stations
+      SELECT Stations.*, StationGroups.stationName, StationGroups.kana, Prefectures.name AS prefName FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationCode = ?
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
     `).get(code);
   }catch(err){
     console.error(err);
