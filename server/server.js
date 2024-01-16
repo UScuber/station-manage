@@ -50,16 +50,11 @@ const convert_date = (date) => {
 
 // manage access log
 const log_file = __dirname + "/info.log";
-if(!fs.existsSync(log_file)) fs.writeFileSync(log_file, "");
-let log_data = fs.readFileSync(log_file).toString();
-const write_log_data = () => fs.writeFileSync(log_file, log_data);
-process.on("exit", () => write_log_data());
-process.on("SIGINT", () => process.exit(0));
-process.on("SIGHUP", () => process.exit(0));
+const write_log_data = (log_data) => fs.appendFileSync(log_file, log_data);
 
 const accessLog = (req, res, next) => {
-  log_data += `[${convert_date(new Date())}] ${req.method} ${req.originalUrl}\n`;
-  write_log_data();
+  const log_data = `[${convert_date(new Date())}] ${req.method} ${req.originalUrl}\n`;
+  write_log_data(log_data);
   next();
 };
 
@@ -341,6 +336,7 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
+  const value_name = ["getDate", "passDate"][state];
   if(code === undefined || date === undefined || state === undefined){
     next(new Error("Invalid input"));
     return;
@@ -350,15 +346,10 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
     return;
   }
   try{
-    db.prepare("INSERT INTO StationHistory VALUES(?, datetime(?), ?)").run();
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
+    db.prepare(
+      "INSERT INTO StationHistory VALUES(?, datetime(?), ?)"
+    ).run(code, date, state);
 
-  const value_name = ["getDate", "passDate"][state];
-  try{
     db.prepare(
       `UPDATE Stations SET ${value_name} = MAX(IFNULL(${value_name}, 0), datetime(?)) WHERE stationCode = ?`
     ).run(date, code);
@@ -380,14 +371,8 @@ app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
   try{
     db.prepare("INSERT INTO StationGroupHistory VALUES(?, datetime(?))")
       .run(code, date);
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
 
-  try{
-    db.run(
+    db.prepare(
       `UPDATE StationGroups SET date = MAX(IFNULL(date, 0), datetime(?)) WHERE stationGroupCode = ?`
     ).run(date, code);
   }catch(err){
@@ -402,6 +387,7 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
   const state = req.query.state;
+  const value_name = ["getDate", "passDate"][state];
   if(code === undefined || date === undefined || state === undefined){
     next(new Error("Invalid input"));
     return;
@@ -415,15 +401,8 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
       DELETE FROM StationHistory
       WHERE stationCode = ? AND date = datetime(?) AND state = ?
     `).run(code, date, state);
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
 
-  const value_name = ["getDate", "passDate"][state];
-  try{
-    db.run(`
+    db.prepare(`
       UPDATE Stations SET ${value_name} = (
         SELECT MAX(date) FROM StationHistory
         WHERE stationCode = ? AND state = ?
@@ -450,12 +429,7 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
       DELETE FROM StationGroupHistory
       WHERE stationCode = ? AND date = datetime(?)
     `).run(code, date);
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
-  try{
+
     db.run(`
       UPDATE StationGroupHistory SET date = (
         SELECT MAX(date) FROM StationGroupHistory
@@ -474,8 +448,8 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
 
 app.use((err, req, res, next) => {
   console.error(`\x1b[31m[${err.name}] ${err.message}\x1b[39m`, err.stack.substr(err.stack.indexOf("\n")));
-  log_data += `[${err.name}] ${err.message} (${req.method} ${req.originalUrl}) ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
-  write_log_data();
+  const log_data = `[${err.name}] ${err.message} (${req.method} ${req.originalUrl}) ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
+  write_log_data(log_data);
   res.status(500).send(err.message);
 });
 
