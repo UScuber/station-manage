@@ -2,26 +2,18 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import { Box, Container } from "@mui/system";
 import { Button, CircularProgress, Typography } from "@mui/material";
-import { useSendStationGroupStateMutation, useStationGroupInfo, useStationInfo, useStationsInfoByGroupCode } from "./Api";
+import { Station, useSendStationGroupStateMutation, useStationGroupInfo, useStationsInfoByGroupCode } from "./Api";
 
 
 type Props = {
-  code: number,
+  info: Station,
 };
 
 const StationItem: React.FC<Props> = (props) => {
-  const { code } = props;
-  const station = useStationInfo(code);
-  const info = station.data;
-
-  if(station.isLoading){
-    return (
-      <Box></Box>
-    );
-  }
+  const { info } = props;
 
   return (
-    <Box sx={{ mb: 2 }} border={1} onClick={() => window.location.href = "/station/" + code}>
+    <Box sx={{ mb: 2 }} border={1} onClick={() => window.location.href = "/station/" + info.stationCode}>
       <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
       <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
 
@@ -81,7 +73,7 @@ const StationGroupInfo = () => {
       </Button>
       <Box>
         {stationList?.map((item) => (
-          <StationItem key={item.stationCode} code={item.stationCode} />
+          <StationItem key={item.stationCode} info={item} />
         ))}
       </Box>
     </Container>
