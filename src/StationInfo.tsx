@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useSendStationStateMutation, useStationInfo } from "./Api";
 import {
   Box,
@@ -51,19 +51,20 @@ const StationInfo = () => {
 
   return (
     <Container>
-      <Typography variant="h3" sx={{ mb: 2 }}>{info?.stationName}</Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h3">{info?.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 16, mb: 1 }}>{info?.kana}</Typography>
+        <Typography variant="h6">{info?.prefName}</Typography>
+      </Box>
       <Box>
         <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
         <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
 
-        <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
-
         <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
         <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
 
-        <Typography variant="h6" sx={{ color: "gray" }}>座標:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>緯度: {info?.latitude}, 経度: {info?.longitude}</Typography>
+        <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
+        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
         <Box sx={{ mx: 2 }}>
@@ -72,13 +73,16 @@ const StationInfo = () => {
         </Box>
       </Box>
       <Box>
-        <Stack spacing={2} direction="row">
+        <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
           {stateNames.map((value, index) => (
             <Button key={value} variant="outlined" onClick={() => handleSubmit(index)} sx={{ textAlign: "center" }}>
               <ListItemText primary={value} />
             </Button>
           ))}
         </Stack>
+        <Button href={"/stationGroup/" + info?.stationGroupCode} variant="outlined">
+          <ListItemText primary="駅グループ" />
+        </Button>
       </Box>
     </Container>
   );
