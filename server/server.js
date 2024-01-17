@@ -97,10 +97,12 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate FROM Stations
+      SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate, Prefectures.name AS prefName FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
       GROUP BY Stations.stationGroupCode
     `).get(code);
   }catch(err){
@@ -147,9 +149,11 @@ app.get("/api/searchStationName", accessLog, (req, res, next) => {
   try{
     data = db.prepare(`
       WITH StationData AS (
-        SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
+        SELECT Stations.*, StationGroups.stationName, StationGroups.date, StationGroups.kana, Prefectures.name AS prefName FROM Stations
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
       )
         SELECT 0 AS ord, StationData.* FROM StationData
           WHERE stationName = ?
@@ -185,13 +189,15 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT StationGroups.*, (
+      SELECT StationGroups.*, Prefectures.name AS prefName, (
         6371 * ACOS(
           COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
           + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
         )
       ) AS distance
       FROM StationGroups
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
       ORDER BY distance
       LIMIT ?
     `).all(
@@ -215,8 +221,10 @@ app.get("/api/stationGroupList", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT * FROM StationGroups
-      ORDER BY stationGroupCode
+      SELECT StationGroups.*, Prefectures.name AS prefName FROM StationGroups
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
+      ORDER BY StationGroups.stationGroupCode
       LIMIT ? OFFSET ?
     `).all(
       len, off
@@ -240,16 +248,21 @@ app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-        SELECT 0 AS ord, StationGroups.* FROM StationGroups
+      WITH StationData AS (
+        SELECT StationGroups.*, Prefectures.name AS prefName FROM StationGroups
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
+      )
+        SELECT 0 AS ord, StationData.* FROM StationData
           WHERE stationName = ?
       UNION ALL
-        SELECT 1 AS ord, StationGroups.* FROM StationGroups
+        SELECT 1 AS ord, StationData.* FROM StationData
           WHERE stationName LIKE ?
       UNION ALL
-        SELECT 2 AS ord, StationGroups.* FROM StationGroups
+        SELECT 2 AS ord, StationData.* FROM StationData
           WHERE stationName LIKE ?
       UNION ALL
-        SELECT 3 AS ord, StationGroups.* FROM StationGroups
+        SELECT 3 AS ord, StationData.* FROM StationData
           WHERE stationName LIKE ?
       ORDER BY ord
       LIMIT ? OFFSET ?
