@@ -67,6 +67,23 @@ app.get("/api", accessLog, (req, res) => {
 });
 
 
+const insert_next_stations = (elem, code) => {
+  let next_stations = {};
+  next_stations["left"] = db.prepare(`
+    SELECT nextStationCode FROM NextStations
+    WHERE stationCode = ? AND direction = 0
+  `).all(code);
+  next_stations["right"] = db.prepare(`
+    SELECT nextStationCode FROM NextStations
+    WHERE stationCode = ? AND direction = 1
+  `).all(code);
+  Object.keys(next_stations).forEach(key => {
+    elem[key] = next_stations[key].map(e => e.nextStationCode);
+  });
+  return elem;
+};
+
+
 app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   const code = req.params.stationCode;
   let data;
@@ -79,6 +96,8 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
     `).get(code);
+
+    data = insert_next_stations(data, code);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -127,6 +146,8 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
     `).all(code);
+
+    data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
