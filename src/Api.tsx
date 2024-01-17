@@ -21,6 +21,10 @@ export type Station = {
   longitude: number,
   getDate: Date | null,
   passDate: Date | null,
+  prefName: string,
+  kana: string,
+  left: number[],
+  right: number[],
 };
 
 export const useStationInfo = (code: number | undefined): UseQueryResult<Station> => {
@@ -54,6 +58,8 @@ export type StationGroup = {
   latitude: number,
   longitude: number,
   date: Date | null,
+  prefName: string,
+  kana: string,
   distance?: number,
 };
 
