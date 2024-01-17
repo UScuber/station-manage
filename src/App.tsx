@@ -8,6 +8,7 @@ import StationInfo from "./StationInfo";
 import StationGroupInfo from "./StationGroupInfo";
 import SearchStation from "./SearchStation";
 import History from "./History";
+import NotFound from "./NotFount";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => {
           <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
           <Route path="/searchStation" element={<SearchStation />} />
           <Route path="/history" element={<History />} />
+          <Route path="/*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
