@@ -35,12 +35,12 @@ const HistoryContent: React.FC<Props> = (props) => {
       color="inherit"
       sx={{ display: "block", mb: 3, textTransform: "none" }}
     >
-      <Typography variant="h4" sx={{ mb: 1 }}>{info?.stationName}</Typography>
+      <Box sx={{ mb: 1 }}>
+        <Typography variant="h4">{info?.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 14, lineHeight: 1 }}>{info?.kana}</Typography>
+      </Box>
 
-      <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>駅コード:</Typography>
-      <Typography variant="h6" sx={{ mx: 4 }}>{info?.stationCode}</Typography>
-
-      <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>路線名:</Typography>
+      <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>路線:</Typography>
       <Typography variant="h6" sx={{ mx: 4 }}>{info?.railwayName}</Typography>
 
       <Typography variant="h6" sx={{ mx: 2 }}>{stateNames[history?.state]}: {history?.date.toString()}</Typography>
@@ -103,8 +103,8 @@ const History = () => {
       <Pagination />
 
       <Box>
-        {historyList.data?.map((item, index) => (
-          <HistoryContent key={index} history={item}/>
+        {historyList.data?.map(item => (
+          <HistoryContent key={item.stationCode} history={item}/>
         ))}
       </Box>
 

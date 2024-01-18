@@ -138,7 +138,7 @@ const StationInfo = () => {
         <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
         <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
 
-        <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
+        <Typography variant="h6" sx={{ color: "gray" }}>路線:</Typography>
         <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
@@ -155,7 +155,11 @@ const StationInfo = () => {
             </Button>
           ))}
         </Stack>
-        <Button href={"/stationGroup/" + info?.stationGroupCode} variant="outlined">
+        <Button
+          component={Link}
+          to={"/stationGroup/" + info?.stationGroupCode}
+          variant="outlined"
+        >
           <ListItemText primary="駅グループ" />
         </Button>
       </Box>

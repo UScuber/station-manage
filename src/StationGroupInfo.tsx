@@ -16,13 +16,10 @@ const StationItem: React.FC<{ info: Station }> = (props) => {
       color="inherit"
       sx={{ display: "block", mb: 3, textTransform: "none" }}
     >
-      <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
-      <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
-
       <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
       <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
 
-      <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
+      <Typography variant="h6" sx={{ color: "gray" }}>路線:</Typography>
       <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
 
       <Typography variant="h6">乗降: {info?.getDate?.toString() ?? "なし"}</Typography>
@@ -69,14 +66,16 @@ const StationGroupInfo = () => {
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h3">{groupStationData?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 16, mb: 1 }}>{groupStationData?.kana}</Typography>
-        <Typography variant="h6">{groupStationData?.prefName}</Typography>
-      </Box>
-      <Typography variant="h6">立ち寄り: {groupStationData?.date?.toString() ?? "なし"}</Typography>
-      <Button variant="outlined" onClick={handleSubmit} sx={{ mb: 2 }}>
-        <ListItemText primary="立ち寄り" />
-      </Button>
+        <Box sx={{ textAlign: "center", mb: 2 }}>
+          <Typography variant="h3">{groupStationData?.stationName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</Typography>
+        </Box>
+          <Typography variant="h6">{groupStationData?.prefName}</Typography>
+        </Box>
+        <Typography variant="h6">立ち寄り: {groupStationData?.date?.toString() ?? "なし"}</Typography>
+        <Button variant="outlined" onClick={handleSubmit} sx={{ mb: 2 }}>
+          <ListItemText primary="立ち寄り" />
+        </Button>
       <Box>
         {stationList?.map((item) => (
           <StationItem key={item.stationCode} info={item} />
