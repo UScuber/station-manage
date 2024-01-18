@@ -32,11 +32,10 @@ const NextStation: React.FC<{ code: number }> = (props) => {
         component={Link}
         to={"/station/" + code}
         color="inherit"
-        sx={{ display: "block", textTransform: "none" }}
-        size="small"
+        sx={{ display: "block", textTransform: "none", padding: 0 }}
       >
         <Typography variant="h6">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 12, }}>{info?.kana}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
       </Button>
     </Stack>
   );
@@ -68,11 +67,11 @@ const StationInfo = () => {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if(!info) return;
-    if(info.left.length === 1 && e.key === "ArrowLeft" && !leftKeyRef.current){
+    if(info.left.length >= 1 && e.key === "ArrowLeft" && !leftKeyRef.current){
       navigation("/station/" + info.left[0]);
       leftKeyRef.current = true;
     }
-    if(info.right.length === 1 && e.key === "ArrowRight" && !rightKeyRef.current){
+    if(info.right.length >= 1 && e.key === "ArrowRight" && !rightKeyRef.current){
       navigation("/station/" + info.right[0]);
       rightKeyRef.current = true;
     }
@@ -117,7 +116,7 @@ const StationInfo = () => {
           <Typography variant="h3">{info?.stationName}</Typography>
           <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.kana}</Typography>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
           <Box sx={{ textAlign: "left" }}>
             {info?.left.map(code => (
               <NextStation key={code} code={code}/>
