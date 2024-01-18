@@ -67,7 +67,7 @@ const StationGroupInfo = () => {
     <Container>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ textAlign: "center", mb: 2 }}>
-          <Typography variant="h3">{groupStationData?.stationName}</Typography>
+          <Typography variant="h3" sx={{ lineHeight: 1 }}>{groupStationData?.stationName}</Typography>
           <Typography variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</Typography>
         </Box>
           <Typography variant="h6">{groupStationData?.prefName}</Typography>

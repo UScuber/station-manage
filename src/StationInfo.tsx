@@ -112,8 +112,8 @@ const StationInfo = () => {
   return (
     <Container>
       <Box maxWidth="sm" sx={{ margin: "auto" }}>
-        <Box sx={{ textAlign: "center", mb: 2 }}>
-          <Typography variant="h3">{info?.stationName}</Typography>
+        <Box sx={{ textAlign: "center" }}>
+          <Typography variant="h3" sx={{ lineHeight: 1 }}>{info?.stationName}</Typography>
           <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.kana}</Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>

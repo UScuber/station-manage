@@ -104,7 +104,7 @@ const History = () => {
 
       <Box>
         {historyList.data?.map(item => (
-          <HistoryContent key={item.stationCode} history={item}/>
+          <HistoryContent key={`${item.date.toString()}|${item.stationCode}`} history={item}/>
         ))}
       </Box>
 
