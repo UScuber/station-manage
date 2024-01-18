@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useParams } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSendStationStateMutation, useStationInfo } from "./Api";
 import {
   Box,
@@ -54,6 +54,10 @@ const StationInfo = () => {
 
   const mutation = useSendStationStateMutation();
 
+  const navigation = useNavigate();
+  const rightKeyRef = useRef(false);
+  const leftKeyRef = useRef(false);
+
   const handleSubmit = (state: number) => {
     mutation.mutate({
       stationCode: stationCode,
@@ -61,6 +65,32 @@ const StationInfo = () => {
       date: new Date(),
     });
   };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if(!info) return;
+    if(info.left.length === 1 && e.key === "ArrowLeft" && !leftKeyRef.current){
+      navigation("/station/" + info.left[0]);
+      leftKeyRef.current = true;
+    }
+    if(info.right.length === 1 && e.key === "ArrowRight" && !rightKeyRef.current){
+      navigation("/station/" + info.right[0]);
+      rightKeyRef.current = true;
+    }
+  };
+
+  const handleKeyUp = (e: KeyboardEvent) => {
+    if(e.key === "ArrowLeft") leftKeyRef.current = false;
+    if(e.key === "ArrowRight") rightKeyRef.current = false;
+  };
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [station.data]);
 
 
   if(station.isError){
