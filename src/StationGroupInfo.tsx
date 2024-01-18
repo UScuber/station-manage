@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Box, Container } from "@mui/system";
 import { Button, CircularProgress, ListItemText, Typography } from "@mui/material";
@@ -44,6 +44,10 @@ const StationGroupInfo = () => {
       date: new Date(),
     });
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
 
   if(groupStations.isError || groupStationQuery.isError){
