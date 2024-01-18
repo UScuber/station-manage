@@ -1,3 +1,4 @@
+import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { useSendStationStateMutation, useStationInfo } from "./Api";
 import {
@@ -11,6 +12,36 @@ import {
 } from "@mui/material";
 
 const stateNames = ["乗降", "通過"];
+
+
+const NextStation: React.FC<{ code: number }> = (props) => {
+  const { code } = props;
+
+  const station = useStationInfo(code);
+  const info = station.data;
+
+  if(station.isLoading){
+    return (
+      <Box></Box>
+    );
+  }
+
+  return (
+    <Stack direction="row" sx={{ display: "inline" }}>
+      <Button
+        component={Link}
+        to={"/station/" + code}
+        color="inherit"
+        sx={{ display: "block", textTransform: "none" }}
+        size="small"
+      >
+        <Typography variant="h6">{info?.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 12, }}>{info?.kana}</Typography>
+      </Button>
+    </Stack>
+  );
+};
+
 
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
@@ -51,12 +82,27 @@ const StationInfo = () => {
 
   return (
     <Container>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h3">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 16, mb: 1 }}>{info?.kana}</Typography>
-        <Typography variant="h6">{info?.prefName}</Typography>
+      <Box maxWidth="sm" sx={{ margin: "auto" }}>
+        <Box sx={{ textAlign: "center", mb: 2 }}>
+          <Typography variant="h3">{info?.stationName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.kana}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Box sx={{ textAlign: "left" }}>
+            {info?.left.map(code => (
+              <NextStation key={code} code={code}/>
+            ))}
+          </Box>
+          <Box sx={{ textAlign: "right" }}>
+            {info?.right.map(code => (
+              <NextStation key={code} code={code}/>
+            ))}
+          </Box>
+        </Box>
       </Box>
       <Box>
+        <Typography variant="h6" sx={{ mb: 2 }}>{info?.prefName}</Typography>
+
         <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
         <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
 
