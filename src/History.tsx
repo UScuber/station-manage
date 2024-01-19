@@ -10,13 +10,10 @@ import {
 } from "@mui/material";
 import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
 
-type Props = {
-  history: StationHistory,
-};
 
 const stateNames = ["乗降", "通過"];
 
-const HistoryContent: React.FC<Props> = (props) => {
+const HistoryContent: React.FC<{ history: StationHistory }> = (props) => {
   const { history } = props;
   const station = useStationInfo(history.stationCode);
   const info = station.data;
@@ -36,14 +33,15 @@ const HistoryContent: React.FC<Props> = (props) => {
       sx={{ display: "block", mb: 3, textTransform: "none" }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h4">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 14, lineHeight: 1 }}>{info?.kana}</Typography>
+        <Typography variant="h5">{info?.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
       </Box>
 
-      <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>路線:</Typography>
-      <Typography variant="h6" sx={{ mx: 4 }}>{info?.railwayName}</Typography>
+      <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>路線: </Typography>
+      <Typography variant="h6" sx={{ mx: 1, fontSize: 14, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ display: "inline-block" }}>{info?.railwayName}</Typography>
 
-      <Typography variant="h6" sx={{ mx: 2 }}>{stateNames[history?.state]}: {history?.date.toString()}</Typography>
+      <Typography variant="h6">{stateNames[history?.state]}: {history?.date.toString()}</Typography>
     </Button>
   );
 };
