@@ -38,7 +38,7 @@ const HistoryContent: React.FC<{ history: StationHistory }> = (props) => {
       </Box>
 
       <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>路線: </Typography>
-      <Typography variant="h6" sx={{ mx: 1, fontSize: 14, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ mx: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
       <Typography variant="h6" sx={{ display: "inline-block" }}>{info?.railwayName}</Typography>
 
       <Typography variant="h6">{stateNames[history?.state]}: {history?.date.toString()}</Typography>

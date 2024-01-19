@@ -16,14 +16,11 @@ const StationItem: React.FC<{ info: Station }> = (props) => {
       color="inherit"
       sx={{ display: "block", mb: 3, textTransform: "none" }}
     >
-      <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
-      <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
 
-      <Typography variant="h6" sx={{ color: "gray" }}>路線:</Typography>
-      <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
-
-      <Typography variant="h6">乗降: {info?.getDate?.toString() ?? "なし"}</Typography>
-      <Typography variant="h6">通過: {info?.passDate?.toString() ?? "なし"}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: {info?.getDate?.toString() ?? "なし"}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: {info?.passDate?.toString() ?? "なし"}</Typography>
     </Button>
   );
 };

@@ -32,18 +32,20 @@ const StationGroupInfo: React.FC<Props> = (props) => {
       {distance && (
         <Typography sx={{ fontSize: 18 }}>距離: {distance.toFixed(3)}[km]</Typography>
       )}
-      {infos?.map(station => (
+      {infos?.map(info => (
         <Button
           component={Link}
-          to={"/station/" + station.stationCode}
+          to={"/station/" + info.stationCode}
           variant="outlined"
           color="inherit"
-          key={station.stationCode}
+          key={info.stationCode}
           sx={{ display: "block", mb: 1, textTransform: "none" }}
         >
-          <Typography variant="h6">駅名: {station.stationName}</Typography>
-          <Typography variant="h6">路線名: {station.railwayName}</Typography>
-          <Typography variant="h6">路線運営会社: {station.railwayCompany}</Typography>
+          <Typography variant="h6">{info?.stationName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
+
+          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+          <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
         </Button>
       ))}
     </Box>
@@ -96,7 +98,7 @@ const SearchStation = () => {
       {!isAvailable && <p>Geolocation is not available.</p>}
       {isAvailable && (
         <Box>
-          <Button onClick={() => getCurrentPosition()}>Search</Button>
+          <Button variant="outlined" onClick={() => getCurrentPosition()}>Search</Button>
           <Typography variant="h6">緯度: {position?.lat}</Typography>
           <Typography variant="h6">経度: {position?.lng}</Typography>
         </Box>
