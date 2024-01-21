@@ -32,7 +32,10 @@ export type Station = {
   right: number[],
 };
 
-export const useStationInfo = (code: number | undefined, onSuccessFn?: (data: Station) => unknown): UseQueryResult<Station> => {
+export const useStationInfo = (
+  code: number | undefined,
+  onSuccessFn?: (data: Station) => unknown
+): UseQueryResult<Station> => {
   return useQuery<Station>({
     queryKey: ["Station", code],
     queryFn: async() => {
@@ -69,11 +72,15 @@ export type StationGroup = {
   distance?: number,
 };
 
-export const useStationGroupInfo = (code: number | undefined): UseQueryResult<StationGroup> => {
+export const useStationGroupInfo = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationGroup) => unknown
+): UseQueryResult<StationGroup> => {
   return useQuery<StationGroup>({
     queryKey: ["StationGroup", code],
     queryFn: async() => {
       const { data } = await axios.get<StationGroup>("/api/stationGroup/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -93,16 +100,17 @@ export const useStationGroupList = (offset: number, length: number): UseQueryRes
 
 
 export const useSearchStationGroupList = (
-  que: {
+  { offset, length, name }
+  :{
     offset: number,
     length: number,
     name: string | undefined,
   }
 ): UseQueryResult<StationGroup[]> => {
   return useQuery<StationGroup[]>({
-    queryKey: ["StationGroupList", que.offset, que.length, que.name],
+    queryKey: ["StationGroupList", offset, length, name],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${que.offset}&len=${que.length}&name=${que.name ?? ""}`, ngrok_header);
+      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${offset}&len=${length}&name=${name ?? ""}`, ngrok_header);
       return data;
     },
   });
@@ -121,14 +129,15 @@ export const useStationGroupCount = (): UseQueryResult<number> => {
 
 
 export const useSearchStationGroupCount = (
-  que: {
+  { name }
+  :{
     name: string | undefined,
   }
 ): UseQueryResult<number> => {
   return useQuery<number>({
-    queryKey: ["StationGroupCount", que.name],
+    queryKey: ["StationGroupCount", name],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${que.name ?? ""}`, ngrok_header);
+      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${name ?? ""}`, ngrok_header);
       return data;
     },
   });
@@ -204,7 +213,7 @@ export const useStationHistoryCount = (): UseQueryResult<number> => {
 };
 
 
-export const useSendStationStateMutation = (onSuccessFn?: (data: string, variables: StationHistory) => unknown) => {
+export const useSendStationStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
@@ -213,7 +222,6 @@ export const useSendStationStateMutation = (onSuccessFn?: (data: string, variabl
     },
     onSuccess: (data: string, variables: StationHistory) => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
-      onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
       console.error(err);
@@ -244,7 +252,9 @@ export const useSendStationGroupStateMutation = () => {
 };
 
 
-export const useDeleteStationHistoryMutation = () => {
+export const useDeleteStationHistoryMutation = (
+  onSuccessFn?: (data: string, variables: StationHistory) => unknown
+) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
@@ -253,6 +263,7 @@ export const useDeleteStationHistoryMutation = () => {
     },
     onSuccess: (data: string, variables: StationHistory) => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
       console.error(err);
@@ -261,7 +272,9 @@ export const useDeleteStationHistoryMutation = () => {
 };
 
 
-export const useDeleteStationGroupHistoryMutation = () => {
+export const useDeleteStationGroupHistoryMutation = (
+  onSuccessFn?: (data: string, variables: StationGroupHistory) => unknown
+) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
@@ -270,6 +283,7 @@ export const useDeleteStationGroupHistoryMutation = () => {
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
       queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
       console.error(err);
