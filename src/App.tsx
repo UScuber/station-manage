@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CssBaseline, Toolbar } from "@mui/material";
+import { CssBaseline, Toolbar, styled } from "@mui/material";
 import Header from "./Header";
 import Top from "./Top";
 import StationList from "./StationList";
@@ -10,6 +10,10 @@ import SearchStation from "./SearchStation";
 import History from "./History";
 import NotFound from "./NotFount";
 
+const ThinToolbar = styled(Toolbar)(({ theme }) => ({
+  minHeight: 25,
+}));
+
 const App = () => {
   const queryClient = new QueryClient();
 
@@ -18,7 +22,7 @@ const App = () => {
       <CssBaseline />
       <BrowserRouter>
         <Header />
-        <Toolbar />
+        <ThinToolbar />
         <Routes>
           <Route path="/" element={<Top />} />
           <Route path="/stationList" element={<StationList />} />
