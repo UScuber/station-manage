@@ -22,7 +22,9 @@ const NextStation: React.FC<{ code: number }> = (props) => {
 
   if(station.isLoading){
     return (
-      <Box></Box>
+      <Box>
+        <CircularProgress />
+      </Box>
     );
   }
 
@@ -137,14 +139,10 @@ const StationInfo = () => {
       <Box>
         <Typography variant="h6" sx={{ mb: 2 }}>{info?.prefName}</Typography>
 
-        <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
-
-        <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
-
-        <Typography variant="h6" sx={{ color: "gray" }}>路線:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
+        <Box>
+          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+          <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+        </Box>
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
         <Box sx={{ mx: 2 }}>
@@ -152,7 +150,7 @@ const StationInfo = () => {
           <Typography variant="h6">通過: {passDate}</Typography>
         </Box>
       </Box>
-      <Box>
+      <Box sx={{ mb: 2 }}>
         <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
           {stateNames.map((value, index) => (
             <Button key={value} variant="outlined" onClick={() => handleSubmit(index)} sx={{ textAlign: "center" }}>
@@ -167,6 +165,10 @@ const StationInfo = () => {
         >
           <ListItemText primary="駅グループ" />
         </Button>
+      </Box>
+      <Box>
+        <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>駅コード:</Typography>
+        <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.stationCode}</Typography>
       </Box>
     </Container>
   );
