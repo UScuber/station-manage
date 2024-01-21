@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useSendStationStateMutation, useStationInfo } from "./Api";
+import { RecordState, Station, useSendStationStateMutation, useStationInfo } from "./Api";
 import {
   Box,
   Button,
@@ -11,7 +11,48 @@ import {
   Stack,
 } from "@mui/material";
 
-const stateNames = ["乗降", "通過"];
+
+type Props = {
+  text: string,
+  loading: boolean,
+  timeLimit: number, // [sec]最終アクセスから一定時間制限する
+  accessedTime: Date | string | undefined,
+  onClick: () => unknown,
+};
+
+const AccessButton: React.FC<Props> = (props) => {
+  const { text, loading, timeLimit, accessedTime, onClick } = props;
+  const [disabled, setDisabled] = useState(true);
+
+  useEffect(() => {
+    const waitTime = timeLimit*1000 - (new Date().getTime() - new Date(accessedTime ?? 0).getTime());
+    if(waitTime <= 0){
+      setDisabled(false);
+      return;
+    }
+    setDisabled(true);
+    const timeoutId = setTimeout(() => setDisabled(false), waitTime);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [accessedTime, timeLimit]);
+
+  return (
+    <Button
+      variant="outlined"
+      onClick={onClick}
+      disabled={disabled || loading}
+      sx={{ textAlign: "center" }}
+    >
+      {loading ?
+        <CircularProgress color="inherit" size={30}/>
+        :
+        <ListItemText primary={text} />
+      }
+    </Button>
+  );
+};
 
 
 const NextStation: React.FC<{ code: number }> = (props) => {
@@ -47,7 +88,14 @@ const NextStation: React.FC<{ code: number }> = (props) => {
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
 
-  const station = useStationInfo(stationCode);
+  const [getLoading, setGetLoading] = useState(false);
+  const [passLoading, setPassLoading] = useState(false);
+
+  const station = useStationInfo(stationCode, (data: Station) => {
+    if(getDate !== data.getDate?.toString()) setGetLoading(false);
+    else setPassLoading(false);
+  });
+
   const info = station.data;
 
   const getDate = info?.getDate?.toString() ?? "なし";
@@ -60,6 +108,9 @@ const StationInfo = () => {
   const leftKeyRef = useRef(false);
 
   const handleSubmit = (state: number) => {
+    if(state === RecordState.Get) setGetLoading(true);
+    else setPassLoading(true);
+
     mutation.mutate({
       stationCode: stationCode,
       state: state,
@@ -152,11 +203,20 @@ const StationInfo = () => {
       </Box>
       <Box sx={{ mb: 2 }}>
         <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
-          {stateNames.map((value, index) => (
-            <Button key={value} variant="outlined" onClick={() => handleSubmit(index)} sx={{ textAlign: "center" }}>
-              <ListItemText primary={value} />
-            </Button>
-          ))}
+          <AccessButton
+            text="乗降"
+            loading={getLoading}
+            timeLimit={60*3}
+            accessedTime={info?.getDate?.toString()}
+            onClick={() => handleSubmit(RecordState.Get)}
+          />
+          <AccessButton
+            text="通過"
+            loading={passLoading}
+            timeLimit={60*3}
+            accessedTime={info?.passDate?.toString()}
+            onClick={() => handleSubmit(RecordState.Pass)}
+          />
         </Stack>
         <Button
           component={Link}
