@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Box, Container } from "@mui/system";
-import { Button, CircularProgress, ListItemText, Typography } from "@mui/material";
-import { Station, useSendStationGroupStateMutation, useStationGroupInfo, useStationsInfoByGroupCode } from "./Api";
+import { Button, CircularProgress, Typography } from "@mui/material";
+import { Station, StationGroup, useSendStationGroupStateMutation, useStationGroupInfo, useStationsInfoByGroupCode } from "./Api";
+import AccessButton from "./components/AccessButton";
 
 
 const StationItem: React.FC<{ info: Station }> = (props) => {
@@ -28,14 +29,20 @@ const StationItem: React.FC<{ info: Station }> = (props) => {
 const StationGroupInfo = () => {
   const stationGroupCode = Number(useParams<"stationGroupCode">().stationGroupCode);
 
+  const [loading, setLoading] = useState(false);
+
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
-  const groupStationQuery = useStationGroupInfo(stationGroupCode);
+  const groupStationQuery = useStationGroupInfo(stationGroupCode, (data: StationGroup) => {
+    setLoading(false);
+  });
   const groupStationData = groupStationQuery.data;
 
   const mutation = useSendStationGroupStateMutation();
 
   const handleSubmit = () => {
+    setLoading(true);
+
     mutation.mutate({
       stationGroupCode: stationGroupCode,
       date: new Date(),
@@ -74,9 +81,14 @@ const StationGroupInfo = () => {
           <Typography variant="h6">{groupStationData?.prefName}</Typography>
         </Box>
         <Typography variant="h6">立ち寄り: {groupStationData?.date?.toString() ?? "なし"}</Typography>
-        <Button variant="outlined" onClick={handleSubmit} sx={{ mb: 2 }}>
-          <ListItemText primary="立ち寄り" />
-        </Button>
+        <AccessButton
+          text="立ち寄り"
+          loading={loading}
+          timeLimit={60*3}
+          accessedTime={groupStationData?.date?.toString()}
+          onClick={handleSubmit}
+          sx={{ mb: 2 }}
+        />
       <Box>
         {stationList?.map((item) => (
           <StationItem key={item.stationCode} info={item} />

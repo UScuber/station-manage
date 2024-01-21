@@ -3,6 +3,8 @@ import {
   Button,
   CircularProgress,
   ListItemText,
+  SxProps,
+  Theme,
 } from "@mui/material";
 
 
@@ -12,10 +14,11 @@ type Props = {
   timeLimit: number, // [sec]最終アクセスから一定時間制限する
   accessedTime: Date | string | undefined,
   onClick: () => unknown,
+  sx?: SxProps<Theme>,
 };
 
 const AccessButton: React.FC<Props> = (props) => {
-  const { text, loading, timeLimit, accessedTime, onClick } = props;
+  const { text, loading, timeLimit, accessedTime, onClick, sx } = props;
   const [disabled, setDisabled] = useState(true);
 
   useEffect(() => {
@@ -37,7 +40,7 @@ const AccessButton: React.FC<Props> = (props) => {
       variant="outlined"
       onClick={onClick}
       disabled={disabled || loading}
-      sx={{ textAlign: "center" }}
+      sx={sx}
     >
       {loading ?
         <CircularProgress color="inherit" size={30}/>
