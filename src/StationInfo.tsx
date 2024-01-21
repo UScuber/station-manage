@@ -50,7 +50,7 @@ const StationInfo = () => {
   const [passLoading, setPassLoading] = useState(false);
 
   const station = useStationInfo(stationCode, (data: Station) => {
-    if(getDate !== data.getDate?.toString()) setGetLoading(false);
+    if(info?.getDate?.toString() !== data.getDate?.toString()) setGetLoading(false);
     else setPassLoading(false);
   });
 
