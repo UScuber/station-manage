@@ -9,6 +9,11 @@ const convert_date = (date: Date): string => {
   return new Date(date).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 };
 
+export enum RecordState {
+  Get,
+  Pass,
+};
+
 export type Station = {
   stationCode: number,
   stationName: string,
@@ -27,11 +32,12 @@ export type Station = {
   right: number[],
 };
 
-export const useStationInfo = (code: number | undefined): UseQueryResult<Station> => {
+export const useStationInfo = (code: number | undefined, onSuccessFn?: (data: Station) => unknown): UseQueryResult<Station> => {
   return useQuery<Station>({
     queryKey: ["Station", code],
     queryFn: async() => {
       const { data } = await axios.get<Station>("/api/station/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -198,7 +204,7 @@ export const useStationHistoryCount = (): UseQueryResult<number> => {
 };
 
 
-export const useSendStationStateMutation = () => {
+export const useSendStationStateMutation = (onSuccessFn?: (data: string, variables: StationHistory) => unknown) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
@@ -207,6 +213,7 @@ export const useSendStationStateMutation = () => {
     },
     onSuccess: (data: string, variables: StationHistory) => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
       console.error(err);
