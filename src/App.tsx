@@ -8,7 +8,7 @@ import StationInfo from "./StationInfo";
 import StationGroupInfo from "./StationGroupInfo";
 import SearchStation from "./SearchStation";
 import History from "./History";
-import NotFound from "./NotFount";
+import NotFound from "./NotFound";
 
 const ThinToolbar = styled(Toolbar)(({ theme }) => ({
   minHeight: 25,
