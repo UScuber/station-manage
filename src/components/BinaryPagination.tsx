@@ -8,6 +8,7 @@ import {
   Theme,
   Typography,
 } from "@mui/material";
+import { useEffect, useRef } from "react";
 
 const BinaryPagination = (
   { count, page, rowsPerPage, rowsPerPageOptions, onPageChange, onRowsPerPageChange, sx }
@@ -22,12 +23,41 @@ const BinaryPagination = (
   }
 ): JSX.Element => {
   const pageNum = Math.ceil(count / rowsPerPage);
+  const rightKeyRef = useRef(false);
+  const leftKeyRef = useRef(false);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if(e.key === "ArrowLeft" && !leftKeyRef.current){
+      leftKeyRef.current = true;
+      if(page > 1) onPageChange(page - 1);
+    }
+    if(e.key === "ArrowRight" && !rightKeyRef.current){
+      rightKeyRef.current = true;
+      if(page < pageNum) onPageChange(page + 1);
+    }
+  };
+
+  const handleKeyUp = (e: KeyboardEvent) => {
+    if(e.key === "ArrowLeft") leftKeyRef.current = false;
+    if(e.key === "ArrowRight") rightKeyRef.current = false;
+  };
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
   const pages = Array.from(new Set(
     [1, page, pageNum]
       .concat([...Array(Math.floor(Math.log2(page))+1).keys()].map(v => page - (1 << v) + 1))
       .concat([...Array(Math.floor(Math.log2(pageNum - page + 1))+1).keys()].map(v => page + (1 << v) - 1))
       .sort((a, b) => a - b)
   ));
+
   return (
     <Box sx={sx}>
       <Box sx={{ textAlign: "center" }}>
