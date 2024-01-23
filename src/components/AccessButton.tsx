@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   CircularProgress,
@@ -17,7 +17,7 @@ type Props = {
   sx?: SxProps<Theme>,
 };
 
-const AccessButton: React.FC<Props> = (props) => {
+const AccessButton = (props: Props): JSX.Element => {
   const { text, loading, timeLimit, accessedTime, onClick, sx } = props;
   const [disabled, setDisabled] = useState(true);
 

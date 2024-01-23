@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Coordinate, useSearchKNearestStationGroups, useStationsInfoByGroupCode } from "./Api";
 import {
@@ -9,13 +9,14 @@ import {
   Typography
 } from "@mui/material";
 
-type Props = {
-  code: number,
-  distance: number | undefined,
-};
 
-const StationGroupInfo: React.FC<Props> = (props) => {
-  const { code, distance } = props;
+const StationGroupInfo = (
+  { code, distance }
+  :{
+    code: number,
+    distance: number | undefined,
+  }
+): JSX.Element => {
   const stations = useStationsInfoByGroupCode(code);
   const infos = stations.data;
 

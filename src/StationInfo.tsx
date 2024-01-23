@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { RecordState, Station, useSendStationStateMutation, useStationInfo } from "./Api";
 import {
@@ -14,9 +14,12 @@ import AccessButton from "./components/AccessButton";
 import AroundTime from "./components/AroundTime";
 
 
-const NextStation: React.FC<{ code: number }> = (props) => {
-  const { code } = props;
-
+const NextStation = (
+  { code }
+  :{
+    code: number,
+  }
+): JSX.Element => {
   const station = useStationInfo(code);
   const info = station.data;
 

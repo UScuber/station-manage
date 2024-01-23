@@ -1,5 +1,5 @@
 import { Button, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 // 現在時刻からの大まかな時間差を求める
 const getAroundTime = (date: Date | string): string => {
@@ -25,7 +25,12 @@ const getAroundTime = (date: Date | string): string => {
 };
 
 
-const AroundTime: React.FC<{ date: string }> = ({ date }) => {
+const AroundTime = (
+  { date }
+  :{
+    date: string,
+  }
+): JSX.Element => {
   const [isDisplayDate, setIsDisplayDate] = useState(false);
 
   useEffect(() => {

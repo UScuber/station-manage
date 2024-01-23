@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Box, Container } from "@mui/system";
 import { Button, CircularProgress, Typography } from "@mui/material";
@@ -6,9 +6,12 @@ import { Station, StationGroup, useSendStationGroupStateMutation, useStationGrou
 import AccessButton from "./components/AccessButton";
 
 
-const StationItem: React.FC<{ info: Station }> = (props) => {
-  const { info } = props;
-
+const StationItem = (
+  { info }
+  :{
+    info: Station,
+  }
+): JSX.Element => {
   return (
     <Button
       component={Link}

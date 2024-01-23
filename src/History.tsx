@@ -14,8 +14,12 @@ import BinaryPagination from "./components/BinaryPagination";
 
 const stateNames = ["乗降", "通過"];
 
-const HistoryContent: React.FC<{ history: StationHistory }> = (props) => {
-  const { history } = props;
+const HistoryContent = (
+  { history }
+  :{
+    history: StationHistory
+  }
+): JSX.Element => {
   const station = useStationInfo(history.stationCode);
   const info = station.data;
 
