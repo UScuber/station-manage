@@ -8,7 +8,7 @@ import {
   Theme,
   Typography,
 } from "@mui/material";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 const BinaryPagination = (
   { count, page, rowsPerPage, rowsPerPageOptions, onPageChange, onRowsPerPageChange, sx }
@@ -26,21 +26,21 @@ const BinaryPagination = (
   const rightKeyRef = useRef(false);
   const leftKeyRef = useRef(false);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if(e.key === "ArrowLeft" && !leftKeyRef.current){
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if(e.key === "ArrowLeft" && !e.altKey && !leftKeyRef.current){
       leftKeyRef.current = true;
       if(page > 1) onPageChange(page - 1);
     }
-    if(e.key === "ArrowRight" && !rightKeyRef.current){
+    if(e.key === "ArrowRight" && !e.altKey && !rightKeyRef.current){
       rightKeyRef.current = true;
       if(page < pageNum) onPageChange(page + 1);
     }
-  };
+  }, [onPageChange, page, pageNum]);
 
-  const handleKeyUp = (e: KeyboardEvent) => {
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
     if(e.key === "ArrowLeft") leftKeyRef.current = false;
     if(e.key === "ArrowRight") rightKeyRef.current = false;
-  };
+  }, []);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
@@ -49,7 +49,7 @@ const BinaryPagination = (
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
+  }, [handleKeyDown, handleKeyUp]);
 
   if(!count){
     return (

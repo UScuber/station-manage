@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { RecordState, Station, useSendStationStateMutation, useStationInfo } from "./Api";
 import {
@@ -80,22 +80,22 @@ const StationInfo = () => {
     });
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if(!info) return;
-    if(info.left.length >= 1 && e.key === "ArrowLeft" && !leftKeyRef.current){
+    if(info.left.length >= 1 && !e.altKey && e.key === "ArrowLeft" && !leftKeyRef.current){
       navigation("/station/" + info.left[0]);
       leftKeyRef.current = true;
     }
-    if(info.right.length >= 1 && e.key === "ArrowRight" && !rightKeyRef.current){
+    if(info.right.length >= 1 && !e.altKey && e.key === "ArrowRight" && !rightKeyRef.current){
       navigation("/station/" + info.right[0]);
       rightKeyRef.current = true;
     }
-  };
+  }, [info, navigation]);
 
-  const handleKeyUp = (e: KeyboardEvent) => {
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
     if(e.key === "ArrowLeft") leftKeyRef.current = false;
     if(e.key === "ArrowRight") rightKeyRef.current = false;
-  };
+  }, []);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
@@ -104,8 +104,7 @@ const StationInfo = () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-    // eslint-disable-next-line
-  }, [info]);
+  }, [handleKeyDown, handleKeyUp]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
