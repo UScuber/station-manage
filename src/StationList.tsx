@@ -2,15 +2,11 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
-  Button,
   CircularProgress,
   Container,
   InputAdornment,
-  MenuItem,
   Paper,
-  Select,
   SelectChangeEvent,
-  SxProps,
   Table,
   TableBody,
   TableCell,
@@ -18,11 +14,11 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Theme,
   Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
+import BinaryPagination from "./components/BinaryPagination";
 
 
 const StationList = () => {
@@ -59,62 +55,6 @@ const StationList = () => {
     );
   };
 
-  const Pagination = (
-    { count, page, rowsPerPage, rowsPerPageOptions, onPageChange, onRowsPerPageChange, sx }
-    :{
-      count: number,
-      page: number,
-      rowsPerPage: number,
-      rowsPerPageOptions: Array<number>,
-      onPageChange: (page: number) => unknown,
-      onRowsPerPageChange: (event: SelectChangeEvent) => unknown,
-      sx?: SxProps<Theme>,
-    }
-  ): JSX.Element => {
-    const pageNum = Math.ceil(count / rowsPerPage);
-    let pages = [page];
-    for(let i = 1; (1 << i) < page; i++){
-      pages.push(page - (1 << i) + 1);
-    }
-    pages.push(1);
-    for(let i = 1; page + (1 << i) - 1 < pageNum; i++){
-      pages.push(page + (1 << i) - 1);
-    }
-    pages.push(pageNum);
-    pages = Array.from(new Set(pages.sort((a, b) => a - b)));
-    return (
-      <Box sx={sx}>
-        <Box sx={{ textAlign: "center" }}>
-          {pages.map(index => (
-            <Button
-              key={index}
-              variant={page === index ? "contained" : "outlined"}
-              onClick={() => onPageChange(index)}
-              sx={{ minWidth: 10, lineHeight: 1, paddingY: "8px", paddingX: "10px", borderRadius: 0 }}
-            >
-              {index}
-            </Button>
-          ))}
-        </Box>
-        <Box sx={{ textAlign: "right" }}>
-          <Typography variant="h6" sx={{ display: "inline-block", mx: 2, fontSize: 14 }}>Rows Per Page</Typography>
-          <Select
-            labelId="RowsPerPage"
-            id="RowsPerPage"
-            value={rowsPerPage.toString()}
-            label="Rows Per Page"
-            size="small"
-            onChange={onRowsPerPageChange}
-          >
-            {rowsPerPageOptions.map(value => (
-              <MenuItem key={value} value={value}>{value}</MenuItem>
-            ))}
-          </Select>
-        </Box>
-      </Box>
-    );
-  };
-
 
   if(stationGroupList.isError || stationGroupCount.isError){
     return (
@@ -142,7 +82,7 @@ const StationList = () => {
             ),
           }}
         />
-        {!stationGroupCount.isLoading && <Pagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>}
+        {!stationGroupCount.isLoading && <BinaryPagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>}
         <Box>
           Loading...
           <CircularProgress />
@@ -168,7 +108,7 @@ const StationList = () => {
           ),
         }}
       />
-      <Pagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
+      <BinaryPagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
       
       <TableContainer component={Paper}>
         <Table sx={{}} aria-label="simple table">
@@ -199,7 +139,7 @@ const StationList = () => {
         </Table>
       </TableContainer>
 
-      <Pagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
+      <BinaryPagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
     </Container>
   );
 };
