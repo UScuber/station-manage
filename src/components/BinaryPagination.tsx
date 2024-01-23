@@ -43,19 +43,22 @@ const BinaryPagination = (
         ))}
       </Box>
       <Box sx={{ textAlign: "right" }}>
-        <Typography variant="h6" sx={{ display: "inline-block", mx: 2, fontSize: 14 }}>Rows Per Page</Typography>
+        <Typography variant="h6" sx={{ display: "inline-block", mx: 1, fontSize: 14 }}>Per page:</Typography>
         <Select
+          variant="standard"
           labelId="RowsPerPage"
           id="RowsPerPage"
           value={rowsPerPage.toString()}
           label="Rows Per Page"
           size="small"
           onChange={onRowsPerPageChange}
+          sx={{ maxHeight: 24 }}
         >
           {rowsPerPageOptions.map(value => (
             <MenuItem key={value} value={value}>{value}</MenuItem>
           ))}
         </Select>
+        <Typography variant="h6" sx={{ display: "inline-block", mx: 1, fontSize: 15 }}>{(page-1)*rowsPerPage+1}–{Math.min(page*rowsPerPage, count)} of {count}</Typography>
       </Box>
     </Box>
   );

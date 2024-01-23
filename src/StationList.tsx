@@ -28,14 +28,14 @@ const StationList = () => {
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
 
+  const stationGroupCount = useSearchStationGroupCount({ name: searchName });
+
   const stationGroupList = useSearchStationGroupList({
     offset: (page-1) * rowsPerPage,
-    length: rowsPerPage,
+    length: Math.min(rowsPerPage, (stationGroupCount.data ?? 1e9) - (page-1) * rowsPerPage),
     name: searchName,
   });
   const stationGroupsInfo = stationGroupList.data;
-
-  const stationGroupCount = useSearchStationGroupCount({ name: searchName });
 
   const handleChangePage = (newPage: number) => {
     setPage(newPage);
@@ -64,6 +64,7 @@ const StationList = () => {
         rowsPerPageOptions={[10,25,50,100,200]}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
+        sx={{ my: 1 }}
       />
     );
   };

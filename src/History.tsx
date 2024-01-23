@@ -77,12 +77,13 @@ const History = () => {
         rowsPerPageOptions={[10,25,50,100]}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
+        sx={{ my: 1 }}
       />
     );
   };
 
 
-  if(historyList.isError){
+  if(historyList.isError || historyListCount.isError){
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -90,7 +91,7 @@ const History = () => {
     );
   }
 
-  if(historyList.isLoading){
+  if(historyList.isLoading || historyListCount.isLoading){
     return (
       <Container>
         {!historyListCount.isLoading && <CustomPagination />}
