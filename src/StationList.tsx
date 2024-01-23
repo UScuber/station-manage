@@ -2,18 +2,23 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
+  Button,
   CircularProgress,
   Container,
   InputAdornment,
+  MenuItem,
   Paper,
+  Select,
+  SelectChangeEvent,
+  SxProps,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   TextField,
+  Theme,
   Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
@@ -21,14 +26,14 @@ import { useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
 
 
 const StationList = () => {
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(50);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
 
   const stationGroupList = useSearchStationGroupList({
-    offset: page * rowsPerPage,
+    offset: (page-1) * rowsPerPage,
     length: rowsPerPage,
     name: searchName,
   });
@@ -36,12 +41,12 @@ const StationList = () => {
 
   const stationGroupCount = useSearchStationGroupCount({ name: searchName });
 
-  const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+  const handleChangePage = (newPage: number) => {
     setPage(newPage);
   };
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(1);
   };
 
   // 500[ms]遅延して検索が更新される
@@ -54,17 +59,59 @@ const StationList = () => {
     );
   };
 
-  const Pagination = (): JSX.Element => {
+  const Pagination = (
+    { count, page, rowsPerPage, rowsPerPageOptions, onPageChange, onRowsPerPageChange, sx }
+    :{
+      count: number,
+      page: number,
+      rowsPerPage: number,
+      rowsPerPageOptions: Array<number>,
+      onPageChange: (page: number) => unknown,
+      onRowsPerPageChange: (event: SelectChangeEvent) => unknown,
+      sx?: SxProps<Theme>,
+    }
+  ): JSX.Element => {
+    const pageNum = Math.ceil(count / rowsPerPage);
+    let pages = [page];
+    for(let i = 1; (1 << i) < page; i++){
+      pages.push(page - (1 << i) + 1);
+    }
+    pages.push(1);
+    for(let i = 1; page + (1 << i) - 1 < pageNum; i++){
+      pages.push(page + (1 << i) - 1);
+    }
+    pages.push(pageNum);
+    pages = Array.from(new Set(pages.sort((a, b) => a - b)));
     return (
-      <TablePagination
-        component="div"
-        count={stationGroupCount.data!}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[10,25,50,100,200,500]}
-      />
+      <Box sx={sx}>
+        <Box sx={{ textAlign: "center" }}>
+          {pages.map(index => (
+            <Button
+              key={index}
+              variant={page === index ? "contained" : "outlined"}
+              onClick={() => onPageChange(index)}
+              sx={{ minWidth: 10, lineHeight: 1, paddingY: "8px", paddingX: "10px", borderRadius: 0 }}
+            >
+              {index}
+            </Button>
+          ))}
+        </Box>
+        <Box sx={{ textAlign: "right" }}>
+          <Typography variant="h6" sx={{ display: "inline-block", mx: 2, fontSize: 14 }}>Rows Per Page</Typography>
+          <Select
+            labelId="RowsPerPage"
+            id="RowsPerPage"
+            value={rowsPerPage.toString()}
+            label="Rows Per Page"
+            size="small"
+            onChange={onRowsPerPageChange}
+          >
+            {rowsPerPageOptions.map(value => (
+              <MenuItem key={value} value={value}>{value}</MenuItem>
+            ))}
+          </Select>
+        </Box>
+      </Box>
     );
   };
 
@@ -95,7 +142,7 @@ const StationList = () => {
             ),
           }}
         />
-        {!stationGroupCount.isLoading && <Pagination />}
+        {!stationGroupCount.isLoading && <Pagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>}
         <Box>
           Loading...
           <CircularProgress />
@@ -121,7 +168,7 @@ const StationList = () => {
           ),
         }}
       />
-      <Pagination />
+      <Pagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
       
       <TableContainer component={Paper}>
         <Table sx={{}} aria-label="simple table">
@@ -152,7 +199,7 @@ const StationList = () => {
         </Table>
       </TableContainer>
 
-      <Pagination />
+      <Pagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
     </Container>
   );
 };
