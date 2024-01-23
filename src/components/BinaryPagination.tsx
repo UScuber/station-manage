@@ -22,16 +22,12 @@ const BinaryPagination = (
   }
 ): JSX.Element => {
   const pageNum = Math.ceil(count / rowsPerPage);
-  let pages = [page];
-  for(let i = 1; (1 << i) < page; i++){
-    pages.push(page - (1 << i) + 1);
-  }
-  pages.push(1);
-  for(let i = 1; page + (1 << i) - 1 < pageNum; i++){
-    pages.push(page + (1 << i) - 1);
-  }
-  pages.push(pageNum);
-  pages = Array.from(new Set(pages.sort((a, b) => a - b)));
+  const pages = Array.from(new Set(
+    [1, page, pageNum]
+      .concat([...Array(Math.floor(Math.log2(page))+1).keys()].map(v => page - (1 << v) + 1))
+      .concat([...Array(Math.floor(Math.log2(pageNum - page + 1))+1).keys()].map(v => page + (1 << v) - 1))
+      .sort((a, b) => a - b)
+  ));
   return (
     <Box sx={sx}>
       <Box sx={{ textAlign: "center" }}>
