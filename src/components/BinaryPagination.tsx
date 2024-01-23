@@ -51,6 +51,14 @@ const BinaryPagination = (
     };
   }, []);
 
+  if(!count){
+    return (
+      <Box sx={sx}>
+        <Box sx={{ height: 20 }}></Box>
+      </Box>
+    );
+  }
+
   const pages = Array.from(new Set(
     [1, page, pageNum]
       .concat([...Array(Math.floor(Math.log2(page))+1).keys()].map(v => page - (1 << v) + 1))
