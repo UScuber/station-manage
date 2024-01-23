@@ -5,10 +5,11 @@ import {
   Button,
   CircularProgress,
   Container,
-  TablePagination,
+  SelectChangeEvent,
   Typography
 } from "@mui/material";
 import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
+import BinaryPagination from "./components/BinaryPagination";
 
 
 const stateNames = ["乗降", "通過"];
@@ -48,31 +49,30 @@ const HistoryContent: React.FC<{ history: StationHistory }> = (props) => {
 
 
 const History = () => {
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const historyList = useStationHistoryList(page * rowsPerPage, rowsPerPage);
+  const historyList = useStationHistoryList((page-1) * rowsPerPage, rowsPerPage);
 
   const historyListCount = useStationHistoryCount();
 
-  const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+  const handleChangePage = (newPage: number) => {
     setPage(newPage);
   };
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(1);
   };
 
-  const Pagination = (): JSX.Element => {
+  const CustomPagination = (): JSX.Element => {
     return (
-      <TablePagination
-        component="div"
-        count={historyListCount.data!}
+      <BinaryPagination
         page={page}
-        onPageChange={handleChangePage}
+        count={historyListCount.data!}
         rowsPerPage={rowsPerPage}
+        rowsPerPageOptions={[10,25,50,100]}
+        onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[10,25,50,100,200,500]}
       />
     );
   };
@@ -89,7 +89,7 @@ const History = () => {
   if(historyList.isLoading){
     return (
       <Container>
-        {!historyListCount.isLoading && <Pagination />}
+        {!historyListCount.isLoading && <CustomPagination />}
         Loading ...
         <CircularProgress />
       </Container>
@@ -98,7 +98,7 @@ const History = () => {
 
   return (
     <Container>
-      <Pagination />
+      <CustomPagination />
 
       <Box>
         {historyList.data?.map(item => (
@@ -106,7 +106,7 @@ const History = () => {
         ))}
       </Box>
 
-      <Pagination />
+      <CustomPagination />
     </Container>
   )
 };

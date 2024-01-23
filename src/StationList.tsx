@@ -55,6 +55,19 @@ const StationList = () => {
     );
   };
 
+  const CustomPagination = (): JSX.Element => {
+    return (
+      <BinaryPagination
+        page={page}
+        count={stationGroupCount.data!}
+        rowsPerPage={rowsPerPage}
+        rowsPerPageOptions={[10,25,50,100,200]}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+    );
+  };
+
 
   if(stationGroupList.isError || stationGroupCount.isError){
     return (
@@ -82,7 +95,7 @@ const StationList = () => {
             ),
           }}
         />
-        {!stationGroupCount.isLoading && <BinaryPagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>}
+        {!stationGroupCount.isLoading && <CustomPagination />}
         <Box>
           Loading...
           <CircularProgress />
@@ -108,7 +121,7 @@ const StationList = () => {
           ),
         }}
       />
-      <BinaryPagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
+      <CustomPagination />
       
       <TableContainer component={Paper}>
         <Table sx={{}} aria-label="simple table">
@@ -139,7 +152,7 @@ const StationList = () => {
         </Table>
       </TableContainer>
 
-      <BinaryPagination page={page} count={stationGroupCount.data!} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10,25,50,100,200]} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage}/>
+      <CustomPagination />
     </Container>
   );
 };
