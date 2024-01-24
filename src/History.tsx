@@ -14,6 +14,8 @@ import BinaryPagination from "./components/BinaryPagination";
 
 const stateNames = ["乗降", "通過"];
 
+const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+
 const HistoryContent = (
   { history }
   :{
@@ -28,6 +30,8 @@ const HistoryContent = (
       <></>
     );
   }
+  
+  const date = new Date(history.date);
 
   return (
     <Button
@@ -35,7 +39,7 @@ const HistoryContent = (
       to={"/station/" + info?.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 3, textTransform: "none" }}
+      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
     >
       <Box sx={{ mb: 1 }}>
         <Typography variant="h5">{info?.stationName}</Typography>
@@ -46,7 +50,7 @@ const HistoryContent = (
       <Typography variant="h6" sx={{ mx: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
       <Typography variant="h6" sx={{ display: "inline-block" }}>{info?.railwayName}</Typography>
 
-      <Typography variant="h6">{stateNames[history?.state]}: {history?.date.toString()}</Typography>
+      <Typography variant="h6">{stateNames[history.state]}: {("0"+date.getHours()).slice(-2)}:{("0"+date.getMinutes()).slice(-2)}</Typography>
     </Button>
   );
 };
@@ -106,9 +110,26 @@ const History = () => {
       <CustomPagination />
 
       <Box>
-        {historyList.data?.map(item => (
-          <HistoryContent key={`${item.date.toString()}|${item.stationCode}`} history={item}/>
-        ))}
+        {historyList.data?.map((item, index, list) => {
+          const date = new Date(item.date);
+          if(!index || new Date(list[index-1].date).getDay() !== new Date(item.date).getDay()){
+            return (
+              <Box key={`${date.toString()}|${item.stationCode}`}>
+                <Typography variant="h6">
+                  {date.getFullYear()}-{("0"+date.getMonth()+1).slice(-2)}-{("0"+date.getDate()).slice(-2)}({dayNames[date.getDay()]})
+                </Typography>
+                <Box sx={{ ml: 2 }}>
+                  <HistoryContent history={item}/>
+                </Box>
+              </Box>
+            );
+          }
+          return (
+            <Box key={`${date.toString()}|${item.stationCode}`} sx={{ ml: 2 }}>
+              <HistoryContent history={item}/>
+            </Box>
+          );
+        })}
       </Box>
 
       <CustomPagination />
