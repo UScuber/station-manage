@@ -16,6 +16,56 @@ const stateNames = ["乗降", "通過"];
 
 const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
 
+const aroundDayName = (date: Date | string): string => {
+  let past = new Date(date.toString());
+  let now = new Date();
+  past = new Date(`${past.getFullYear()}-${past.getMonth()+1}-${past.getDate()}`);
+  now = new Date(`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`);
+  if(past.getTime() === now.getTime()){
+    return "今日";
+  }
+  past.setDate(past.getDate() + 1);
+  if(past.getTime() === now.getTime()){
+    return "昨日";
+  }
+  past.setDate(past.getDate() + 1);
+  if(past.getTime() === now.getTime()){
+    return "おととい";
+  }
+  // 1 week
+  past.setDate(past.getDate() - 2);
+  past.setDate(past.getDate() - past.getDay());
+  now.setDate(now.getDate() - now.getDay());
+  if(past.getTime() === now.getTime()){
+    return "今週";
+  }
+  past.setDate(past.getDate() + 7);
+  if(past.getTime() === now.getTime()){
+    return "先週";
+  }
+  past.setDate(past.getDate() - 7);
+  past.setDate(1);
+  now.setDate(1);
+  if(past.getTime() === now.getTime()){
+    return "今月";
+  }
+  past.setMonth(past.getMonth() + 1);
+  if(past.getTime() === now.getTime()){
+    return "先月";
+  }
+  past.setMonth(past.getMonth() - 1);
+  if(past.getFullYear() === now.getFullYear()){
+    return "今年";
+  }
+  if(past.getFullYear() + 1 === now.getFullYear()){
+    return "去年";
+  }
+  if(past.getFullYear() + 2 === now.getFullYear()){
+    return "おととし";
+  }
+  return "";
+};
+
 const HistoryContent = (
   { history }
   :{
@@ -46,8 +96,8 @@ const HistoryContent = (
         <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
       </Box>
 
-      <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>路線: </Typography>
-      <Typography variant="h6" sx={{ mx: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+      {/* <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>路線: </Typography> */}
+      <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
       <Typography variant="h6" sx={{ display: "inline-block" }}>{info?.railwayName}</Typography>
 
       <Typography variant="h6">{stateNames[history.state]}: {("0"+date.getHours()).slice(-2)}:{("0"+date.getMinutes()).slice(-2)}</Typography>
@@ -117,6 +167,7 @@ const History = () => {
               <Box key={`${date.toString()}|${item.stationCode}`}>
                 <Typography variant="h6">
                   {date.getFullYear()}-{("0"+date.getMonth()+1).slice(-2)}-{("0"+date.getDate()).slice(-2)}({dayNames[date.getDay()]})
+                  ー {aroundDayName(item.date)}
                 </Typography>
                 <Box sx={{ ml: 2 }}>
                   <HistoryContent history={item}/>
