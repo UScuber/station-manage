@@ -1,5 +1,6 @@
-import { useParams } from "react-router-dom";
-import { useSendStationStateMutation, useStationInfo } from "./Api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { RecordState, Station, useSendStationStateMutation, useStationInfo } from "./Api";
 import {
   Box,
   Button,
@@ -9,27 +10,105 @@ import {
   ListItemText,
   Stack,
 } from "@mui/material";
+import AccessButton from "./components/AccessButton";
+import AroundTime from "./components/AroundTime";
 
-const stateNames = ["乗降", "通過"];
+
+const NextStation = (
+  { code }
+  :{
+    code: number,
+  }
+): JSX.Element => {
+  const station = useStationInfo(code);
+  const info = station.data;
+
+  if(station.isLoading){
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Stack direction="row" sx={{ display: "inline" }}>
+      <Button
+        component={Link}
+        to={"/station/" + code}
+        color="inherit"
+        sx={{ display: "block", textTransform: "none", padding: 0 }}
+      >
+        <Typography variant="h6">{info?.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
+      </Button>
+    </Stack>
+  );
+};
+
 
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
 
-  const station = useStationInfo(stationCode);
-  const info = station.data;
+  const [getLoading, setGetLoading] = useState(false);
+  const [passLoading, setPassLoading] = useState(false);
 
-  const getDate = info?.getDate?.toString() ?? "なし";
-  const passDate = info?.passDate?.toString() ?? "なし";
+  const station = useStationInfo(stationCode, (data: Station) => {
+    if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
+      setGetLoading(false);
+    }else{
+      setPassLoading(false);
+    }
+  });
+
+  const info = station.data;
 
   const mutation = useSendStationStateMutation();
 
+  const navigation = useNavigate();
+  const rightKeyRef = useRef(false);
+  const leftKeyRef = useRef(false);
+
   const handleSubmit = (state: number) => {
+    if(state === RecordState.Get) setGetLoading(true);
+    else setPassLoading(true);
+
     mutation.mutate({
       stationCode: stationCode,
       state: state,
       date: new Date(),
     });
   };
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if(!info) return;
+    if(info.left.length >= 1 && !e.altKey && e.key === "ArrowLeft" && !leftKeyRef.current){
+      navigation("/station/" + info.left[0]);
+      leftKeyRef.current = true;
+    }
+    if(info.right.length >= 1 && !e.altKey && e.key === "ArrowRight" && !rightKeyRef.current){
+      navigation("/station/" + info.right[0]);
+      rightKeyRef.current = true;
+    }
+  }, [info, navigation]);
+
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    if(e.key === "ArrowLeft") leftKeyRef.current = false;
+    if(e.key === "ArrowRight") rightKeyRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
 
   if(station.isError){
@@ -51,34 +130,66 @@ const StationInfo = () => {
 
   return (
     <Container>
-      <Typography variant="h3" sx={{ mb: 2 }}>{info?.stationName}</Typography>
-      <Box>
-        <Typography variant="h6" sx={{ color: "gray" }}>駅コード:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>{info?.stationCode}</Typography>
-
-        <Typography variant="h6" sx={{ color: "gray" }}>路線名:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayName}</Typography>
-
-        <Typography variant="h6" sx={{ color: "gray" }}>路線運営会社:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>{info?.railwayCompany}</Typography>
-
-        <Typography variant="h6" sx={{ color: "gray" }}>座標:</Typography>
-        <Typography variant="h6" sx={{ mx: 2 }}>緯度: {info?.latitude}, 経度: {info?.longitude}</Typography>
-
-        <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
-        <Box sx={{ mx: 2 }}>
-          <Typography variant="h6">乗降: {getDate}</Typography>
-          <Typography variant="h6">通過: {passDate}</Typography>
+      <Box maxWidth="sm" sx={{ margin: "auto" }}>
+        <Box sx={{ textAlign: "center" }}>
+          <Typography variant="h3" sx={{ lineHeight: 1 }}>{info?.stationName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.kana}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
+          <Box sx={{ textAlign: "left" }}>
+            {info?.left.map(code => (
+              <NextStation key={code} code={code} />
+            ))}
+          </Box>
+          <Box sx={{ textAlign: "right" }}>
+            {info?.right.map(code => (
+              <NextStation key={code} code={code} />
+            ))}
+          </Box>
         </Box>
       </Box>
       <Box>
-        <Stack spacing={2} direction="row">
-          {stateNames.map((value, index) => (
-            <Button key={value} variant="outlined" onClick={() => handleSubmit(index)} sx={{ textAlign: "center" }}>
-              <ListItemText primary={value} />
-            </Button>
-          ))}
+        <Typography variant="h6" sx={{ mb: 2 }}>{info?.prefName}</Typography>
+
+        <Box>
+          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+          <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+        </Box>
+
+        <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
+        <Box sx={{ mx: 2 }}>
+          <Typography variant="h6">乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
+          <Typography variant="h6">通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
+        </Box>
+      </Box>
+      <Box sx={{ mb: 2 }}>
+        <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
+          <AccessButton
+            text="乗降"
+            loading={getLoading}
+            timeLimit={60*3}
+            accessedTime={info?.getDate}
+            onClick={() => handleSubmit(RecordState.Get)}
+          />
+          <AccessButton
+            text="通過"
+            loading={passLoading}
+            timeLimit={60*3}
+            accessedTime={info?.passDate}
+            onClick={() => handleSubmit(RecordState.Pass)}
+          />
         </Stack>
+        <Button
+          component={Link}
+          to={"/stationGroup/" + info?.stationGroupCode}
+          variant="outlined"
+        >
+          <ListItemText primary="駅グループ" />
+        </Button>
+      </Box>
+      <Box>
+        <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>駅コード:</Typography>
+        <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.stationCode}</Typography>
       </Box>
     </Container>
   );
