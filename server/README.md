@@ -4,7 +4,9 @@
 
 ```
 npm install
-node convert-geojson.js [geojsonへのファイルパス]
+node convert-geojson.js [Station.geojsonへのpath] [駅名が入ったjsonへのpath]
+node setKanaManual.js [更新したい読み仮名のデータのjsonへのpath] # 必要があれば
+node create.js [Station.geojsonへのpath] [RailroadSection.geojsonへのpath]
 ```
 
 - 駅のデータ: https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-v3_1.html
@@ -17,10 +19,21 @@ node server.js
 ```
 
 
+## プログラムの概要
 
-# 隣駅を計算するプログラム
+### convert-geojson.js
 
-## railroad.txtの内容
+geojsonのデータからDBの基本的な情報を入力する
+
+### export-sql.js, import-sql.js
+
+jsonデータから乗降や通過などのデータをDBからimport,exportする
+
+### create.js
+
+隣駅をcalc.cppで計算してその結果をDBに入力する
+
+#### railroad.txtの内容
 
 ```
 駅の総数

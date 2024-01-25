@@ -3,10 +3,40 @@ import axios from "axios";
 
 axios.defaults.baseURL = process.env.REACT_APP_API_BASEURL;
 
+// 日付をDate型に変換する
+axios.interceptors.response.use(res => {
+  const dateFormat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+  for(const key of Object.keys(res.data)){
+    const value = res.data[key];
+    if(typeof value === "string" && dateFormat.test(value)){
+      res.data[key] = new Date(value);
+      continue;
+    }
+    if(value === null){
+      res.data[key] = undefined;
+      continue;
+    }
+    if(typeof value === "object"){
+      for(const k of Object.keys(value)){
+        const val = value[k];
+        if(typeof val === "string" && dateFormat.test(val)){
+          res.data[key][k] = new Date(val);
+        }
+      }
+    }
+  }
+  return res;
+});
+
 const ngrok_header = { headers: { "ngrok-skip-browser-warning": "a" } };
 
 const convert_date = (date: Date): string => {
   return new Date(date).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+};
+
+export enum RecordState {
+  Get,
+  Pass,
 };
 
 export type Station = {
@@ -19,15 +49,23 @@ export type Station = {
   railwayCompany: string,
   latitude: number,
   longitude: number,
-  getDate: Date | null,
-  passDate: Date | null,
+  getDate: Date | undefined,
+  passDate: Date | undefined,
+  prefName: string,
+  kana: string,
+  left: number[],
+  right: number[],
 };
 
-export const useStationInfo = (code: number | undefined): UseQueryResult<Station> => {
+export const useStationInfo = (
+  code: number | undefined,
+  onSuccessFn?: (data: Station) => unknown
+): UseQueryResult<Station> => {
   return useQuery<Station>({
     queryKey: ["Station", code],
     queryFn: async() => {
       const { data } = await axios.get<Station>("/api/station/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -53,15 +91,21 @@ export type StationGroup = {
   stationName: string,
   latitude: number,
   longitude: number,
-  date: Date | null,
+  date: Date | undefined,
+  prefName: string,
+  kana: string,
   distance?: number,
 };
 
-export const useStationGroupInfo = (code: number | undefined): UseQueryResult<StationGroup> => {
+export const useStationGroupInfo = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationGroup) => unknown
+): UseQueryResult<StationGroup> => {
   return useQuery<StationGroup>({
     queryKey: ["StationGroup", code],
     queryFn: async() => {
       const { data } = await axios.get<StationGroup>("/api/stationGroup/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -81,16 +125,17 @@ export const useStationGroupList = (offset: number, length: number): UseQueryRes
 
 
 export const useSearchStationGroupList = (
-  que: {
+  { offset, length, name }
+  :{
     offset: number,
     length: number,
     name: string | undefined,
   }
 ): UseQueryResult<StationGroup[]> => {
   return useQuery<StationGroup[]>({
-    queryKey: ["StationGroupList", que.offset, que.length, que.name],
+    queryKey: ["StationGroupList", offset, length, name],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${que.offset}&len=${que.length}&name=${que.name ?? ""}`, ngrok_header);
+      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${offset}&len=${length}&name=${name ?? ""}`, ngrok_header);
       return data;
     },
   });
@@ -109,14 +154,15 @@ export const useStationGroupCount = (): UseQueryResult<number> => {
 
 
 export const useSearchStationGroupCount = (
-  que: {
+  { name }
+  :{
     name: string | undefined,
   }
 ): UseQueryResult<number> => {
   return useQuery<number>({
-    queryKey: ["StationGroupCount", que.name],
+    queryKey: ["StationGroupCount", name],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${que.name ?? ""}`, ngrok_header);
+      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${name ?? ""}`, ngrok_header);
       return data;
     },
   });
@@ -231,7 +277,9 @@ export const useSendStationGroupStateMutation = () => {
 };
 
 
-export const useDeleteStationHistoryMutation = () => {
+export const useDeleteStationHistoryMutation = (
+  onSuccessFn?: (data: string, variables: StationHistory) => unknown
+) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
@@ -240,6 +288,7 @@ export const useDeleteStationHistoryMutation = () => {
     },
     onSuccess: (data: string, variables: StationHistory) => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
       console.error(err);
@@ -248,7 +297,9 @@ export const useDeleteStationHistoryMutation = () => {
 };
 
 
-export const useDeleteStationGroupHistoryMutation = () => {
+export const useDeleteStationGroupHistoryMutation = (
+  onSuccessFn?: (data: string, variables: StationGroupHistory) => unknown
+) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
@@ -257,6 +308,7 @@ export const useDeleteStationGroupHistoryMutation = () => {
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
       queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
       console.error(err);

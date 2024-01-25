@@ -1,29 +1,39 @@
 const fs = require("fs");
 const sqlite3 = require("better-sqlite3");
+const { SearchAttribute } = require("./searchAttr");
 
-if(process.argv.length <= 2){
-  console.error("Argument Error: node convert-geojson.js [geojson-file-name]");
+if(process.argv.length <= 3){
+  console.error("Argument Error: node convert-geojson.js [geojson-file-name] [json-station-name]");
   process.exit(1);
 }
-const file_path = process.argv[2];
-if(!fs.existsSync(file_path)){
-  console.error(`Error: ${file_path} does not exist`);
+const geojson_file_path = process.argv[2];
+if(!fs.existsSync(geojson_file_path)){
+  console.error(`Error: ${geojson_file_path} does not exist`);
+  process.exit(1);
+}
+const station_name_file_path = process.argv[3];
+if(!fs.existsSync(station_name_file_path)){
+  console.error(`Error: ${station_name_file_path} does not exist`);
   process.exit(1);
 }
 
+
+// geojson
+
+console.log("Calc geojson");
 
 const max_same_station_dist = 0.45; // [km]
 
 // [latitude, longitude]
-const distance = (p1, p2) => {
+const distance = (a, b) => {
   const R = Math.PI / 180;
-  return Math.acos(Math.cos(p1[0]*R) * Math.cos(p2[0]*R) * Math.cos(p2[1]*R - p1[1]*R) + Math.sin(p1[0]*R) * Math.sin(p2[0]*R)) * 6371;
+  return Math.acos(Math.cos(a.lat*R) * Math.cos(b.lat*R) * Math.cos(b.lng*R - a.lng*R) + Math.sin(a.lat*R) * Math.sin(b.lat*R)) * 6371;
 };
 
-let json_data = JSON.parse(fs.readFileSync(file_path).toString());
+let json_data = JSON.parse(fs.readFileSync(geojson_file_path));
 json_data = json_data.features;
 
-json_data = json_data.map((elem) => {
+json_data = json_data.map(elem => {
   delete elem.type;
   elem["coordinates"] = [elem.geometry.coordinates]; // 駅の座標の線分
   delete elem.geometry;
@@ -54,20 +64,19 @@ json_data.forEach((elem, index) => {
     station_code_map[codes] = index;
   }
 });
-json_data = json_data.filter((elem) => elem !== null);
+json_data = json_data.filter(elem => elem !== null);
 
 // 重心を求める
-json_data = json_data.map((elem) => {
-  let latitude = 0, longitude = 0;
-  elem.coordinates.forEach((pos) => {
-    // [経度, 緯度]
-    latitude += (pos[0][1] + pos[pos.length-1][1]) * 0.5;
-    longitude += (pos[0][0] + pos[pos.length-1][0]) * 0.5;
-  });
-  latitude /= elem.coordinates.length;
-  longitude /= elem.coordinates.length;
+json_data = json_data.map(elem => {
+  const lat = elem.coordinates.reduce((tot, pos) => (
+    tot + (pos[0][1] + pos[pos.length-1][1]) * 0.5
+  ), 0) / elem.coordinates.length;
+  const lng = elem.coordinates.reduce((tot, pos) => (
+    tot + (pos[0][0] + pos[pos.length-1][0]) * 0.5
+  ), 0) / elem.coordinates.length;
 
-  elem["center"] = [latitude, longitude];
+  elem["lat"] = lat;
+  elem["lng"] = lng;
   delete elem.coordinates;
 
   return elem;
@@ -77,14 +86,13 @@ json_data = json_data.map((elem) => {
 // 駅の集合を探す
 const black_list = ["堀田"];
 let station_group_map = {};
-let group_codes = [];
-for(let i = 0; i < json_data.length; i++) group_codes.push(-1);
+let group_codes = new Array(json_data.length).fill(-1);
 json_data.forEach((elem, index) => {
   const station_name = elem.stationName;
   if(station_name in station_group_map){
     const station_name_indices = station_group_map[station_name];
     for(let i = 0; i < station_name_indices.length; i++){
-      let dist = distance(json_data[index].center, json_data[station_name_indices[i][0]].center);
+      let dist = distance(json_data[index], json_data[station_name_indices[i][0]]);
       if(isNaN(dist)){
         dist = 0;
       }
@@ -111,17 +119,61 @@ json_data = json_data.map((elem, index) => {
 
 // calc center
 const station_group_codes = Array.from(new Set(group_codes));
-let centers = new Array(json_data.length);
-for(let i = 0; i < json_data.length; i++) centers[i] = { lat:0, lng:0, cnt:0 };
+let centers = new Array(json_data.length).fill().map(e => ({ lat:0, lng:0, cnt:0 }));
 group_codes.forEach((code, index) => {
-  centers[code].lat += json_data[index].center[0];
-  centers[code].lng += json_data[index].center[1];
+  centers[code].lat += json_data[index].lat;
+  centers[code].lng += json_data[index].lng;
   centers[code].cnt++;
 });
-centers = centers.map((pos) => {
+centers = centers.map(pos => {
   if(!pos.cnt) return {};
   return { lat: pos.lat/pos.cnt, lng: pos.lng/pos.cnt };
 });
+
+
+
+// station name
+
+console.log("Import station names");
+
+let station_name_data = JSON.parse(fs.readFileSync(station_name_file_path));
+station_name_data = station_name_data.map(elem => ({
+  name: elem.original_name,
+  name_kana: elem.name_kana,
+  lat: elem.lat,
+  lng: elem.lng,
+  pref: elem.prefecture,
+}));
+
+let station_name_maps = {};
+station_name_data.forEach(elem => {
+  if(!(elem.name in station_name_maps)){
+    station_name_maps[elem.name] = [];
+  }
+  station_name_maps[elem.name].push(elem);
+});
+
+(async() => {
+
+let sattr = await SearchAttribute.build();
+
+await Promise.all(station_group_codes.map(async(code) => {
+  let elem = json_data[code];
+  const name = elem.stationName;
+  if(name in station_name_maps){
+    const nearest_data = station_name_maps[name].reduce((a, b) => {
+      if(distance(a, elem) < distance(b, elem)) return a;
+      return b;
+    });
+    elem["kana"] = nearest_data.name_kana;
+    elem["pref"] = nearest_data.pref;
+  }else{
+    elem["kana"] = await sattr.search_station_name(name);
+    elem["pref"] = await sattr.get_pref_code(elem);
+  }
+}));
+
+if(fs.existsSync("./__temp.txt")) fs.rmSync("./__temp.txt");
 
 
 if(fs.existsSync("./station.db")) fs.rmSync("./station.db");
@@ -148,6 +200,18 @@ const institution_type_cd_data = [
   { code: 3, content: "公営鉄道" },
   { code: 4, content: "民営鉄道" },
   { code: 5, content: "第三セクター" },
+];
+const prefecture = [
+  { code: 1, name: "北海道" },
+  { code: 2, name: "青森県" }, { code: 3, name: "岩手県" }, { code: 4, name: "宮城県" }, { code: 5, name: "秋田県" }, { code: 6, name: "山形県" }, { code: 7, name: "福島県" },
+  { code: 8, name: "茨城県" }, { code: 9, name: "栃木県" }, { code: 10, name: "群馬県" }, { code: 11, name: "埼玉県" }, { code: 12, name: "千葉県" }, { code: 13, name: "東京都" }, { code: 14, name: "神奈川県" },
+  { code: 15, name: "新潟県" }, { code: 16, name: "富山県" }, { code: 17, name: "石川県" }, { code: 18, name: "福井県" }, { code: 19, name: "山梨県" }, { code: 20, name: "長野県" },
+  { code: 21, name: "岐阜県" }, { code: 22, name: "静岡県" }, { code: 23, name: "愛知県" }, { code: 24, name: "三重県" },
+  { code: 25, name: "滋賀県" }, { code: 26, name: "京都府" }, { code: 27, name: "大阪府" }, { code: 28, name: "兵庫県" }, { code: 29, name: "奈良県" }, { code: 30, name: "和歌山県" },
+  { code: 31, name: "鳥取県" }, { code: 32, name: "島根県" }, { code: 33, name: "岡山県" }, { code: 34, name: "広島県" }, { code: 35, name: "山口県" },
+  { code: 36, name: "徳島県" }, { code: 37, name: "香川県" }, { code: 38, name: "愛媛県" }, { code: 39, name: "高知県" },
+  { code: 40, name: "福岡県" },{ code: 41, name: "佐賀県" }, { code: 42, name: "長崎県" }, { code: 43, name: "熊本県" }, { code: 44, name: "大分県" }, { code: 45, name: "宮崎県" }, { code: 46, name: "鹿児島県" },
+  { code: 47, name: "沖縄県" },
 ];
 
 console.log("Create tables");
@@ -178,15 +242,30 @@ db.transaction(() => {
     db.prepare("INSERT INTO InstitutionTypeCd VALUES(?,?)").run(data.code, data.content);
   });
 
+  // Prefectures
+  db.prepare(`
+  CREATE TABLE Prefectures(
+    code INTEGER,
+    name VARCHAR(4),
+    PRIMARY KEY (code)
+  )
+  `).run();
+  prefecture.forEach(data => {
+    db.prepare("INSERT INTO Prefectures VALUES(?,?)").run(data.code, data.name);
+  });
+
   // StationGroups
   db.prepare(`
   CREATE TABLE StationGroups(
     stationGroupCode INTEGER,
-    stationName VARCHAR(32) NOT NULL,
+    stationName VARCHAR(80) NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
+    prefCode INTEGER,
+    kana VARCHAR(80),
     date DATE,
     PRIMARY KEY (stationGroupCode)
+    FOREIGN KEY (prefCode) REFERENCES Prefectures(code)
   )
   `).run();
 
@@ -239,12 +318,14 @@ console.log("Insert data");
 db.transaction(() => {
   // StationGroups
   station_group_codes.forEach(code => {
-    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,NULL)")
+    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,?,?,NULL)")
       .run(
         code,
         json_data[code].stationName,
         centers[code].lat.toFixed(5),
-        centers[code].lng.toFixed(5)
+        centers[code].lng.toFixed(5),
+        json_data[code].pref,
+        json_data[code].kana,
       );
   });
 
@@ -258,8 +339,8 @@ db.transaction(() => {
         elem.stationGroupCode,
         elem.railwayName,
         elem.railwayCompany,
-        elem.center[0].toFixed(5),
-        elem.center[1].toFixed(5)
+        elem.lat.toFixed(5),
+        elem.lng.toFixed(5)
       );
   });
 })();
@@ -267,3 +348,5 @@ db.transaction(() => {
 db.close();
 
 console.log("Finished");
+
+})();

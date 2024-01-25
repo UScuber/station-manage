@@ -1,23 +1,77 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
   Button,
   CircularProgress,
   Container,
-  TablePagination,
-  Typography
+  SelectChangeEvent,
+  Typography,
 } from "@mui/material";
 import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
+import BinaryPagination from "./components/BinaryPagination";
 
-type Props = {
-  history: StationHistory,
-};
 
 const stateNames = ["乗降", "通過"];
 
-const HistoryContent: React.FC<Props> = (props) => {
-  const { history } = props;
+const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+
+const aroundDayName = (date: Date | string): string => {
+  let past = new Date(date.toString());
+  let now = new Date();
+  past = new Date(`${past.getFullYear()}-${past.getMonth()+1}-${past.getDate()}`);
+  now = new Date(`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`);
+  if(past.getTime() === now.getTime()){
+    return "今日";
+  }
+  past.setDate(past.getDate() + 1);
+  if(past.getTime() === now.getTime()){
+    return "昨日";
+  }
+  past.setDate(past.getDate() + 1);
+  if(past.getTime() === now.getTime()){
+    return "おととい";
+  }
+  // 1 week
+  past.setDate(past.getDate() - 2);
+  past.setDate(past.getDate() - past.getDay());
+  now.setDate(now.getDate() - now.getDay());
+  if(past.getTime() === now.getTime()){
+    return "今週";
+  }
+  past.setDate(past.getDate() + 7);
+  if(past.getTime() === now.getTime()){
+    return "先週";
+  }
+  past.setDate(past.getDate() - 7);
+  past.setDate(1);
+  now.setDate(1);
+  if(past.getTime() === now.getTime()){
+    return "今月";
+  }
+  past.setMonth(past.getMonth() + 1);
+  if(past.getTime() === now.getTime()){
+    return "先月";
+  }
+  past.setMonth(past.getMonth() - 1);
+  if(past.getFullYear() === now.getFullYear()){
+    return "今年";
+  }
+  if(past.getFullYear() + 1 === now.getFullYear()){
+    return "去年";
+  }
+  if(past.getFullYear() + 2 === now.getFullYear()){
+    return "おととし";
+  }
+  return "";
+};
+
+const HistoryContent = (
+  { history }
+  :{
+    history: StationHistory
+  }
+): JSX.Element => {
   const station = useStationInfo(history.stationCode);
   const info = station.data;
 
@@ -26,6 +80,8 @@ const HistoryContent: React.FC<Props> = (props) => {
       <></>
     );
   }
+  
+  const date = new Date(history.date);
 
   return (
     <Button
@@ -33,54 +89,55 @@ const HistoryContent: React.FC<Props> = (props) => {
       to={"/station/" + info?.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 3, textTransform: "none" }}
+      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
     >
-      <Typography variant="h4" sx={{ mb: 1 }}>{info?.stationName}</Typography>
+      <Box sx={{ mb: 1 }}>
+        <Typography variant="h5">{info?.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
+      </Box>
 
-      <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>駅コード:</Typography>
-      <Typography variant="h6" sx={{ mx: 4 }}>{info?.stationCode}</Typography>
+      {/* <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>路線: </Typography> */}
+      <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ display: "inline-block" }}>{info?.railwayName}</Typography>
 
-      <Typography variant="h6" sx={{ color: "gray", mx: 2 }}>路線名:</Typography>
-      <Typography variant="h6" sx={{ mx: 4 }}>{info?.railwayName}</Typography>
-
-      <Typography variant="h6" sx={{ mx: 2 }}>{stateNames[history?.state]}: {history?.date.toString()}</Typography>
+      <Typography variant="h6">{stateNames[history.state]}: {("0"+date.getHours()).slice(-2)}:{("0"+date.getMinutes()).slice(-2)}</Typography>
     </Button>
   );
 };
 
 
 const History = () => {
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const historyList = useStationHistoryList(page * rowsPerPage, rowsPerPage);
+  const historyList = useStationHistoryList((page-1) * rowsPerPage, rowsPerPage);
 
   const historyListCount = useStationHistoryCount();
 
-  const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+  const handleChangePage = (newPage: number) => {
     setPage(newPage);
   };
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(1);
   };
 
-  const Pagination = (): JSX.Element => {
+  const CustomPagination = (): JSX.Element => {
     return (
-      <TablePagination
-        component="div"
-        count={historyListCount.data!}
+      <BinaryPagination
         page={page}
-        onPageChange={handleChangePage}
+        count={historyListCount.data!}
         rowsPerPage={rowsPerPage}
+        rowsPerPageOptions={[10,25,50,100]}
+        onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[10,25,50,100,200,500]}
+        sx={{ my: 1 }}
       />
     );
   };
 
 
-  if(historyList.isError){
+  if(historyList.isError || historyListCount.isError){
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -88,10 +145,10 @@ const History = () => {
     );
   }
 
-  if(historyList.isLoading){
+  if(historyList.isLoading || historyListCount.isLoading){
     return (
       <Container>
-        {!historyListCount.isLoading && <Pagination />}
+        {!historyListCount.isLoading && <CustomPagination />}
         Loading ...
         <CircularProgress />
       </Container>
@@ -100,15 +157,33 @@ const History = () => {
 
   return (
     <Container>
-      <Pagination />
+      <CustomPagination />
 
       <Box>
-        {historyList.data?.map((item, index) => (
-          <HistoryContent key={index} history={item}/>
-        ))}
+        {historyList.data?.map((item, index, list) => {
+          const date = new Date(item.date);
+          if(!index || new Date(list[index-1].date).getDay() !== new Date(item.date).getDay()){
+            return (
+              <Box key={`${date.toString()}|${item.stationCode}`}>
+                <Typography variant="h6">
+                  {date.getFullYear()}-{("0"+date.getMonth()+1).slice(-2)}-{("0"+date.getDate()).slice(-2)}({dayNames[date.getDay()]})
+                  ー {aroundDayName(item.date)}
+                </Typography>
+                <Box sx={{ ml: 2 }}>
+                  <HistoryContent history={item}/>
+                </Box>
+              </Box>
+            );
+          }
+          return (
+            <Box key={`${date.toString()}|${item.stationCode}`} sx={{ ml: 2 }}>
+              <HistoryContent history={item}/>
+            </Box>
+          );
+        })}
       </Box>
 
-      <Pagination />
+      <CustomPagination />
     </Container>
   )
 };
