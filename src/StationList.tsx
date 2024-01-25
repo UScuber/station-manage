@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import {
   Box,
   CircularProgress,
+  Collapse,
   Container,
+  IconButton,
   InputAdornment,
   Paper,
   SelectChangeEvent,
@@ -15,10 +17,19 @@ import {
   TableRow,
   TextField,
   Typography,
+  styled,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import { useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
+import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
+import { StationGroup, useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
 import BinaryPagination from "./components/BinaryPagination";
+import AroundTime from "./components/AroundTime";
+
+
+const CustomLink = styled(Link)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  textDecoration: "none",
+  textTransform: "none",
+}));
 
 
 const StationList = () => {
@@ -69,6 +80,70 @@ const StationList = () => {
     );
   };
 
+  const Row = (
+    { info }
+    :{
+      info: StationGroup,
+    }
+  ): JSX.Element => {
+    const [open, setOpen] = useState(false);
+
+    return (
+      <>
+        <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+          <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0 }}>
+            <CustomLink
+              to={"/stationGroup/" + info.stationGroupCode}
+            >
+              <Typography variant="h6" sx={{ fontSize: 15, lineHeight: 1.3 }}>{info.stationName}</Typography>
+              <Typography variant="h6" sx={{ fontSize: 9, lineHeight: 1 }}>{info.kana}</Typography>
+            </CustomLink>
+          </TableCell>
+          <TableCell align="center" sx={{ paddingX: 0.5 }}>
+            <Typography variant="h6" sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
+          </TableCell>
+          <TableCell align="center" sx={{ paddingX: 0.5 }}>
+            <AroundTime date={info.date?.toString() ?? ""} disableMinute fontSize={14}/>
+          </TableCell>
+          <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>
+            <IconButton
+              aria-label="expand row"
+              size="small"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            </IconButton>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <Box sx={{ margin: 1 }}>
+                <Typography variant="h6" gutterBottom component="div">
+                  History
+                </Typography>
+                <Table size="small" aria-label="purchases">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {info.date && (
+                      <TableRow>
+                        <TableCell>{info.date?.toString() ?? ""}</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Collapse>
+          </TableCell>
+        </TableRow>
+      </>
+    );
+  };
+
 
   if(stationGroupList.isError || stationGroupCount.isError){
     return (
@@ -108,8 +183,8 @@ const StationList = () => {
   return (
     <Container>
       <TextField
-        id="name"
-        label="name"
+        id="stationName"
+        label="station name"
         variant="standard"
         value={inputName}
         sx={{ maxWidth: "50%" }}
@@ -125,29 +200,18 @@ const StationList = () => {
       <CustomPagination />
       
       <TableContainer component={Paper}>
-        <Table sx={{}} aria-label="simple table">
+        <Table aria-label="collapsible table" size="medium">
           <TableHead>
             <TableRow>
-              <TableCell>Group Code</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Date</TableCell>
+              <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>駅名</TableCell>
+              <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>都道府県</TableCell>
+              <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>立ち寄り</TableCell>
+              <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>詳細</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {stationGroupsInfo?.map(item => (
-              <TableRow key={item.stationGroupCode}>
-                <TableCell>
-                  <Link
-                    color="primary"
-                    to={"/stationGroup/" + item.stationGroupCode}
-                    style={{ textDecoration: "none" }}
-                  >
-                    {item.stationGroupCode}
-                  </Link>
-                </TableCell>
-                <TableCell>{item.stationName}</TableCell>
-                <TableCell>{item.date?.toString() ?? ""}</TableCell>
-              </TableRow>
+              <Row key={item.stationGroupCode} info={item} />
             ))}
           </TableBody>
         </Table>
