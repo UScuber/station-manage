@@ -26,9 +26,10 @@ const getAroundTime = (date: Date | string): string => {
 
 
 const AroundTime = (
-  { date }
+  { date, fontSize }
   :{
     date: string,
+    fontSize?: number | string,
   }
 ): JSX.Element => {
   const [isDisplayDate, setIsDisplayDate] = useState(false);
@@ -41,9 +42,9 @@ const AroundTime = (
     <Button
       color="inherit"
       onClick={() => setIsDisplayDate(true)}
-      sx={{ display: "inline-block", textTransform: "none" }}
+      sx={{ display: "inline-block", textTransform: "none", minWidth: 40, paddingX: 0 }}
     >
-      <Typography variant="h6" sx={{ lineHeight: 0.9 }}>
+      <Typography variant="h6" sx={{ lineHeight: 0.9, fontSize: fontSize }}>
         {isDisplayDate ? date : getAroundTime(date)}
       </Typography>
     </Button>
