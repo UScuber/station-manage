@@ -159,7 +159,7 @@ const StationInfo = () => {
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
         <Box sx={{ mx: 2 }}>
           <Typography variant="h6">乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
-          <Typography variant="h6">通過: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
+          <Typography variant="h6">通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
         </Box>
       </Box>
       <Box sx={{ mb: 2 }}>

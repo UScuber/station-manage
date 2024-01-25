@@ -6,8 +6,10 @@ import {
   Button,
   CircularProgress,
   Container,
-  Typography
+  Divider,
+  Typography,
 } from "@mui/material";
+import AroundTime from "./components/AroundTime";
 
 
 const StationGroupInfo = (
@@ -20,6 +22,12 @@ const StationGroupInfo = (
   const stations = useStationsInfoByGroupCode(code);
   const infos = stations.data;
 
+  if(stations.isError){
+    return (
+      <Typography variant="h5">Error</Typography>
+    );
+  }
+
   if(stations.isLoading){
     return (
       <Box sx={{ mb: 2 }}>
@@ -30,8 +38,21 @@ const StationGroupInfo = (
 
   return (
     <Box sx={{ mb: 4 }}>
+      {infos && (
+        <Box sx={{ mb: 0.5 }}>
+          <Button
+            component={Link}
+            to={"/stationGroup/" + code}
+            color="inherit"
+            sx={{ display: "inline-block", textTransform: "none", padding: 0 }}
+          >
+            <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
+            <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
+          </Button>
+        </Box>
+      )}
       {distance && (
-        <Typography sx={{ fontSize: 18 }}>距離: {distance.toFixed(3)}[km]</Typography>
+        <Typography variant="h6" sx={{ fontSize: 18 }}>{distance.toFixed(3)}[km]</Typography>
       )}
       {infos?.map(info => (
         <Button
@@ -40,13 +61,13 @@ const StationGroupInfo = (
           variant="outlined"
           color="inherit"
           key={info.stationCode}
-          sx={{ display: "block", mb: 1, textTransform: "none" }}
+          sx={{ display: "block", mb: 1, ml: 1, textTransform: "none" }}
         >
-          <Typography variant="h6">{info?.stationName}</Typography>
-          <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
-
           <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
           <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+
+          <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" fontSize={16} /></Typography>
+          <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" fontSize={16} /></Typography>
         </Button>
       ))}
     </Box>
@@ -98,13 +119,15 @@ const SearchStation = () => {
     <Container>
       {!isAvailable && <p>Geolocation is not available.</p>}
       {isAvailable && (
-        <Box>
-          <Button variant="outlined" onClick={() => getCurrentPosition()}>Search</Button>
-          <Typography variant="h6">緯度: {position?.lat}</Typography>
-          <Typography variant="h6">経度: {position?.lng}</Typography>
+        <Box sx={{ mb: 1 }}>
+          <Button variant="outlined" onClick={getCurrentPosition}>Search</Button>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>緯度: {position?.lat}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>経度: {position?.lng}</Typography>
         </Box>
       )}
+
       <Typography variant="h6">List</Typography>
+      <Divider sx={{ mb: 1 }} light />
       {groupStations?.map(item => (
         <StationGroupInfo
           key={item.stationGroupCode}

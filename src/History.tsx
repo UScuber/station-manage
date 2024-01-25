@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -6,7 +6,7 @@ import {
   CircularProgress,
   Container,
   SelectChangeEvent,
-  Typography
+  Typography,
 } from "@mui/material";
 import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
 import BinaryPagination from "./components/BinaryPagination";
