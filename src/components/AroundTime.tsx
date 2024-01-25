@@ -24,11 +24,16 @@ const getAroundTime = (date: Date | string): string => {
   return Math.floor(diff / (60*60*24*30*12)) + "年前";
 };
 
+const getDateString = (date: Date, disableMinute: boolean | undefined): string => {
+  return `${date.getFullYear()}-${("0"+date.getMonth()+1).slice(-2)}-${("0"+date.getDate()).slice(-2)} ${("0"+date.getHours()).slice(-2)}:${("0"+date.getMinutes()).slice(-2)}`
+    + (disableMinute ? "" : ("0"+date.getSeconds()).slice(-2));
+};
 
 const AroundTime = (
-  { date, fontSize }
+  { date, disableMinute, fontSize }
   :{
     date: string,
+    disableMinute?: boolean,
     fontSize?: number | string,
   }
 ): JSX.Element => {
@@ -44,8 +49,8 @@ const AroundTime = (
       onClick={() => setIsDisplayDate(true)}
       sx={{ display: "inline-block", textTransform: "none", minWidth: 40, paddingX: 0 }}
     >
-      <Typography variant="h6" sx={{ lineHeight: 0.9, fontSize: fontSize }}>
-        {isDisplayDate ? date : getAroundTime(date)}
+      <Typography variant="h6" sx={{ lineHeight: 1, fontSize: fontSize }}>
+        {isDisplayDate && new Date(date).toString() !== "Invalid Date" ? getDateString(new Date(date), disableMinute) : getAroundTime(date)}
       </Typography>
     </Button>
   );
