@@ -54,7 +54,7 @@ const StationInfo = () => {
   const [passLoading, setPassLoading] = useState(false);
 
   const station = useStationInfo(stationCode, (data: Station) => {
-    if(new Date(data.getDate?.toString() ?? 0) > new Date(data.passDate?.toString() ?? 0)){
+    if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
       setGetLoading(false);
     }else{
       setPassLoading(false);
@@ -62,9 +62,6 @@ const StationInfo = () => {
   });
 
   const info = station.data;
-
-  const getDate = info?.getDate?.toString() ?? "なし";
-  const passDate = info?.passDate?.toString() ?? "なし";
 
   const mutation = useSendStationStateMutation();
 
@@ -141,12 +138,12 @@ const StationInfo = () => {
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
           <Box sx={{ textAlign: "left" }}>
             {info?.left.map(code => (
-              <NextStation key={code} code={code}/>
+              <NextStation key={code} code={code} />
             ))}
           </Box>
           <Box sx={{ textAlign: "right" }}>
             {info?.right.map(code => (
-              <NextStation key={code} code={code}/>
+              <NextStation key={code} code={code} />
             ))}
           </Box>
         </Box>
@@ -161,8 +158,8 @@ const StationInfo = () => {
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
         <Box sx={{ mx: 2 }}>
-          <Typography variant="h6">乗降: <AroundTime date={getDate}/></Typography>
-          <Typography variant="h6">通過: <AroundTime date={passDate}/></Typography>
+          <Typography variant="h6">乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
+          <Typography variant="h6">通過: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
         </Box>
       </Box>
       <Box sx={{ mb: 2 }}>
@@ -171,14 +168,14 @@ const StationInfo = () => {
             text="乗降"
             loading={getLoading}
             timeLimit={60*3}
-            accessedTime={info?.getDate?.toString()}
+            accessedTime={info?.getDate}
             onClick={() => handleSubmit(RecordState.Get)}
           />
           <AccessButton
             text="通過"
             loading={passLoading}
             timeLimit={60*3}
-            accessedTime={info?.passDate?.toString()}
+            accessedTime={info?.passDate}
             onClick={() => handleSubmit(RecordState.Pass)}
           />
         </Stack>

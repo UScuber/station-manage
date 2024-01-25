@@ -1,10 +1,13 @@
 import { Button, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
+import getDateString from "../utils/getDateString";
+
 
 // 現在時刻からの大まかな時間差を求める
-const getAroundTime = (date: Date | string): string => {
-  if(new Date(date).toString() === "Invalid Date") return date.toString();
-  const diff = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+const getAroundTime = (date: Date | undefined, invalidMsg: string): string => {
+  if(!date) return invalidMsg;
+
+  const diff = Math.floor((new Date().getTime() - date.getTime()) / 1000);
   if(diff < 60){
     if(diff === 0) return "現在";
     return diff + "秒前";
@@ -24,15 +27,11 @@ const getAroundTime = (date: Date | string): string => {
   return Math.floor(diff / (60*60*24*30*12)) + "年前";
 };
 
-const getDateString = (date: Date, disableMinute: boolean | undefined): string => {
-  return `${date.getFullYear()}-${("0"+date.getMonth()+1).slice(-2)}-${("0"+date.getDate()).slice(-2)} ${("0"+date.getHours()).slice(-2)}:${("0"+date.getMinutes()).slice(-2)}`
-    + (disableMinute ? "" : ":" + ("0"+date.getSeconds()).slice(-2));
-};
-
 const AroundTime = (
-  { date, disableMinute, fontSize }
+  { date, invalidMsg, disableMinute, fontSize }
   :{
-    date: string,
+    date: Date | undefined,
+    invalidMsg: string,
     disableMinute?: boolean,
     fontSize?: number | string,
   }
@@ -50,7 +49,7 @@ const AroundTime = (
       sx={{ display: "inline-block", textTransform: "none", minWidth: 40, paddingX: 0 }}
     >
       <Typography variant="h6" sx={{ lineHeight: 1, fontSize: fontSize }}>
-        {isDisplayDate && new Date(date).toString() !== "Invalid Date" ? getDateString(new Date(date), disableMinute) : getAroundTime(date)}
+        {isDisplayDate && date ? getDateString(date, disableMinute) : getAroundTime(date, invalidMsg)}
       </Typography>
     </Button>
   );

@@ -6,6 +6,7 @@ import { KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardAr
 import { Station, StationGroup, useSendStationGroupStateMutation, useStationGroupInfo, useStationsInfoByGroupCode } from "./Api";
 import AccessButton from "./components/AccessButton";
 import AroundTime from "./components/AroundTime";
+import getDateString from "./utils/getDateString";
 
 
 const StationItem = (
@@ -25,8 +26,8 @@ const StationItem = (
       <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
       <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
 
-      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info?.getDate?.toString() ?? "なし"}/></Typography>
-      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info?.passDate?.toString() ?? "なし"}/></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
     </Button>
   );
 };
@@ -87,7 +88,7 @@ const StationGroupInfo = () => {
           <Typography variant="h6">{groupStationData?.prefName}</Typography>
         </Box>
         <Typography variant="h6" sx={{ display: "inline-block" }}>
-          立ち寄り: <AroundTime date={groupStationData?.date?.toString() ?? "なし"}/>
+          立ち寄り: <AroundTime date={groupStationData?.date} invalidMsg="なし" />
         </Typography>
         <IconButton
           aria-label="expand row"
@@ -97,9 +98,7 @@ const StationGroupInfo = () => {
         </IconButton>
         <Collapse in={open} timeout="auto" unmountOnExit>
           <Box sx={{ margin: 1 }}>
-            <Typography variant="h6" component="div">
-              History
-            </Typography>
+            <Typography variant="h6" component="div">History</Typography>
             <Table size="small" aria-label="dates">
               <TableHead>
                 <TableRow>
@@ -109,7 +108,7 @@ const StationGroupInfo = () => {
               <TableBody>
                 {groupStationData?.date && (
                   <TableRow>
-                    <TableCell>{groupStationData?.date?.toString() ?? ""}</TableCell>
+                    <TableCell>{getDateString(groupStationData?.date)}</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -120,7 +119,7 @@ const StationGroupInfo = () => {
           text="立ち寄り"
           loading={loading}
           timeLimit={60*3}
-          accessedTime={groupStationData?.date?.toString()}
+          accessedTime={groupStationData?.date}
           onClick={handleSubmit}
           sx={{ mb: 2, display: "block" }}
         />

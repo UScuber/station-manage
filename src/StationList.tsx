@@ -23,6 +23,7 @@ import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardA
 import { StationGroup, useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
 import BinaryPagination from "./components/BinaryPagination";
 import AroundTime from "./components/AroundTime";
+import getDateString from "./utils/getDateString";
 
 
 const CustomLink = styled(Link)(({ theme }) => ({
@@ -103,7 +104,7 @@ const StationList = () => {
             <Typography variant="h6" sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
           </TableCell>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
-            <AroundTime date={info.date?.toString() ?? ""} disableMinute fontSize={14}/>
+            <AroundTime date={info.date} invalidMsg="" disableMinute fontSize={14}/>
           </TableCell>
           <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>
             <IconButton
@@ -119,9 +120,7 @@ const StationList = () => {
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={open} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
-                <Typography variant="h6" gutterBottom component="div">
-                  History
-                </Typography>
+                <Typography variant="h6" gutterBottom component="div">History</Typography>
                 <Table size="small" aria-label="purchases">
                   <TableHead>
                     <TableRow>
@@ -131,7 +130,7 @@ const StationList = () => {
                   <TableBody>
                     {info.date && (
                       <TableRow>
-                        <TableCell>{info.date?.toString() ?? ""}</TableCell>
+                        <TableCell>{getDateString(info.date)}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
