@@ -16,11 +16,11 @@ const stateNames = ["乗降", "通過"];
 
 const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
 
-const aroundDayName = (date: Date | string): string => {
-  let past = new Date(date.toString());
+const aroundDayName = (date: Date): string => {
+  let past = date;
   let now = new Date();
-  past = new Date(`${past.getFullYear()}-${past.getMonth()+1}-${past.getDate()}`);
-  now = new Date(`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`);
+  past = new Date(past.getFullYear(), past.getMonth(), past.getDate());
+  now = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   if(past.getTime() === now.getTime()){
     return "今日";
   }
@@ -80,8 +80,6 @@ const HistoryContent = (
       <></>
     );
   }
-  
-  const date = new Date(history.date);
 
   return (
     <Button
@@ -96,11 +94,10 @@ const HistoryContent = (
         <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
       </Box>
 
-      {/* <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>路線: </Typography> */}
       <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
       <Typography variant="h6" sx={{ display: "inline-block" }}>{info?.railwayName}</Typography>
 
-      <Typography variant="h6">{stateNames[history.state]}: {("0"+date.getHours()).slice(-2)}:{("0"+date.getMinutes()).slice(-2)}</Typography>
+      <Typography variant="h6">{stateNames[history.state]}: {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}</Typography>
     </Button>
   );
 };
@@ -161,8 +158,8 @@ const History = () => {
 
       <Box>
         {historyList.data?.map((item, index, list) => {
-          const date = new Date(item.date);
-          if(!index || new Date(list[index-1].date).getDay() !== new Date(item.date).getDay()){
+          const date = item.date;
+          if(!index || list[index-1].date.getDay() !== date.getDay()){
             return (
               <Box key={`${date.toString()}|${item.stationCode}`}>
                 <Typography variant="h6">
