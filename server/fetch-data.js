@@ -34,7 +34,7 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
 
 // 駅情報の取得(group)
 (async() => {
-  if(fs.existsSync("./data/stationGroup.json")) return;
+  if(fs.existsSync("./data/station.json")) return;
 
   const station_num = await get_contents_num("station");
 
@@ -47,18 +47,37 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
       kana: data.Station.Yomi,
       latitude: data.GeoPoint.lati_d,
       longitude: data.GeoPoint.longi_d,
+      type: data.Station.Type,
+    })).filter(data => data.type === "train");
+  };
+
+  let station_list = [];
+  for(let i = 0; i < station_num; i += max_limit){
+    const rows = await get_row_data(i);
+    station_list = station_list.concat(rows);
+    await sleep(100);
+  }
+
+  const get_detail_data = async(code) => {
+    const json = await fetch_data("station/info", { code: code, type: "operationLine" });
+    const company_list = [].concat(json.Information.Corporation);
+    if(!json.Information.Line) return [];
+    return [].concat(json.Information.Line).map(data => ({
+      railwayCode: data.code,
+      railwayName: data.Name,
+      company: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
+      companyCode: company_list[parseInt(data.corporationIndex, 10) - 1].code,
     }));
   };
 
-  let stationGroup_list = [];
-  for(let i = 0; i < station_num; i += max_limit){
-    const rows = await get_row_data(i);
-    stationGroup_list = stationGroup_list.concat(rows);
-    await sleep(200);
+  for(let i = 0; i < station_list.length; i++){
+    station_list[i]["railway"] = await get_detail_data(station_list[i].stationGroupCode);
+    await sleep(100);
   }
+  station_list = station_list.filter(data => data.railway.length);
 
-  fs.writeFileSync("./data/stationGroup.json", JSON.stringify(stationGroup_list, null, " "));
-  console.log("station group fetch OK");
+  fs.writeFileSync("./data/station.json", JSON.stringify(station_list, null, "  "));
+  console.log("station data fetch OK");
 })();
 
 
