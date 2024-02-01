@@ -45,8 +45,8 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
       stationName: data.Station.Name,
       prefCode: data.Prefecture.code,
       kana: data.Station.Yomi,
-      latitude: data.GeoPoint.lati_d,
-      longitude: data.GeoPoint.longi_d,
+      lat: data.GeoPoint.lati_d,
+      lng: data.GeoPoint.longi_d,
       type: data.Station.Type,
     })).filter(data => data.type === "train");
   };
@@ -65,7 +65,7 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
     return [].concat(json.Information.Line).map(data => ({
       railwayCode: data.code,
       railwayName: data.Name,
-      company: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
+      companyName: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
       companyCode: company_list[parseInt(data.corporationIndex, 10) - 1].code,
     }));
   };
@@ -87,9 +87,9 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
 
   const railway_num = await get_contents_num("operationLine");
 
-  const rgb10to16 = (col) => {
-    [0,1,2].map(idx => ("0" + parseInt(col.substr(idx*3,3), 10).toString(16)).slice(-2)).join("");
-  };
+  const rgb10to16 = (col) => (
+    [0,1,2].map(idx => ("0" + parseInt(col.substr(idx*3,3), 10).toString(16)).slice(-2)).join("")
+  );
 
   const get_row_data = async(offset) => {
     const json = await fetch_data("operationLine", { offset: offset+1 });
@@ -98,7 +98,7 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
       raiwayCode: data.code,
       railwayName: data.Name,
       kana: data.Yomi,
-      company: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
+      companyName: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
       companyCode: company_list[parseInt(data.corporationIndex, 10) - 1].code,
       railwayColor: rgb10to16(data.Color),
     }));
