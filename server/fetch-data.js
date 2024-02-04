@@ -95,7 +95,7 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
     const json = await fetch_data("operationLine", { offset: offset+1 });
     const company_list = [].concat(json.Corporation);
     return [].concat(json.Line).map(data => ({
-      raiwayCode: data.code,
+      railwayCode: data.code,
       railwayName: data.Name,
       kana: data.Yomi,
       companyName: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
