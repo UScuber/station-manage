@@ -292,7 +292,7 @@ int main(){
       double min_dist = 1e9;
       for(const auto st : name_map[station.info->name]){
         if(st->rail->name.find("新幹線") != std::string::npos) continue;
-        const double d = station.pos.dist_km(st->pos) + str_dist(station.rail->name, st->rail->name);
+        const double d = station.pos.dist_km(st->pos) + str_dist(station.rail->name, st->rail->name) * 0.1;
         if(min_dist > d){
           min_dist = d;
           min_st = st;
@@ -305,7 +305,7 @@ int main(){
     double min_dist = 1e9;
     for(const auto &sta : sub_data.stations){
       if(sta.rail->name.find("新幹線") != std::string::npos) continue;
-      const double d = station.pos.dist_km(sta.pos) - almost_same(station.info->name, sta.info->name) * 2.0 - almost_same(station.rail->name, sta.rail->name) * 2.0;
+      const double d = station.pos.dist_km(sta.pos) - almost_same(station.info->name, sta.info->name) - almost_same(station.rail->name, sta.rail->name);
       if(min_dist > d){
         min_dist = d;
         min_st = &sta;
@@ -429,6 +429,7 @@ int main(){
     for(const auto &x : main_sub_station_pairs){
       same_station_pairs[x.first] = x.second;
     }
+    // 全部一致していれば対応付ける
     for(auto &railway : unknown_railways){
       std::set<const Railway*> cnt;
       for(const auto &station : main_data.stations){
