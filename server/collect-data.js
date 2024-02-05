@@ -1,6 +1,7 @@
 const fs = require("fs");
 const { parse } = require("csv-parse/sync");
 const execShPromise = require("exec-sh").promise;
+const { SearchAttribute } = require("./searchAttr");
 require("dotenv").config();
 
 
@@ -31,7 +32,9 @@ parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((val, idx) => idx)
     railway_data[row[0]] = {
       companyCode: row[1],
       railwayName: normalize_name(row[2]),
+      prevRailwayName: row[2],
       railwayFormalName: normalize_name(row[4]),
+      prevRailwayFormalName: row[4],
     };
   });
 
@@ -40,6 +43,7 @@ parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((val, idx) => idx)
   .forEach(row => {
     company_data[row[0]] = {
       companyName: normalize_name(row[2]),
+      prevCompanyName: row[2],
     };
   });
 
@@ -59,11 +63,15 @@ const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter
     stationCode: row[0],
     stationGroupCode: arrange_stationGroupCode(row[1], row[2]),
     stationName: normalize_name(row[2]),
+    prevStationName: row[2],
     railwayCode: row[5],
     railwayName: railway_data[row[5]].railwayName,
+    prevRailwayName: railway_data[row[5]].prevRailwayName,
     railwayFormalName: railway_data[row[5]].railwayFormalName,
+    prevRailwayFormalName: railway_data[row[5]].prevRailwayFormalName,
     companyCode: railway_data[row[5]].companyCode,
     companyName: company_data[railway_data[row[5]].companyCode].companyName,
+    prevCompanyName: company_data[railway_data[row[5]].companyCode].prevCompanyName,
     prefCode: row[6],
     lng: row[9],
     lat: row[10],
@@ -295,36 +303,45 @@ const find_station_data = (code) => {
   }
   return undefined;
 }
-const stations_db = filtered_station_data.map(data => {
+
+const sattr = new SearchAttribute();
+
+let name_unlinked_stations = [];
+const stations_db = Array.from(await Promise.all(filtered_station_data.map(async(data) => {
   const sub_stationCode = find_station_pair(data.stationCode);
+  let kana = "";
   if(!sub_stationCode){
-    return undefined;
+    const kana_cand = await sattr.search_station_name(data.stationName, true);
+    if(kana_cand === null){
+      name_unlinked_stations.push(data);
+      return undefined;
+    }
+    kana = kana_cand;
   }
-  const info = find_station_data(parseInt(sub_stationCode.toString().substr(0, 5), 10));
+  if(!kana){
+    const info = find_station_data(parseInt(sub_stationCode.toString().substr(0, 5), 10));
+    kana = info.kana;
+  }
   return {
     stationCode: data.stationCode,
     stationGroupCode: data.stationGroupCode,
-    stationName: data.stationName,
+    stationName: data.prevStationName,
     railwayCode: data.railwayCode,
-    railwayName: data.railwayName,
-    railwayFormalName: data.railwayFormalName,
+    railwayName: data.prevRailwayName,
+    railwayFormalName: data.prevRailwayFormalName,
     companyCode: data.companyCode,
-    companyName: data.companyName,
+    companyName: data.prevCompanyName,
     prefCode: data.prefCode,
     lat: data.lat,
     lng: data.lng,
-    kana: info.kana,
+    kana: kana,
   };
-}).filter(data => data);
+}))).filter(data => data);
 
 
 let railway_data = {};
 filtered_station_data.forEach(data => {
-  railway_data[data.railwayCode] = {
-    railwayName: data.railwayName,
-    railwayFormalName: data.railwayFormalName,
-    companyCode: data.companyCode,
-  };
+  railway_data[data.railwayCode] = data;
 });
 const railways_db = Object.keys(railway_data).map(railwayCode => {
   const sub_railwayCode = find_railway_pair(railwayCode);
@@ -334,10 +351,10 @@ const railways_db = Object.keys(railway_data).map(railwayCode => {
   const detail = find_railway_data(sub_railwayCode);
   return {
     railwayCode: railwayCode,
-    railwayName: railway_data[railwayCode].railwayName,
-    railwayFormalName: railway_data[railwayCode].railwayFormalName,
+    railwayName: railway_data[railwayCode].prevRailwayName,
+    railwayFormalName: railway_data[railwayCode].prevRailwayFormalName,
     companyCode: railway_data[railwayCode].companyCode,
-    companyName: company_data[railway_data[railwayCode].companyCode].companyName,
+    companyName: railway_data[railwayCode].prevCompanyName,
     railwayColor: detail.railwayColor,
   };
 }).filter(data => data);
@@ -346,17 +363,16 @@ fs.writeFileSync("station-railway-data.json", JSON.stringify({ stations: station
 
 // unknown data
 // 読み仮名がわからなかったもの
-const unknown_station_data = filtered_station_data
-  .filter(data => !find_station_pair(data.stationCode))
+const unknown_station_data = name_unlinked_stations
   .map(data => ({
     stationCode: data.stationCode,
     stationGroupCode: data.stationGroupCode,
-    stationName: data.stationName,
+    stationName: data.prevStationName,
     railwayCode: data.railwayCode,
-    railwayName: data.railwayName,
-    railwayFormalName: data.railwayFormalName,
+    railwayName: data.prevRailwayName,
+    railwayFormalName: data.prevRailwayFormalName,
     companyCode: data.companyCode,
-    companyName: data.companyName,
+    companyName: data.prevCompanyName,
     prefCode: data.prefCode,
     lat: data.lat,
     lng: data.lng,
@@ -368,12 +384,18 @@ const unknown_railway_data = Object.keys(railway_data)
   .filter(railwayCode => !find_railway_pair(railwayCode))
   .map(railwayCode => ({
     railwayCode: railwayCode,
-    railwayName: railway_data[railwayCode].railwayName,
+    railwayName: railway_data[railwayCode].prevRailwayName,
     companyCode: railway_data[railwayCode].companyCode,
-    companyName: company_data[railway_data[railwayCode].companyCode].companyName,
+    companyName: railway_data[railwayCode].prevCompanyName,
     railwayColor: null,
   }));
 
-fs.writeFileSync("unknown-data.json", JSON.stringify({ stations: unknown_station_data, railways: unknown_railway_data }, null, "  "));
+const unknown_data_file_path = "unknown-data.json";
+if(fs.existsSync(unknown_data_file_path)){
+  console.log(`${unknown_data_file_path} already exists`);
+}else{
+  fs.writeFileSync(unknown_data_file_path, JSON.stringify({ stations: unknown_station_data, railways: unknown_railway_data }, null, "  "));
+  console.log(`Please fill out null values (file: ${unknown_data_file_path})`);
+}
 
 })();
