@@ -56,7 +56,7 @@ const arrange_stationGroupCode = (stationGroupCode, stationName) => {
   if(!(stationName in stationGroupCode_data[stationGroupCode])){
     stationGroupCode_data[stationGroupCode][stationName] = Object.keys(stationGroupCode_data[stationGroupCode]).length;
   }
-  return stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName]++;
+  return stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName];
 };
 
 const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter((val, idx) => idx)
@@ -81,7 +81,9 @@ const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter
   }));
 
 let join_data = {};
-station_data.forEach(data => join_data[data.stationCode] = { left: [], right: [] });
+station_data
+  .filter(data => data.status != 2)
+  .forEach(data => join_data[data.stationCode] = { left: [], right: [] });
 parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((val, idx) => idx)
   .forEach(row => {
     const left = row[1], right = row[2];
@@ -89,6 +91,15 @@ parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((val, idx) => idx)
     join_data[left].right.push(right);
     join_data[right].left.push(left);
   });
+
+const filtered_station_data = station_data
+  .filter(data => data.status != 2)
+  .filter(data => join_data[data.stationCode].left.length + join_data[data.stationCode].right.length);
+
+Object.keys(join_data).forEach(stationCode => {
+  join_data[stationCode].left = Array.from(new Set(join_data[stationCode].left));
+  join_data[stationCode].right = Array.from(new Set(join_data[stationCode].right));
+});
 
 
 const main_station_data = JSON.parse(fs.readFileSync("./data/station.json"))
@@ -199,10 +210,6 @@ buffer += main_station_data.map(data => (
 
 buffer += "0\n";
 
-
-const filtered_station_data = station_data
-  .filter(data => data.status != 2)
-  .filter(data => join_data[data.stationCode].left.length + join_data[data.stationCode].right.length);
 buffer += filtered_station_data.length + "\n";
 buffer += filtered_station_data.map(data => (
   `${data.stationCode} ${data.stationGroupCode} ${encode_str(data.stationName)} `
@@ -363,7 +370,21 @@ const railways_db = Object.keys(railway_data).map(railwayCode => {
   };
 }).filter(data => data);
 
-fs.writeFileSync("station-railway-data.json", JSON.stringify({ stations: stations_db, railways: railways_db }, null, "  "));
+// next stations
+const next_station_db = filtered_station_data.map(data => ({
+  stationCode: data.stationCode,
+  left: join_data[data.stationCode].left,
+  right: join_data[data.stationCode].right,
+}));
+
+fs.writeFileSync("station-railway-data.json", JSON.stringify(
+  {
+    stations: stations_db,
+    railways: railways_db,
+    nextStations: next_station_db,
+  },
+  null, "  "
+));
 
 // unknown data
 // 読み仮名がわからなかったもの
