@@ -34,7 +34,7 @@ const unknown_data = JSON.parse(fs.readFileSync(unknown_data_file_path));
 
 const company_data = parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((val, idx) => idx)
   .map(row => ({
-    companyCode: row[0],
+    companyCode: parseInt(row[0]),
     companyName: change_width(row[2]),
     kana: kanaToHira(row[3]),
     formalName: change_width(row[4]),
@@ -68,8 +68,8 @@ station_railway_data.stations.concat(unknown_data.stations).forEach(data => {
 const stationGroup_data = Object.keys(stationGroup_cnt).map(stationGroupCode => {
   const list = stationGroup_cnt[stationGroupCode];
   const first_data = list[0];
-  const lat = list.reduce((tot, data) => tot + parseFloat(data.lat), 0) / list.length;
-  const lng = list.reduce((tot, data) => tot + parseFloat(data.lng), 0) / list.length;
+  const lat = list.reduce((tot, data) => tot + data.lat, 0) / list.length;
+  const lng = list.reduce((tot, data) => tot + data.lng, 0) / list.length;
   return {
     stationGroupCode: stationGroupCode,
     stationName: change_width(first_data.stationName),
@@ -229,7 +229,7 @@ db.transaction(() => {
   // Companies
   company_data.forEach(data => {
     db.prepare("INSERT INTO Companies VALUES(?,?,?)").run(
-      parseInt(data.companyCode, 10),
+      data.companyCode,
       data.companyName,
       data.formalName
     );
@@ -238,10 +238,10 @@ db.transaction(() => {
   // Railways
   railway_data.forEach(data => {
     db.prepare("INSERT INTO Railways VALUES(?,?,?,?,?,?)").run(
-      parseInt(data.railwayCode, 10),
+      data.railwayCode,
       data.railwayName,
       data.formalName,
-      parseInt(data.companyCode, 10),
+      data.companyCode,
       data.railwayKana,
       data.railwayColor
     );
@@ -275,15 +275,15 @@ db.transaction(() => {
     const stmt = db.prepare("INSERT INTO NextStations VALUES(?,?,?)");
     data.left.forEach(code => {
       stmt.run(
-        parseInt(data.stationCode, 10),
-        parseInt(code, 10),
+        data.stationCode,
+        code,
         0
       );
     });
     data.right.forEach(code => {
       stmt.run(
-        parseInt(data.stationCode, 10),
-        parseInt(code, 10),
+        data.stationCode,
+        code,
         1
       );
     });

@@ -27,10 +27,10 @@ const normalize_name = (s) => (
 const encode_str = (s) => btoa(String.fromCharCode.apply(null, new TextEncoder().encode(s)));
 
 let railway_data = {};
-parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((val, idx) => idx)
+parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((_, idx) => idx)
   .forEach(row => {
-    railway_data[row[0]] = {
-      companyCode: row[1],
+    railway_data[parseInt(row[0])] = {
+      companyCode: parseInt(row[1]),
       railwayName: normalize_name(row[2]),
       prevRailwayName: row[2],
       railwayKana: row[3],
@@ -40,9 +40,9 @@ parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((val, idx) => idx)
   });
 
 let company_data = {};
-parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((val, idx) => idx)
+parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((_, idx) => idx)
   .forEach(row => {
-    company_data[row[0]] = {
+    company_data[parseInt(row[0])] = {
       companyName: normalize_name(row[2]),
       prevCompanyName: row[2],
     };
@@ -56,16 +56,16 @@ const arrange_stationGroupCode = (stationGroupCode, stationName) => {
   if(!(stationName in stationGroupCode_data[stationGroupCode])){
     stationGroupCode_data[stationGroupCode][stationName] = Object.keys(stationGroupCode_data[stationGroupCode]).length;
   }
-  return stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName];
+  return parseInt(stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName], 10);
 };
 
-const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter((val, idx) => idx)
+const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter((_, idx) => idx)
   .map(row => ({
-    stationCode: row[0],
+    stationCode: parseInt(row[0]),
     stationGroupCode: arrange_stationGroupCode(row[1], row[2]),
     stationName: normalize_name(row[2]),
     prevStationName: row[2],
-    railwayCode: row[5],
+    railwayCode: parseInt(row[5]),
     railwayName: railway_data[row[5]].railwayName,
     prevRailwayName: railway_data[row[5]].prevRailwayName,
     railwayFormalName: railway_data[row[5]].railwayFormalName,
@@ -74,26 +74,26 @@ const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter
     companyCode: railway_data[row[5]].companyCode,
     companyName: company_data[railway_data[row[5]].companyCode].companyName,
     prevCompanyName: company_data[railway_data[row[5]].companyCode].prevCompanyName,
-    prefCode: row[6],
-    lng: row[9],
-    lat: row[10],
-    status: row[13],
+    prefCode: parseInt(row[6]),
+    lng: parseFloat(row[9]),
+    lat: parseFloat(row[10]),
+    status: parseInt(row[13]),
   }));
 
 let join_data = {};
 station_data
-  .filter(data => data.status != 2)
+  .filter(data => data.status !== 2)
   .forEach(data => join_data[data.stationCode] = { left: [], right: [] });
-parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((val, idx) => idx)
+parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((_, idx) => idx)
   .forEach(row => {
-    const left = row[1], right = row[2];
+    const left = parseInt(row[1]), right = parseInt(row[2]);
     if(!(left in join_data) || !(right in join_data)) return;
     join_data[left].right.push(right);
     join_data[right].left.push(left);
   });
 
 const filtered_station_data = station_data
-  .filter(data => data.status != 2)
+  .filter(data => data.status !== 2)
   .filter(data => join_data[data.stationCode].left.length + join_data[data.stationCode].right.length);
 
 Object.keys(join_data).forEach(stationCode => {
