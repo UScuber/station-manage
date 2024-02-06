@@ -89,12 +89,24 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT Stations.*, StationGroups.stationName, StationGroups.kana, Prefectures.name AS prefName FROM Stations
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana,
+        Prefectures.name AS prefName,
+        Railways.railwayName,
+        Railways.railwayColor,
+        Companies.companyName AS railwayCompany
+      FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationCode = ?
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
     `).get(code);
 
     data = insert_next_stations(data, code);
@@ -116,7 +128,12 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate, Prefectures.name AS prefName FROM Stations
+      SELECT
+        StationGroups.*,
+        MAX(getDate) AS maxGetDate,
+        MAX(passDate) AS maxPassDate,
+        Prefectures.name AS prefName
+      FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
@@ -141,10 +158,21 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
   let data;
   try{
     data = db.prepare(`
-      SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana,
+        StationGroups.date,
+        Railways.railwayName,
+        Companies.companyName AS railwayCompany
+      FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
     `).all(code);
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
@@ -210,12 +238,15 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT StationGroups.*, Prefectures.name AS prefName, (
-        6371 * ACOS(
-          COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-          + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
-        )
-      ) AS distance
+      SELECT
+        StationGroups.*,
+        Prefectures.name AS prefName,
+        (
+          6371 * ACOS(
+            COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+            + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+          )
+        ) AS distance
       FROM StationGroups
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
