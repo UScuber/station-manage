@@ -198,25 +198,42 @@ app.get("/api/searchStationName", accessLog, (req, res, next) => {
   try{
     data = db.prepare(`
       WITH StationData AS (
-        SELECT Stations.*, StationGroups.stationName, StationGroups.date, StationGroups.kana, Prefectures.name AS prefName FROM Stations
-        INNER JOIN StationGroups
-          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        SELECT
+          StationGroups.*,
+          Prefectures.name AS prefName
+        FROM StationGroups
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
       )
-        SELECT 0 AS ord, StationData.* FROM StationData
-          WHERE stationName = ?
-      UNION ALL
-        SELECT 1 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 2 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 3 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      ORDER BY ord
+      SELECT * FROM (
+          SELECT 0 AS ord, StationData.* FROM StationData
+            WHERE stationName = ?
+        UNION ALL
+          SELECT 1 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 2 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 3 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 4 AS ord, StationData.* FROM StationData
+            WHERE kana = ?
+        UNION ALL
+          SELECT 5 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 6 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 7 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+      ) AS Results
+      GROUP BY Results.stationGroupCode
+      ORDER BY Results.ord
     `).all(
+      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
       name,`${name}_%`,`_%${name}`,`_%${name}_%`
     );
   }catch(err){
@@ -301,24 +318,43 @@ app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   try{
     data = db.prepare(`
       WITH StationData AS (
-        SELECT StationGroups.*, Prefectures.name AS prefName FROM StationGroups
+        SELECT
+          StationGroups.*,
+          Prefectures.name AS prefName
+        FROM StationGroups
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
       )
-        SELECT 0 AS ord, StationData.* FROM StationData
-          WHERE stationName = ?
-      UNION ALL
-        SELECT 1 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 2 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 3 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      ORDER BY ord
+      SELECT * FROM (
+          SELECT 0 AS ord, StationData.* FROM StationData
+            WHERE stationName = ?
+        UNION ALL
+          SELECT 1 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 2 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 3 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 4 AS ord, StationData.* FROM StationData
+            WHERE kana = ?
+        UNION ALL
+          SELECT 5 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 6 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 7 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+      ) AS Results
+      GROUP BY Results.stationGroupCode
+      ORDER BY Results.ord
       LIMIT ? OFFSET ?
     `).all(
+      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
       name,`${name}_%`,`_%${name}`,`_%${name}_%`,
       len, off
     );
@@ -340,7 +376,12 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
         OR stationName LIKE ?
         OR stationName LIKE ?
         OR stationName LIKE ?
+        OR kana = ?
+        OR kana LIKE ?
+        OR kana LIKE ?
+        OR kana LIKE ?
     `).get(
+      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
       name,`${name}_%`,`_%${name}`,`_%${name}_%`
     );
   }catch(err){
