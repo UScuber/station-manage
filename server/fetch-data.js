@@ -41,12 +41,12 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
   const get_row_data = async(offset) => {
     const json = await fetch_data("station", { offset: offset+1, gcs: "wgs84" });
     return [].concat(json.Point).map(data => ({
-      stationGroupCode: data.Station.code,
+      stationGroupCode: parseInt(data.Station.code),
       stationName: data.Station.Name,
-      prefCode: data.Prefecture.code,
+      prefCode: parseInt(data.Prefecture.code),
       kana: data.Station.Yomi,
-      lat: data.GeoPoint.lati_d,
-      lng: data.GeoPoint.longi_d,
+      lat: parseFloat(data.GeoPoint.lati_d),
+      lng: parseFloat(data.GeoPoint.longi_d),
       type: data.Station.Type,
     })).filter(data => data.type === "train");
   };
@@ -63,10 +63,10 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
     const company_list = [].concat(json.Information.Corporation);
     if(!json.Information.Line) return [];
     return [].concat(json.Information.Line).map(data => ({
-      railwayCode: data.code,
+      railwayCode: parseInt(data.code),
       railwayName: data.Name,
-      companyName: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
-      companyCode: company_list[parseInt(data.corporationIndex, 10) - 1].code,
+      companyName: company_list[parseInt(data.corporationIndex) - 1].Name,
+      companyCode: parseInt(company_list[parseInt(data.corporationIndex) - 1].code),
     }));
   };
 
@@ -95,11 +95,11 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
     const json = await fetch_data("operationLine", { offset: offset+1 });
     const company_list = [].concat(json.Corporation);
     return [].concat(json.Line).map(data => ({
-      railwayCode: data.code,
+      railwayCode: parseInt(data.code),
       railwayName: data.Name,
       kana: data.Yomi,
-      companyName: company_list[parseInt(data.corporationIndex, 10) - 1].Name,
-      companyCode: company_list[parseInt(data.corporationIndex, 10) - 1].code,
+      companyName: company_list[parseInt(data.corporationIndex) - 1].Name,
+      companyCode: parseInt(company_list[parseInt(data.corporationIndex) - 1].code),
       railwayColor: rgb10to16(data.Color),
     }));
   };
@@ -125,7 +125,7 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
   const get_row_data = async(offset) => {
     const json = await fetch_data("corporation", { offset: offset+1 });
     return [].concat(json.Corporation).map(data => ({
-      companyCode: data.code,
+      companyCode: parseInt(data.code),
       company: data.Name,
     }));
   };

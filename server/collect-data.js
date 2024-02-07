@@ -56,7 +56,7 @@ const arrange_stationGroupCode = (stationGroupCode, stationName) => {
   if(!(stationName in stationGroupCode_data[stationGroupCode])){
     stationGroupCode_data[stationGroupCode][stationName] = Object.keys(stationGroupCode_data[stationGroupCode]).length;
   }
-  return parseInt(stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName], 10);
+  return parseInt(stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName]);
 };
 
 const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter((_, idx) => idx)
@@ -328,7 +328,7 @@ const stations_db = Array.from(await Promise.all(filtered_station_data.map(async
     kana = kana_cand;
   }
   if(!kana){
-    const info = find_station_data(parseInt(sub_stationCode.toString().substr(0, 5), 10));
+    const info = find_station_data(parseInt(sub_stationCode.toString().substr(0, 5)));
     kana = info.kana;
   }
   return {
@@ -360,7 +360,7 @@ const railways_db = Object.keys(railway_data).map(railwayCode => {
   }
   const detail = find_railway_data(sub_railwayCode);
   return {
-    railwayCode: railwayCode,
+    railwayCode: parseInt(railwayCode),
     railwayName: railway_data[railwayCode].prevRailwayName,
     railwayFormalName: railway_data[railwayCode].prevRailwayFormalName,
     railwayKana: railway_data[railwayCode].railwayKana,
