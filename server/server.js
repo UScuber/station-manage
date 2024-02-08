@@ -188,6 +188,96 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
   }
 });
 
+app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
+  const code = req.params.railwayCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM Railways
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+          AND Railways.railwayCode = ?
+    `).get(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
+app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
+  const code = req.params.railwayCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana
+      FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND Stations.railwayCode = ?
+    `).all(code);
+
+    data = data.map(station => insert_next_stations(station, station.stationCode));
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data.length){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
+app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
+  const code = req.params.companyCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM Companies
+      WHERE companyCode = ?
+    `).get(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
+app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
+  const code = req.params.companyCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM Railways
+      WHERE companyCode = ?
+    `).all(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
 app.get("/api/searchStationName", accessLog, (req, res, next) => {
   const name = req.query.name;
   if(name === undefined){
