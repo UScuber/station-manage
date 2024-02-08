@@ -84,6 +84,7 @@ const insert_next_stations = (elem, code) => {
 };
 
 
+// 駅情報取得
 app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   const code = req.params.stationCode;
   let data;
@@ -122,7 +123,7 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   }
 });
 
-
+// 駅グループの情報取得
 app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   let data;
@@ -153,6 +154,7 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   }
 });
 
+// 駅グループに属する駅の駅情報を取得
 app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   let data;
@@ -188,6 +190,7 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
   }
 });
 
+// 路線情報取得
 app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
   const code = req.params.railwayCode;
   let data;
@@ -210,6 +213,7 @@ app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
   }
 });
 
+// 路線に属する駅の駅情報を取得
 app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
   const code = req.params.railwayCode;
   let data;
@@ -238,6 +242,7 @@ app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
   }
 });
 
+// 会社情報取得
 app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
   const code = req.params.companyCode;
   let data;
@@ -258,6 +263,7 @@ app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
   }
 });
 
+// 会社に属する路線の路線情報を取得
 app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
   const code = req.params.companyCode;
   let data;
@@ -278,62 +284,7 @@ app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
   }
 });
 
-app.get("/api/searchStationName", accessLog, (req, res, next) => {
-  const name = req.query.name;
-  if(name === undefined){
-    next(new Error("Invalid Input"));
-    return;
-  }
-  let data;
-  try{
-    data = db.prepare(`
-      WITH StationData AS (
-        SELECT
-          StationGroups.*,
-          Prefectures.name AS prefName
-        FROM StationGroups
-        INNER JOIN Prefectures
-          ON StationGroups.prefCode = Prefectures.code
-      )
-      SELECT * FROM (
-          SELECT 0 AS ord, StationData.* FROM StationData
-            WHERE stationName = ?
-        UNION ALL
-          SELECT 1 AS ord, StationData.* FROM StationData
-            WHERE stationName LIKE ?
-        UNION ALL
-          SELECT 2 AS ord, StationData.* FROM StationData
-            WHERE stationName LIKE ?
-        UNION ALL
-          SELECT 3 AS ord, StationData.* FROM StationData
-            WHERE stationName LIKE ?
-        UNION ALL
-          SELECT 4 AS ord, StationData.* FROM StationData
-            WHERE kana = ?
-        UNION ALL
-          SELECT 5 AS ord, StationData.* FROM StationData
-            WHERE kana LIKE ?
-        UNION ALL
-          SELECT 6 AS ord, StationData.* FROM StationData
-            WHERE kana LIKE ?
-        UNION ALL
-          SELECT 7 AS ord, StationData.* FROM StationData
-            WHERE kana LIKE ?
-      ) AS Results
-      GROUP BY Results.stationGroupCode
-      ORDER BY Results.ord
-    `).all(
-      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
-      name,`${name}_%`,`_%${name}`,`_%${name}_%`
-    );
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
-  res.json(data);
-});
-
+// 座標から近い駅/駅グループを複数取得
 app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   const lat = req.query.lat;
   const lng = req.query.lng;
@@ -370,32 +321,7 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   res.json(data);
 });
 
-app.get("/api/stationGroupList", accessLog, (req, res, next) => {
-  const off = req.query.off;
-  const len = req.query.len;
-  if(off === undefined || len === undefined){
-    next(new Error("Invalid input"));
-    return;
-  }
-  let data;
-  try{
-    data = db.prepare(`
-      SELECT StationGroups.*, Prefectures.name AS prefName FROM StationGroups
-      INNER JOIN Prefectures
-        ON StationGroups.prefCode = Prefectures.code
-      ORDER BY StationGroups.stationGroupCode
-      LIMIT ? OFFSET ?
-    `).all(
-      len, off
-    );
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
-  res.json(data);
-});
-
+// 駅グループを名前で検索、区間指定
 app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
@@ -456,6 +382,7 @@ app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   res.json(data);
 });
 
+// 駅グループを名前で検索した際の件数
 app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
   const name = req.query.name ?? "";
   let data;
@@ -482,20 +409,7 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
   res.json(data.count);
 });
 
-app.get("/api/stationGroupCount", accessLog, (req, res, next) => {
-  let data;
-  try{
-    data = db.prepare(
-      "SELECT COUNT(*) AS count FROM StationGroups",
-    ).get();
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
-  res.json(data.count);
-});
-
+// 乗降/通過の履歴を区間取得
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
@@ -516,6 +430,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
   res.json(data);
 });
 
+// 乗降/通過の履歴の個数を取得
 app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   let data;
   try{
@@ -530,6 +445,7 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   res.json(data.count);
 });
 
+// 乗降/通過の情報を追加
 app.get("/api/postStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -559,6 +475,7 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
   res.end("OK");
 });
 
+// 立ち寄りの情報を追加
 app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -581,6 +498,7 @@ app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
   res.end("OK");
 });
 
+// 乗降/通過の履歴を削除
 app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -615,6 +533,7 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
   res.end("OK");
 });
 
+// 立ち寄りの履歴を削除
 app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
