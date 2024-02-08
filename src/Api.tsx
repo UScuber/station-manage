@@ -89,7 +89,7 @@ export const useStationsInfoByGroupCode = (code: number | undefined): UseQueryRe
 
 
 export type StationGroup = {
-  stationGroupCode: number, 
+  stationGroupCode: number,
   stationName: string,
   latitude: number,
   longitude: number,
@@ -109,6 +109,78 @@ export const useStationGroupInfo = (
     queryFn: async() => {
       const { data } = await axios.get<StationGroup>("/api/stationGroup/" + code, ngrok_header);
       onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+export type Railway = {
+  railwayCode: number,
+  railwayName: string,
+  companyCode: number,
+  companyName: string,
+  railwayKana: string,
+  formalName: string,
+  railwayColor: string,
+};
+
+// 路線情報取得
+export const useRailwayInfo = (code: number | undefined): UseQueryResult<Railway> => {
+  return useQuery<Railway>({
+    queryKey: ["Railway", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Railway>("/api/railway/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+// 路線に属する駅の駅情報を取得
+export const useStationsInfoByRailwayCode = (
+  code: number | undefined,
+  onSuccessFn?: (data: Station[]) => unknown
+): UseQueryResult<Station[]> => {
+  return useQuery<Station[]>({
+    queryKey: ["RailwayStations", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Station[]>("/api/railwayStations/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+export type Company = {
+  companyCode: number,
+  companyName: string,
+  formalName: string,
+};
+
+// 会社情報取得
+export const useCompanyInfo = (code: number | undefined): UseQueryResult<Company> => {
+  return useQuery<Company>({
+    queryKey: ["Company", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Company>("/api/company/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+// 会社に属する路線の路線情報を取得
+export const useRailwaysInfoByCompanyCode = (code: number | undefined): UseQueryResult<Railway[]> => {
+  return useQuery<Railway[]>({
+    queryKey: ["CompanyRailways", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Railway[]>("/api/companyRailways/" + code, ngrok_header);
       return data;
     },
     enabled: code !== undefined,
