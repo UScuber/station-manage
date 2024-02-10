@@ -99,10 +99,32 @@ struct Station {
 };
 
 struct StationDatabase {
-  std::vector<Company> companies;
-  std::vector<Railway> railways;
-  std::vector<StationGroup> stationGroups;
   std::vector<Station> stations;
+  std::vector<StationGroup> stationGroups;
+  std::vector<Railway> railways;
+  std::vector<Company> companies;
+
+  void build(){
+    for(auto &station : stations){
+      stations_data[station.code] = &station;
+    }
+    for(const auto &station : stations){
+      railway_stations[station.rail->code].emplace_back(&station);
+    }
+  }
+
+  Station *get_station(const int stationCode){
+    assert(stations_data.count(stationCode));
+    return stations_data[stationCode];
+  }
+  std::vector<const Station*> &get_railway_stations(const int railwayCode){
+    assert(railway_stations.count(railwayCode));
+    return railway_stations[railwayCode];
+  }
+
+private:
+  std::map<int, Station*> stations_data;
+  std::map<int, std::vector<const Station*>> railway_stations;
 };
 
 StationDatabase main_data;
@@ -277,7 +299,12 @@ bool almost_same(const std::string &s, const std::string &t){
 int main(){
   std::cin.tie(nullptr);
   std::ios::sync_with_stdio(false);
+
   input();
+
+  main_data.build();
+  sub_data.build();
+  route_data.build();
 
   std::vector<std::pair<int, int>> main_sub_station_pairs;
   std::vector<const Station*> unknown_stations;
@@ -318,17 +345,6 @@ int main(){
     }
   }
 
-
-  std::map<int, std::vector<const Station*>> main_railway, sub_railway, route_railway;
-  for(const auto &station : main_data.stations){
-    main_railway[station.rail->code].emplace_back(&station);
-  }
-  for(const auto &station : sub_data.stations){
-    sub_railway[station.rail->code].emplace_back(&station);
-  }
-  for(const auto &station : route_data.stations){
-    route_railway[station.rail->code].emplace_back(&station);
-  }
 
   auto calc_avg_dist = [](
     std::vector<const Station*> &stas1,
@@ -372,25 +388,28 @@ int main(){
   std::vector<std::pair<int, int>> main_sub_railway_pairs, main_route_railway_pairs;
   std::vector<const Railway*> unknown_railways;
 
-  for(auto &main_rail_data : main_railway){
-    if(main_rail_data.second.size() <= 2){
+  for(const auto &main_railway : main_data.railways){
+     auto &main_railway_stations = main_data.get_railway_stations(main_railway.code);
+    if(main_railway_stations.size() <= 2){
       continue;
     }
-    const auto main_first = main_rail_data.second[0];
+    const auto main_first = main_railway_stations[0];
     bool ok = false;
-    for(auto &sub_rail_data : sub_railway){
-      const auto sub_first = sub_rail_data.second[0];
+
+    for(const auto &sub_railway : sub_data.railways){
+      auto &sub_railway_stations = sub_data.get_railway_stations(sub_railway.code);
+      const auto sub_first = sub_railway_stations[0];
       // 名前の一致判定
       if(main_first->rail->name == sub_first->rail->name && main_first->rail->company->name == sub_first->rail->company->name){
-        main_sub_railway_pairs.emplace_back(main_rail_data.first, sub_rail_data.first);
+        main_sub_railway_pairs.emplace_back(main_railway.code, sub_railway.code);
         ok = true;
         break;
       }
       // 1路線だけの駅での一致判定
       bool found = false;
-      for(const auto station : main_rail_data.second){
+      for(const auto station : main_railway_stations){
         if(station->info->stationCnt != 1) continue;
-        for(const auto sta : sub_rail_data.second){
+        for(const auto sta : sub_railway_stations){
           if(sta->info->stationCnt != 1) continue;
           if(station->info->name == sta->info->name){
             found = true;
@@ -401,21 +420,21 @@ int main(){
       }
       if(found){
         ok = true;
-        main_sub_railway_pairs.emplace_back(main_rail_data.first, sub_rail_data.first);
+        main_sub_railway_pairs.emplace_back(main_railway.code, sub_railway.code);
         break;
       }
       // 路線の全駅での一致判定
-      if(main_rail_data.second.size() != sub_rail_data.second.size()) continue;
+      if(main_railway_stations.size() != sub_railway_stations.size()) continue;
       double min_avg_dist = 1e9;
-      chmin(min_avg_dist, calc_avg_dist(main_rail_data.second, sub_rail_data.second, [](const auto a, const auto b){ return a->pos < b->pos; }));
-      chmin(min_avg_dist, calc_avg_dist(main_rail_data.second, sub_rail_data.second, [](const auto a, const auto b){ return a->pos.lat < b->pos.lat; }));
-      chmin(min_avg_dist, calc_avg_dist(main_rail_data.second, sub_rail_data.second, [](const auto a, const auto b){ return a->pos.lng < b->pos.lng; }));
-      chmin(min_avg_dist, calc_avg_dist(main_rail_data.second, sub_rail_data.second, [](const auto a, const auto b){ return a->pos.lat+a->pos.lng < b->pos.lat+b->pos.lng; }));
-      chmin(min_avg_dist, calc_avg_dist(main_rail_data.second, sub_rail_data.second, [](const auto a, const auto b){ return a->info->name < b->info->name; }));
-      chmin(min_avg_dist, calc_nearest_dist(main_rail_data.second, sub_rail_data.second));
-      chmin(min_avg_dist, calc_nearest_dist(sub_rail_data.second, main_rail_data.second));
+      chmin(min_avg_dist, calc_avg_dist(main_railway_stations, sub_railway_stations, [](const auto a, const auto b){ return a->pos < b->pos; }));
+      chmin(min_avg_dist, calc_avg_dist(main_railway_stations, sub_railway_stations, [](const auto a, const auto b){ return a->pos.lat < b->pos.lat; }));
+      chmin(min_avg_dist, calc_avg_dist(main_railway_stations, sub_railway_stations, [](const auto a, const auto b){ return a->pos.lng < b->pos.lng; }));
+      chmin(min_avg_dist, calc_avg_dist(main_railway_stations, sub_railway_stations, [](const auto a, const auto b){ return a->pos.lat+a->pos.lng < b->pos.lat+b->pos.lng; }));
+      chmin(min_avg_dist, calc_avg_dist(main_railway_stations, sub_railway_stations, [](const auto a, const auto b){ return a->info->name < b->info->name; }));
+      chmin(min_avg_dist, calc_nearest_dist(main_railway_stations, sub_railway_stations));
+      chmin(min_avg_dist, calc_nearest_dist(sub_railway_stations, main_railway_stations));
       if(min_avg_dist <= 1.0){
-        main_sub_railway_pairs.emplace_back(main_rail_data.first, sub_rail_data.first);
+        main_sub_railway_pairs.emplace_back(main_railway.code, sub_railway.code);
         ok = true;
         break;
       }
@@ -436,11 +455,7 @@ int main(){
         if(station.rail->name != railway->name) continue;
         if(!same_station_pairs.count(station.code)) continue;
         const int sub_code = same_station_pairs[station.code];
-        for(const auto &sta : sub_data.stations){
-          if(sta.code != sub_code) continue;
-          cnt.insert(sta.rail);
-          break;
-        }
+        cnt.insert(sub_data.get_station(sub_code)->rail);
       }
       if((int)cnt.size() != 1) continue;
       main_sub_railway_pairs.emplace_back(railway->code, (*cnt.begin())->code);
@@ -456,7 +471,8 @@ int main(){
 
 
 
-  std::cout << "{\n  \"stationPairs\": [\n";
+  std::cout << "{\n";
+  std::cout << "  \"stationPairs\": [\n";
   bool isfirst = true;
   for(const auto &x : main_sub_station_pairs){
     if(!isfirst) std::cout << ",\n";
