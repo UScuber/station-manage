@@ -1,8 +1,8 @@
 /node_modules
-station.db
+station.db*
 .env
 info.log
 railroad.txt
 calc
-unknown-data.json
+unknown-*.json
 /data
