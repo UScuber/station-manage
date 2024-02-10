@@ -544,10 +544,10 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
   try{
     db.prepare(`
       DELETE FROM StationGroupHistory
-      WHERE stationCode = ? AND date = datetime(?)
+      WHERE stationGroupCode = ? AND date = datetime(?)
     `).run(code, date);
 
-    db.run(`
+    db.prepare(`
       UPDATE StationGroupHistory SET date = (
         SELECT MAX(date) FROM StationGroupHistory
         WHERE stationGroupCode = ?
