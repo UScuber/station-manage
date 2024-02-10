@@ -35,6 +35,8 @@ db.function("dist", (lat1,lng1,lat2,lng2) => distance([lat1,lng1],[lat2,lng2]));
 db.prepare("DELETE FROM StationHistory").run();
 db.prepare("DELETE FROM StationGroupHistory").run();
 
+let unknown_history = { station_history: [], station_group_history: [] };
+
 db.transaction(() => {
   input_json.station_history.forEach(data => {
     const res = db.prepare(`
@@ -42,10 +44,14 @@ db.transaction(() => {
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND StationGroups.stationName = ?
-          AND Stations.railwayName = ?
-          AND Stations.railwayCompany = ?
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+          AND Railways.railwayName = ?
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+          AND Companies.companyName = ?
     `)
-      .get(data.info.stationName, data.info.railwayName, data.info.railwayCompany);
+      .get(data.info.stationName, data.info.railwayName, data.info.companyName ?? data.info.railwayCompany);
     if(res){
       data.history.forEach(elem => {
         db.prepare("INSERT INTO StationHistory VALUES(?, datetime(?), ?)")
@@ -53,39 +59,12 @@ db.transaction(() => {
       });
     }else{
       // 座標から探す
-      const nearest = db.prepare(`
-        SELECT * FROM Stations
-        WHERE dist(latitude,longitude,?,?) = (
-          SELECT MIN(dist(latitude,longitude,?,?)) FROM Stations
-        )
-      `)
-        .get(
-          data.info.latitude, data.info.longitude,
-          data.info.latitude, data.info.longitude
-        );
-      data.history.forEach(elem => {
-        db.prepare("INSERT INTO StationHistory VALUES(?, datetime(?), ?)")
-          .run(nearest.stationCode, elem.date, elem.state);
+      unknown_history.station_history.push({
+        history: data.history,
+        info: data.info,
+        query: data.history.map(hist => `postStationDate?state=${hist.state}&date=${hist.date}&code=`)
       });
     }
-
-    // 最終アクセスの更新
-    db.prepare(`
-      UPDATE Stations SET getDate = (
-        SELECT MAX(date) FROM StationHistory
-        WHERE stationCode = ? AND state = 0
-      )
-      WHERE stationCode = ?
-    `)
-      .run(res.stationCode, res.stationCode);
-    db.prepare(`
-      UPDATE Stations SET passDate = (
-        SELECT MAX(date) FROM StationHistory
-        WHERE stationCode = ? AND state = 1
-      )
-      WHERE stationCode = ?
-    `)
-      .run(res.stationCode, res.stationCode);
   });
 })();
 
@@ -127,26 +106,11 @@ db.transaction(() => {
           .run(res.stationGroupCode, elem.date);
       });
     }else{
-      // 駅名関係なく座標が一番近いものを探す
-      const res = db.prepare(`
-        SELECT * FROM StationGroups
-        WHERE dist(latitude,longitude,?,?) = (
-          SELECT MIN(dist(latitude,longitude,?,?)) FROM StationGroups
-        )
-      `)
-        .get(
-          data.info.latitude, data.info.longitude,
-          data.info.latitude, data.info.longitude
-        );
-      if(res){
-        data.history.forEach(elem => {
-          db.prepare("INSERT INTO StationGroupHistory VALUES(?, datetime(?))")
-            .run(res.stationGroupCode, elem.date);
-        });
-      }else{
-        console.log("ERROR");
-        process.exit(1);
-      }
+      unknown_history.station_group_history.push({
+        history: data.history,
+        info: data.info,
+        query: data.history.map(hist => `postStationGroupDate?date=${hist.date}&code=`)
+      });
     }
   });
 })();
@@ -161,3 +125,7 @@ db.transaction(() => {
       )
   `).run();
 })();
+
+unknown_history.station_history = unknown_history.station_history.sort((a, b) => new Date(a.history[0].date) < new Date(b.history[0].date) ? -1 : 1);
+unknown_history.station_group_history = unknown_history.station_group_history.sort((a, b) => new Date(a.history[0].date) < new Date(b.history[0].date) ? -1 : 1);
+fs.writeFileSync("unknown-history.json", JSON.stringify(unknown_history, null, "  "));
