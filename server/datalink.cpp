@@ -555,16 +555,16 @@ void output_shinkansen_data(
       if(station->info->name == "越後湯沢" && rail.name.find("上越新幹線(") != std::string::npos) continue;
       const Station *min_st = find_almost_same_name_station(station, main_data.stations);
 
-      if(!min_st){
+      if(min_st && min_st->pos.dist_km(station->pos) <= 1.5){
+        min_st->info->stationCnt++;
+        main_data.stations.emplace_back(10000000 + station->code, min_st->info, railway_ptr, station->pos);
+      }else{
         std::string name = station->info->name;
         if(name.find('(') != std::string::npos) name = name.substr(0, name.find('('));
         main_data.stationGroups.emplace_back(10000000 + station->code, name);
         StationGroup *group = &main_data.stationGroups.back();
         group->stationCnt++;
         main_data.stations.emplace_back(10000000 + station->code, group, railway_ptr, station->pos);
-      }else{
-        min_st->info->stationCnt++;
-        main_data.stations.emplace_back(10000000 + station->code, min_st->info, railway_ptr, station->pos);
       }
       main_sub_station_pairs.emplace_back(main_data.stations.back().code, station->code);
     }

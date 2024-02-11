@@ -92,7 +92,7 @@ parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((_, idx) => idx)
     join_data[right].left.push(left);
   });
 
-const filtered_station_data = station_data
+let filtered_station_data = station_data
   .filter(data => data.status !== 2)
   .filter(data => join_data[data.stationCode].left.length + join_data[data.stationCode].right.length);
 
@@ -313,6 +313,35 @@ const find_station_data = (code) => {
   return undefined;
 }
 
+// 新幹線の情報を追加
+filtered_station_data = filtered_station_data.concat(result_json.shinkansen.stations.map(data => {
+  const sub_stationCode = find_station_pair(data.stationCode);
+  if(!sub_stationCode){
+    console.error("shinkansen is not linked");
+    process.exit(1);
+  }
+  const info = find_station_data(parseInt(sub_stationCode.toString().substr(0, 5)));
+  join_data[data.stationCode] = {
+    left: data.left,
+    right: data.right,
+  };
+  return {
+    stationCode: data.stationCode,
+    stationGroupCode: data.stationGroupCode,
+    prevStationName: data.stationName,
+    railwayCode: data.railwayCode,
+    prevRailwayName: data.railwayName,
+    prevRailwayFormalName: data.railwayName,
+    railwayKana: railway_data[data.railwayCode].railwayKana,
+    companyCode: railway_data[data.railwayCode].companyCode,
+    prevCompanyName: company_data[railway_data[data.railwayCode].companyCode].prevCompanyName,
+    prefCode: info.prefCode,
+    lat: info.lat,
+    lng: info.lng,
+  };
+}));
+
+
 const sattr = new SearchAttribute();
 
 let name_unlinked_stations = [];
@@ -349,7 +378,7 @@ const stations_db = Array.from(await Promise.all(filtered_station_data.map(async
 }))).filter(data => data);
 
 
-let railway_data = {};
+railway_data = {};
 filtered_station_data.forEach(data => {
   railway_data[data.railwayCode] = data;
 });
