@@ -6,6 +6,7 @@
 #include <tuple>
 #include <set>
 #include <map>
+#include <queue>
 #include <cassert>
 
 constexpr double PI = 3.14159265358979323846;
@@ -23,6 +24,7 @@ double get_double(){
 
 struct Pos {
   double lat,lng;
+
   Pos() : lat(0), lng(0){}
   Pos(const double a, const double b) : lat(a), lng(b){}
   double dist_km(const Pos &a) const{
@@ -69,6 +71,7 @@ Pos get_coordinate(){
 struct Company {
   int code;
   std::string name;
+
   Company(const int code, const std::string &name) : code(code), name(name){}
 };
 
@@ -76,6 +79,7 @@ struct Railway {
   int code;
   std::string name;
   const Company *company;
+
   Railway(const int code, const std::string &name, const Company *company) : code(code), name(name), company(company){}
 };
 
@@ -83,6 +87,7 @@ struct StationGroup {
   int code;
   std::string name;
   int stationCnt;
+
   StationGroup(const int code, const std::string &name) : code(code), name(name), stationCnt(0){}
 };
 
@@ -92,10 +97,58 @@ struct Station {
   const Railway *rail;
   Pos pos;
   std::vector<const Station*> left, right;
+
   Station(const int code, StationGroup *info, const Railway *rail, const Pos &pos) :
     code(code), info(info), rail(rail), pos(pos){}
+
   void add_left(const Station *st){ left.emplace_back(st); }
   void add_right(const Station *st){ right.emplace_back(st); }
+
+  // 左の隣駅をたどって目的の駅まで移動する距離
+  int calc_left_station_dist(const Station *target){
+    if(!dist_left.empty()){
+      if(dist_left.count(target)) return dist_left[target];
+      return 100000;
+    }
+    std::queue<const Station*> que;
+    que.push(this);
+    dist_left[this] = 0;
+    while(!que.empty()){
+      const auto current = que.front();
+      que.pop();
+      for(const auto next : current->left){
+        if(dist_left.count(next)) continue;
+        dist_left[next] = dist_left[current] + 1;
+        que.push(next);
+      }
+    }
+    if(dist_left.count(target)) return dist_left[target];
+    return 100000;
+  }
+
+  int calc_right_station_dist(const Station *target){
+    if(!dist_right.empty()){
+      if(dist_right.count(target)) return dist_right[target];
+      return 100000;
+    }
+    std::queue<const Station*> que;
+    que.push(this);
+    dist_right[this] = 0;
+    while(!que.empty()){
+      const auto current = que.front();
+      que.pop();
+      for(const auto next : current->right){
+        if(dist_right.count(next)) continue;
+        dist_right[next] = dist_right[current] + 1;
+        que.push(next);
+      }
+    }
+    if(dist_right.count(target)) return dist_right[target];
+    return 100000;
+  }
+
+private:
+  std::map<const Station*, int> dist_left, dist_right;
 };
 
 struct StationDatabase {
@@ -105,8 +158,13 @@ struct StationDatabase {
   std::vector<Company> companies;
 
   void build(){
+    stations_data.clear();
+    railway_stations_mut.clear();
+    railway_stations.clear();
+
     for(auto &station : stations){
       stations_data[station.code] = &station;
+      railway_stations_mut[station.rail->code].emplace_back(&station);
     }
     for(const auto &station : stations){
       railway_stations[station.rail->code].emplace_back(&station);
@@ -121,10 +179,15 @@ struct StationDatabase {
     assert(railway_stations.count(railwayCode));
     return railway_stations[railwayCode];
   }
+  std::vector<Station*> &get_railway_stations_mut(const int railwayCode){
+    assert(railway_stations_mut.count(railwayCode));
+    return railway_stations_mut[railwayCode];
+  }
 
 private:
   std::map<int, Station*> stations_data;
   std::map<int, std::vector<const Station*>> railway_stations;
+  std::map<int, std::vector<Station*>> railway_stations_mut;
 };
 
 StationDatabase main_data;
@@ -256,37 +319,6 @@ void input(){
   get_station_data(sub_data);
   get_station_data(main_data);
   get_station_data(route_data);
-}
-
-void output(const StationDatabase &data){
-  auto get_stations_json = [&](const std::vector<const Station*> &nexts, const std::string &indent){
-    bool first = true;
-    for(const auto &next : nexts){
-      if(!first) std::cout << ",\n";
-      first = false;
-      std::cout << indent << "{";
-      std::cout << " \"stationCode\": \"" << next->code << "\"";
-      std::cout << "}";
-    }
-    if(!first) std::cout << "\n";
-  };
-  std::cout << "[\n";
-  bool isfirst = true;
-  for(const auto &station : data.stations){
-    if(!isfirst) std::cout << ",\n";
-    isfirst = false;
-    std::cout << "  {\n";
-    std::cout << "    \"stationCode\": \"" << station.code << "\",\n";
-    std::cout << "    \"left\": [\n";
-    get_stations_json(station.left, "      ");
-    std::cout << "    ],\n";
-    std::cout << "    \"right\": [\n";
-    get_stations_json(station.right, "      ");
-    std::cout << "    ]\n";
-    std::cout << "  }";
-  }
-  std::cout << "\n";
-  std::cout << "]\n";
 }
 
 bool almost_same(const std::string &s, const std::string &t){
@@ -457,6 +489,209 @@ void link_railways_color(
   }
 }
 
+void output_shinkansen_data(
+  std::vector<std::pair<int, int>> &main_sub_station_pairs,
+  std::vector<std::pair<int, int>> &main_sub_railway_pairs
+){
+  const std::vector<std::tuple<int,int,std::string>> shinkansen_data = {
+    // { 1001, 3, "中央新幹線" },
+    { 1002, 3, "東海道新幹線" },
+    { 1003, 4, "山陽新幹線" },
+    { 1004, 2, "東北新幹線" },
+    { 1005, 2, "上越新幹線" },
+    { 1007, 2, "山形新幹線" },
+    { 1008, 2, "秋田新幹線" },
+    { 1009, 2, "北陸新幹線" },
+    { 1010, 6, "九州新幹線" },
+    { 1011, 1, "北海道新幹線" },
+    { 1012, 6, "西九州新幹線" },
+  };
+  std::set<std::string> valid_railNames = {
+    "奥羽線", "上越線", "北陸線", "田沢湖線"
+  };
+  // route_data only
+  auto is_shinkansen_railway = [&](const std::string &railwayName) -> bool {
+    return railwayName.find("新幹線") != std::string::npos || valid_railNames.count(railwayName);
+  };
+
+  for(const auto &x : shinkansen_data){
+    int railwayCode, companyCode;
+    std::string railwayName;
+    std::tie(railwayCode, companyCode, railwayName) = x;
+    for(const auto &company : main_data.companies){
+      if(company.code == companyCode){
+        main_data.railways.emplace_back(railwayCode, railwayName, &company);
+        break;
+      }
+    }
+  }
+
+  auto find_almost_same_name_station = [](const Station *station, std::vector<Station> &stations) -> Station* {
+    Station *min_st = nullptr;
+    for(auto &sta : stations){
+      if(!almost_same(station->info->name, sta.info->name)) continue;
+      if(!min_st || station->pos.dist_km(min_st->pos) > station->pos.dist_km(sta.pos)){
+        min_st = &sta;
+      }
+    }
+    return min_st;
+  };
+
+  for(const auto &rail : sub_data.railways){
+    if(rail.name.find("新幹線") == std::string::npos) continue;
+    const std::string railName = rail.name.substr(2);
+    const Railway *railway_ptr = nullptr;
+    for(const auto &r : main_data.railways){
+      if(almost_same(r.name, railName)){
+        railway_ptr = &r;
+        break;
+      }
+    }
+    assert(railway_ptr);
+    main_sub_railway_pairs.emplace_back(railway_ptr->code, rail.code);
+
+    // 新幹線駅の追加
+    for(const auto station : sub_data.get_railway_stations(rail.code)){
+      if(station->info->name == "越後湯沢" && rail.name.find("上越新幹線(") != std::string::npos) continue;
+      const Station *min_st = find_almost_same_name_station(station, main_data.stations);
+
+      if(!min_st){
+        std::string name = station->info->name;
+        if(name.find('(') != std::string::npos) name = name.substr(0, name.find('('));
+        main_data.stationGroups.emplace_back(10000000 + station->code, name);
+        StationGroup *group = &main_data.stationGroups.back();
+        group->stationCnt++;
+        main_data.stations.emplace_back(10000000 + station->code, group, railway_ptr, station->pos);
+      }else{
+        min_st->info->stationCnt++;
+        main_data.stations.emplace_back(10000000 + station->code, min_st->info, railway_ptr, station->pos);
+      }
+      main_sub_station_pairs.emplace_back(main_data.stations.back().code, station->code);
+    }
+  }
+
+  auto find_main_data_shinkansen = [](const Station *station) -> std::vector<Station*> {
+    std::vector<Station*> res;
+    for(auto &sta : main_data.stations){
+      if(sta.rail->name.find("新幹線") == std::string::npos) continue;
+      if(almost_same(station->info->name, sta.info->name)){
+        res.emplace_back(&sta);
+      }
+    }
+    return res;
+  };
+
+  auto find_similar_route_stations = [&is_shinkansen_railway](const Station *station) -> std::vector<Station*> {
+    std::vector<Station*> res;
+    for(auto &sta : route_data.stations){
+      if(!is_shinkansen_railway(sta.rail->name)) continue;
+      if(almost_same(station->info->name, sta.info->name)){
+        res.emplace_back(&sta);
+      }
+    }
+    return res;
+  };
+
+  main_data.build();
+
+  // 新幹線の隣駅を求める
+  // (新幹線の駅では違う場所で同じ駅名は存在しないとする)
+  for(const auto &railway : main_data.railways){
+    if(railway.name.find("新幹線") == std::string::npos) continue;
+    auto &one_railway_stations = main_data.get_railway_stations_mut(railway.code);
+    // 2駅が隣駅かどうか
+    for(auto station : one_railway_stations){
+      auto routes_stations = find_similar_route_stations(station);
+      int min_left_dist = 100000;
+      Station *min_left_st = nullptr;
+      int min_right_dist = 100000;
+      Station *min_right_st = nullptr;
+      for(auto sta : one_railway_stations){
+        if(station == sta) continue;
+        const auto routes_stas = find_similar_route_stations(sta);
+        for(const auto routes_station : routes_stations){
+          for(const auto routes_sta : routes_stas){
+            const int left_dist = routes_station->calc_left_station_dist(routes_sta);
+            if(left_dist >= 1 && chmin(min_left_dist, left_dist)){
+              min_left_st = sta;
+            }
+            const int right_dist = routes_station->calc_right_station_dist(routes_sta);
+            if(right_dist >= 1 && chmin(min_right_dist, right_dist)){
+              min_right_st = sta;
+            }
+          }
+        }
+      }
+      if(min_left_st){
+        station->add_left(min_left_st);
+        min_left_st->add_right(station);
+      }
+      if(min_right_st){
+        station->add_right(min_right_st);
+        min_right_st->add_left(station);
+      }
+    }
+  }
+
+  // 重複削除
+  for(auto &station : main_data.stations){
+    if(station.rail->name.find("新幹線") == std::string::npos) continue;
+    std::sort(station.left.begin(), station.left.end());
+    station.left.erase(std::unique(station.left.begin(), station.left.end()), station.left.end());
+    std::sort(station.right.begin(), station.right.end());
+    station.right.erase(std::unique(station.right.begin(), station.right.end()), station.right.end());
+  }
+
+
+  std::cout << "  \"shinkansen\": {\n";
+  std::cout << "    \"railways\": [\n";
+  bool is_first = true;
+  for(const auto &rail : main_data.railways){
+    if(rail.name.find("新幹線") == std::string::npos) continue;
+    if(!is_first) std::cout << ",\n";
+    is_first = false;
+    std::cout << "      {\n";
+    std::cout << "        \"railwayCode\": " << rail.code << ",\n";
+    std::cout << "        \"railwayName\": \"" << rail.name << "\",\n";
+    std::cout << "        \"companyCode\": " << rail.company->code << "\n";
+    std::cout << "      }";
+  }
+  std::cout << "\n    ],\n";
+
+  std::cout << "    \"stations\": [\n";
+  is_first = true;
+  auto output_next_station = [](const std::vector<const Station*> &nexts){
+    bool first = true;
+    std::cout << "[";
+    for(const auto next : nexts){
+      if(!first) std::cout << ",";
+      first = false;
+      std::cout << next->code;
+    }
+    std::cout << "]";
+  };
+  for(const auto &station : main_data.stations){
+    if(station.rail->name.find("新幹線") == std::string::npos) continue;
+    if(station.left.empty() && station.right.empty()) continue;
+    if(!is_first) std::cout << ",\n";
+    is_first = false;
+    std::cout << "      {\n";
+    std::cout << "        \"stationCode\": " << station.code << ",\n";
+    std::cout << "        \"stationGroupCode\": " << station.info->code << ",\n";
+    std::cout << "        \"stationName\": \"" << station.info->name << "\",\n";
+    std::cout << "        \"railwayCode\": " << station.rail->code << ",\n";
+    std::cout << "        \"railwayName\": \"" << station.rail->name << "\",\n";
+    std::cout << "        \"left\": ";
+    output_next_station(station.left);
+    std::cout << ",\n";
+    std::cout << "        \"right\": ";
+    output_next_station(station.right);
+    std::cout << "\n      }";
+  }
+  std::cout << "\n    ]\n";
+  std::cout << "  },\n";
+}
+
 int main(){
   std::cin.tie(nullptr);
   std::ios::sync_with_stdio(false);
@@ -479,9 +714,12 @@ int main(){
   link_railways_color(main_sub_railway_pairs, unknown_railways, main_sub_station_pairs);
 
 
-
-
+  // output json
   std::cout << "{\n";
+
+  output_shinkansen_data(main_sub_station_pairs, main_sub_railway_pairs);
+
+
   std::cout << "  \"stationPairs\": [\n";
   bool isfirst = true;
   for(const auto &x : main_sub_station_pairs){
@@ -514,5 +752,6 @@ int main(){
     std::cout << railway->code;
   }
   std::cout << "]\n";
+
   std::cout << "}\n";
 }
