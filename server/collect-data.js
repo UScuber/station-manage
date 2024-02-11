@@ -409,7 +409,7 @@ const unknown_station_data = name_unlinked_stations
 const unknown_railway_data = Object.keys(railway_data)
   .filter(railwayCode => !find_railway_pair(railwayCode))
   .map(railwayCode => ({
-    railwayCode: railwayCode,
+    railwayCode: parseInt(railwayCode),
     railwayName: railway_data[railwayCode].prevRailwayName,
     railwayFormalName: railway_data[railwayCode].prevRailwayFormalName,
     railwayKana: railway_data[railwayCode].railwayKana,

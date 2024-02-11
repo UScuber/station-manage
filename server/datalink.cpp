@@ -296,19 +296,8 @@ bool almost_same(const std::string &s, const std::string &t){
   return false;
 }
 
-int main(){
-  std::cin.tie(nullptr);
-  std::ios::sync_with_stdio(false);
-
-  input();
-
-  main_data.build();
-  sub_data.build();
-  route_data.build();
-
-  std::vector<std::pair<int, int>> main_sub_station_pairs;
-  std::vector<const Station*> unknown_stations;
-
+// 読みを推測する、路線名までの一致判定は行わない
+void link_stations_name(std::vector<std::pair<int, int>> &main_sub_station_pairs, std::vector<const Station*> &unknown_stations){
   std::map<std::string, std::vector<const Station*>> name_map;
   for(const auto &station : sub_data.stations){
     name_map[station.info->name].emplace_back(&station);
@@ -344,8 +333,14 @@ int main(){
       main_sub_station_pairs.emplace_back(station.code, min_st->code);
     }
   }
+}
 
-
+// 2津のデータの同じ路線の対応をとる
+void link_railways_color(
+  std::vector<std::pair<int, int>> &main_sub_railway_pairs,
+  std::vector<const Railway*> &unknown_railways,
+  const std::vector<std::pair<int, int>> &main_sub_station_pairs
+){
   auto calc_avg_dist = [](
     std::vector<const Station*> &stas1,
     std::vector<const Station*> &stas2,
@@ -385,14 +380,8 @@ int main(){
     return avg_dist;
   };
 
-  std::vector<std::pair<int, int>> main_sub_railway_pairs, main_route_railway_pairs;
-  std::vector<const Railway*> unknown_railways;
-
   for(const auto &main_railway : main_data.railways){
      auto &main_railway_stations = main_data.get_railway_stations(main_railway.code);
-    if(main_railway_stations.size() <= 2){
-      continue;
-    }
     const auto main_first = main_railway_stations[0];
     bool ok = false;
 
@@ -442,32 +431,53 @@ int main(){
     if(ok) continue;
     unknown_railways.emplace_back(main_first->rail);
   }
+
   // 駅の対応付けからの路線一致判定
-  {
-    std::map<int, int> same_station_pairs;
-    for(const auto &x : main_sub_station_pairs){
-      same_station_pairs[x.first] = x.second;
-    }
-    // 全部一致していれば対応付ける
-    for(auto &railway : unknown_railways){
-      std::set<const Railway*> cnt;
-      for(const auto &station : main_data.stations){
-        if(station.rail->name != railway->name) continue;
-        if(!same_station_pairs.count(station.code)) continue;
-        const int sub_code = same_station_pairs[station.code];
-        cnt.insert(sub_data.get_station(sub_code)->rail);
-      }
-      if((int)cnt.size() != 1) continue;
-      main_sub_railway_pairs.emplace_back(railway->code, (*cnt.begin())->code);
-      railway = nullptr; // delete
-    }
-    std::sort(unknown_railways.begin(), unknown_railways.end());
-    unknown_railways.erase(std::unique(unknown_railways.begin(), unknown_railways.end()), unknown_railways.end());
-    if(!unknown_railways.empty() && !unknown_railways[0]){
-      unknown_railways.erase(unknown_railways.begin());
-    }
+  std::map<int, int> same_station_pairs;
+  for(const auto &x : main_sub_station_pairs){
+    same_station_pairs[x.first] = x.second;
   }
-  
+  // 全部一致していれば対応付ける
+  for(auto &railway : unknown_railways){
+    std::set<const Railway*> cnt;
+    for(const auto &station : main_data.stations){
+      if(station.rail->name != railway->name) continue;
+      if(!same_station_pairs.count(station.code)) continue;
+      const int sub_code = same_station_pairs[station.code];
+      cnt.insert(sub_data.get_station(sub_code)->rail);
+    }
+    if((int)cnt.size() != 1) continue;
+    main_sub_railway_pairs.emplace_back(railway->code, (*cnt.begin())->code);
+    railway = nullptr; // delete
+  }
+  std::sort(unknown_railways.begin(), unknown_railways.end());
+  unknown_railways.erase(std::unique(unknown_railways.begin(), unknown_railways.end()), unknown_railways.end());
+  if(!unknown_railways.empty() && !unknown_railways[0]){
+    unknown_railways.erase(unknown_railways.begin());
+  }
+}
+
+int main(){
+  std::cin.tie(nullptr);
+  std::ios::sync_with_stdio(false);
+
+  input();
+
+  main_data.build();
+  sub_data.build();
+  route_data.build();
+
+  std::vector<std::pair<int, int>> main_sub_station_pairs;
+  std::vector<const Station*> unknown_stations;
+
+  link_stations_name(main_sub_station_pairs, unknown_stations);
+
+
+  std::vector<std::pair<int, int>> main_sub_railway_pairs, main_route_railway_pairs;
+  std::vector<const Railway*> unknown_railways;
+
+  link_railways_color(main_sub_railway_pairs, unknown_railways, main_sub_station_pairs);
+
 
 
 
