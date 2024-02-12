@@ -77,7 +77,7 @@ export const useStationInfo = (
 // 駅グループに属する駅の駅情報を取得
 export const useStationsInfoByGroupCode = (code: number | undefined): UseQueryResult<Station[]> => {
   return useQuery<Station[]>({
-    queryKey: ["Station", code],
+    queryKey: ["GroupStations", code],
     queryFn: async() => {
       const { data } = await axios.get<Station[]>("/api/stationsByGroupCode/" + code, ngrok_header);
       return data;
@@ -282,6 +282,8 @@ export const useSendStationStateMutation = () => {
     },
     onSuccess: (data: string, variables: StationHistory) => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
     },
     onError: (err: Error) => {
       console.error(err);
