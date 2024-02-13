@@ -409,6 +409,9 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
   res.json(data.count);
 });
 
+
+///// History
+
 // 乗降/通過の履歴を区間取得
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
   const off = req.query.off;
@@ -443,6 +446,58 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
     return;
   }
   res.json(data.count);
+});
+
+// 駅の履歴を取得
+app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
+  const code = req.params.stationCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM StationHistory
+      WHERE stationCode = ?
+      ORDER BY date DESC
+    `).all(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
+// 駅グループ全体の履歴を取得(各駅の行動も含める)
+app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next) => {
+  const code = req.params.stationGroupCode;
+  let data;
+  try{
+    data = db.prepare(`
+        SELECT
+          StationGroupHistory.*,
+          3 AS state,
+          '' AS railwayName,
+          '' AS railwayColor
+        FROM StationGroupHistory
+        WHERE stationGroupCode = ?
+      UNION ALL
+        SELECT
+          StationHistory.*,
+          Railways.railwayName,
+          Railways.railwayColor
+        FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+            AND Stations.stationGroupCode = ?
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+      ORDER BY date DESC
+    `).all(code, code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
 });
 
 // 乗降/通過の情報を追加
