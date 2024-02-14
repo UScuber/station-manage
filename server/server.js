@@ -196,7 +196,11 @@ app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT * FROM Railways
+      SELECT
+        Railways.*,
+        Companies.companyName,
+        Companies.formalName AS companyFormalName
+      FROM Railways
       INNER JOIN Companies
         ON Railways.companyCode = Companies.companyCode
           AND Railways.railwayCode = ?
