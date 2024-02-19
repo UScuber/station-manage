@@ -84,17 +84,30 @@ const insert_next_stations = (elem, code) => {
 };
 
 
+// 駅情報取得
 app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   const code = req.params.stationCode;
   let data;
   try{
     data = db.prepare(`
-      SELECT Stations.*, StationGroups.stationName, StationGroups.kana, Prefectures.name AS prefName FROM Stations
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana,
+        Prefectures.name AS prefName,
+        Railways.railwayName,
+        Railways.railwayColor,
+        Companies.companyName AS railwayCompany
+      FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationCode = ?
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
     `).get(code);
 
     data = insert_next_stations(data, code);
@@ -110,13 +123,18 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   }
 });
 
-
+// 駅グループの情報取得
 app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   let data;
   try{
     data = db.prepare(`
-      SELECT StationGroups.*, MAX(getDate) AS maxGetDate, MAX(passDate) AS maxPassDate, Prefectures.name AS prefName FROM Stations
+      SELECT
+        StationGroups.*,
+        MAX(getDate) AS maxGetDate,
+        MAX(passDate) AS maxPassDate,
+        Prefectures.name AS prefName
+      FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
@@ -136,15 +154,27 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   }
 });
 
+// 駅グループに属する駅の駅情報を取得
 app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next) => {
   const code = req.params.stationGroupCode;
   let data;
   try{
     data = db.prepare(`
-      SELECT Stations.*, StationGroups.stationName, StationGroups.date FROM Stations
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana,
+        StationGroups.date,
+        Railways.railwayName,
+        Companies.companyName AS railwayCompany
+      FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.stationGroupCode = ?
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
     `).all(code);
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
@@ -160,45 +190,105 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
   }
 });
 
-app.get("/api/searchStationName", accessLog, (req, res, next) => {
-  const name = req.query.name;
-  if(name === undefined){
-    next(new Error("Invalid Input"));
-    return;
-  }
+// 路線情報取得
+app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
+  const code = req.params.railwayCode;
   let data;
   try{
     data = db.prepare(`
-      WITH StationData AS (
-        SELECT Stations.*, StationGroups.stationName, StationGroups.date, StationGroups.kana, Prefectures.name AS prefName FROM Stations
-        INNER JOIN StationGroups
-          ON Stations.stationGroupCode = StationGroups.stationGroupCode
-        INNER JOIN Prefectures
-          ON StationGroups.prefCode = Prefectures.code
-      )
-        SELECT 0 AS ord, StationData.* FROM StationData
-          WHERE stationName = ?
-      UNION ALL
-        SELECT 1 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 2 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 3 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      ORDER BY ord
-    `).all(
-      name,`${name}_%`,`_%${name}`,`_%${name}_%`
-    );
+      SELECT
+        Railways.*,
+        Companies.companyName,
+        Companies.formalName AS companyFormalName
+      FROM Railways
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+          AND Railways.railwayCode = ?
+    `).get(code);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
     return;
   }
-  res.json(data);
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
 });
 
+// 路線に属する駅の駅情報を取得
+app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
+  const code = req.params.railwayCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana
+      FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND Stations.railwayCode = ?
+    `).all(code);
+
+    data = data.map(station => insert_next_stations(station, station.stationCode));
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data.length){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
+// 会社情報取得
+app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
+  const code = req.params.companyCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM Companies
+      WHERE companyCode = ?
+    `).get(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
+// 会社に属する路線の路線情報を取得
+app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
+  const code = req.params.companyCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM Railways
+      WHERE companyCode = ?
+    `).all(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
+// 座標から近い駅/駅グループを複数取得
 app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   const lat = req.query.lat;
   const lng = req.query.lng;
@@ -210,12 +300,15 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT StationGroups.*, Prefectures.name AS prefName, (
-        6371 * ACOS(
-          COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-          + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
-        )
-      ) AS distance
+      SELECT
+        StationGroups.*,
+        Prefectures.name AS prefName,
+        (
+          6371 * ACOS(
+            COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
+            + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
+          )
+        ) AS distance
       FROM StationGroups
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
@@ -232,32 +325,7 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   res.json(data);
 });
 
-app.get("/api/stationGroupList", accessLog, (req, res, next) => {
-  const off = req.query.off;
-  const len = req.query.len;
-  if(off === undefined || len === undefined){
-    next(new Error("Invalid input"));
-    return;
-  }
-  let data;
-  try{
-    data = db.prepare(`
-      SELECT StationGroups.*, Prefectures.name AS prefName FROM StationGroups
-      INNER JOIN Prefectures
-        ON StationGroups.prefCode = Prefectures.code
-      ORDER BY StationGroups.stationGroupCode
-      LIMIT ? OFFSET ?
-    `).all(
-      len, off
-    );
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
-  res.json(data);
-});
-
+// 駅グループを名前で検索、区間指定
 app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
@@ -270,24 +338,43 @@ app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   try{
     data = db.prepare(`
       WITH StationData AS (
-        SELECT StationGroups.*, Prefectures.name AS prefName FROM StationGroups
+        SELECT
+          StationGroups.*,
+          Prefectures.name AS prefName
+        FROM StationGroups
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
       )
-        SELECT 0 AS ord, StationData.* FROM StationData
-          WHERE stationName = ?
-      UNION ALL
-        SELECT 1 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 2 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      UNION ALL
-        SELECT 3 AS ord, StationData.* FROM StationData
-          WHERE stationName LIKE ?
-      ORDER BY ord
+      SELECT * FROM (
+          SELECT 0 AS ord, StationData.* FROM StationData
+            WHERE stationName = ?
+        UNION ALL
+          SELECT 1 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 2 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 3 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 4 AS ord, StationData.* FROM StationData
+            WHERE kana = ?
+        UNION ALL
+          SELECT 5 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 6 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 7 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+      ) AS Results
+      GROUP BY Results.stationGroupCode
+      ORDER BY Results.ord
       LIMIT ? OFFSET ?
     `).all(
+      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
       name,`${name}_%`,`_%${name}`,`_%${name}_%`,
       len, off
     );
@@ -299,6 +386,7 @@ app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
   res.json(data);
 });
 
+// 駅グループを名前で検索した際の件数
 app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
   const name = req.query.name ?? "";
   let data;
@@ -309,7 +397,12 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
         OR stationName LIKE ?
         OR stationName LIKE ?
         OR stationName LIKE ?
+        OR kana = ?
+        OR kana LIKE ?
+        OR kana LIKE ?
+        OR kana LIKE ?
     `).get(
+      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
       name,`${name}_%`,`_%${name}`,`_%${name}_%`
     );
   }catch(err){
@@ -320,20 +413,10 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
   res.json(data.count);
 });
 
-app.get("/api/stationGroupCount", accessLog, (req, res, next) => {
-  let data;
-  try{
-    data = db.prepare(
-      "SELECT COUNT(*) AS count FROM StationGroups",
-    ).get();
-  }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
-  }
-  res.json(data.count);
-});
 
+///// History
+
+// 乗降/通過の履歴を区間取得
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
@@ -354,6 +437,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
   res.json(data);
 });
 
+// 乗降/通過の履歴の個数を取得
 app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   let data;
   try{
@@ -368,6 +452,59 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   res.json(data.count);
 });
 
+// 駅の履歴を取得
+app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
+  const code = req.params.stationCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM StationHistory
+      WHERE stationCode = ?
+      ORDER BY date DESC
+    `).all(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
+// 駅グループ全体の履歴を取得(各駅の行動も含める)
+app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next) => {
+  const code = req.params.stationGroupCode;
+  let data;
+  try{
+    data = db.prepare(`
+        SELECT
+          StationGroupHistory.*,
+          3 AS state,
+          '' AS railwayName,
+          '' AS railwayColor
+        FROM StationGroupHistory
+        WHERE stationGroupCode = ?
+      UNION ALL
+        SELECT
+          StationHistory.*,
+          Railways.railwayName,
+          Railways.railwayColor
+        FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+            AND Stations.stationGroupCode = ?
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+      ORDER BY date DESC
+    `).all(code, code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
+// 乗降/通過の情報を追加
 app.get("/api/postStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -397,6 +534,7 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
   res.end("OK");
 });
 
+// 立ち寄りの情報を追加
 app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -419,6 +557,7 @@ app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
   res.end("OK");
 });
 
+// 乗降/通過の履歴を削除
 app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -453,6 +592,7 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
   res.end("OK");
 });
 
+// 立ち寄りの履歴を削除
 app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
   const code = req.query.code;
   const date = convert_date(req.query.date);
@@ -463,10 +603,10 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
   try{
     db.prepare(`
       DELETE FROM StationGroupHistory
-      WHERE stationCode = ? AND date = datetime(?)
+      WHERE stationGroupCode = ? AND date = datetime(?)
     `).run(code, date);
 
-    db.run(`
+    db.prepare(`
       UPDATE StationGroupHistory SET date = (
         SELECT MAX(date) FROM StationGroupHistory
         WHERE stationGroupCode = ?

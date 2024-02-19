@@ -35,9 +35,20 @@ const create_station_history = (station) => {
 
 db.transaction(() => {
   const res = db.prepare(`
-    SELECT Stations.*, StationGroups.stationName FROM StationHistory
-    INNER JOIN Stations ON StationHistory.stationCode = Stations.stationCode
-    INNER JOIN StationGroups ON Stations.stationGroupCode = StationGroups.stationGroupCode
+    SELECT
+      Stations.*,
+      StationGroups.stationName,
+      Railways.railwayName,
+      Companies.companyName
+    FROM StationHistory
+    INNER JOIN Stations
+      ON StationHistory.stationCode = Stations.stationCode
+    INNER JOIN StationGroups
+      ON Stations.stationGroupCode = StationGroups.stationGroupCode
+    INNER JOIN Railways
+      ON Stations.railwayCode = Railways.railwayCode
+    INNER JOIN Companies
+      ON Railways.companyCode = Companies.companyCode
     GROUP BY StationHistory.stationCode
   `).all();
   if(!res){
@@ -71,7 +82,8 @@ const create_station_group_history = (station) => {
 db.transaction(() => {
   const res = db.prepare(`
     SELECT StationGroups.* FROM StationGroupHistory
-    INNER JOIN StationGroups ON StationGroupHistory.stationGroupCode = StationGroups.stationGroupCode
+    INNER JOIN StationGroups
+      ON StationGroupHistory.stationGroupCode = StationGroups.stationGroupCode
     GROUP BY StationGroupHistory.stationGroupCode
   `).all();
   if(!res){
@@ -91,4 +103,4 @@ const result_json = {
   station_history: station_history,
   station_group_history: station_group_history,
 };
-fs.writeFileSync(file_path, JSON.stringify(result_json, null, " "));
+fs.writeFileSync(file_path, JSON.stringify(result_json, null, "  "));
