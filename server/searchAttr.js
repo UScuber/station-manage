@@ -40,7 +40,7 @@ class SearchAttribute {
     return obj;
   }
 
-  search_station_name = async(name) => {
+  search_station_name = async(name, useonlywiki = false) => {
     // wikipediaから探す
     const results = Array.from(await Promise.all(["駅", "停留場"].map(async(suffix) => {
       const result = await fetch("https://ja.wikipedia.org/wiki/" + name + suffix);
@@ -58,6 +58,8 @@ class SearchAttribute {
   
     if(results.length) return results[0];
   
+    if(useonlywiki) return null;
+
     // ルビ推測
     let result;
     fs.writeFileSync("__temp.txt", name + "駅");
@@ -80,6 +82,10 @@ class SearchAttribute {
 
   // muniCdから都道府県コードを取得
   getPrefectureCodeFromMuniCd = (muniCdInput) => {
+    if(!this.muniData){
+      console.error("muniData is not initialized");
+      return undefined;
+    }
     const muniCd = muniCdInput.substring(0, 1) === "0" ? muniCdInput.slice(1) : muniCdInput;
     const muniContents = this.muniData[muniCd];
     if(!muniContents) return undefined;

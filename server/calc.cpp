@@ -361,14 +361,30 @@ std::vector<std::vector<NextStaInfo>> separate_to_connected_graph(const std::vec
 
 std::vector<NextStaInfo> calc_linear_list_graph(std::vector<NextStaInfo> graph){
   const int station_num = graph.size();
-  int st = -1;
+  std::vector<int> start_cands;
   for(int i = 0; i < station_num; i++){
     if((int)graph[i].size() != 1) continue;
-    if(st == -1) st = i;
-    else if(graph[st].station.geometry[0][0].lng > graph[i].station.geometry[0][0].lng) st = i;
+    start_cands.emplace_back(i);
   }
-  assert(st != -1);
-  int cur = st, prev = -1;
+  assert(!start_cands.empty());
+  int cur = start_cands[0];
+  for(const int idx : start_cands){
+    if(graph[cur].station.geometry[0][0].lng > graph[idx].station.geometry[0][0].lng){
+      cur = idx;
+    }
+  }
+  if((int)start_cands.size() == 2){
+    const auto pos0 = graph[start_cands[0]].station.geometry[0][0];
+    const auto pos1 = graph[start_cands[1]].station.geometry[0][0];
+    if(std::abs(pos0.lat - pos1.lat) < std::abs(pos0.lng - pos1.lng)){
+      if(pos0.lng < pos1.lng) cur = start_cands[0];
+      else cur = start_cands[1];
+    }else{
+      if(pos0.lat < pos1.lat) cur = start_cands[0];
+      else cur = start_cands[1];
+    }
+  }
+  int prev = -1;
   while(prev == -1 || (int)graph[cur].size() == 2){
     for(const int x : graph[cur].next_list()){
       if(x == prev) continue;
