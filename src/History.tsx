@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
 import BinaryPagination from "./components/BinaryPagination";
+import getDateString from "./utils/getDateString";
 
 
 const stateNames = ["乗降", "通過"];
@@ -163,7 +164,7 @@ const History = () => {
             return (
               <Box key={`${date.toString()}|${item.stationCode}`}>
                 <Typography variant="h6">
-                  {date.getFullYear()}-{("0"+date.getMonth()+1).slice(-2)}-{("0"+date.getDate()).slice(-2)}({dayNames[date.getDay()]})
+                  {getDateString(date, true, true)}({dayNames[date.getDay()]})
                   ー {aroundDayName(item.date)}
                 </Typography>
                 <Box sx={{ ml: 2 }}>
