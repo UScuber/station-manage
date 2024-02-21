@@ -4,10 +4,24 @@ import {
   Button,
   CircularProgress,
   Container,
+  Toolbar,
   Typography,
 } from "@mui/material";
 import { Station, useRailwayInfo, useStationsInfoByRailwayCode } from "./Api";
 import AroundTime from "./components/AroundTime";
+import { MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import Leaflet from "leaflet";
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+const DefaultIcon = Leaflet.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconAnchor: [13, 40],
+  popupAnchor: [0, -35],
+});
+Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
 
 const StationItem = (
@@ -61,6 +75,19 @@ const RailwayInfo = () => {
     );
   }
 
+  const centerPosition = stationList?.reduce((totPos, item) => ({
+    lat: totPos.lat + item.latitude / stationList.length,
+    lng: totPos.lng + item.longitude / stationList.length,
+  }), { lat: 0, lng: 0 });
+
+  const stationsPositionMap = (() => {
+    let codeMap: { [key: number]: { lat: number, lng: number } } = {};
+    stationList?.forEach(item => {
+      codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
+    });
+    return codeMap;
+  })();
+
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
@@ -72,6 +99,28 @@ const RailwayInfo = () => {
           <StationItem key={item.stationCode} info={item} />
         ))}
       </Box>
+
+      <MapContainer center={centerPosition} zoom={8} style={{ height: "50vh" }}>
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {stationList?.map(item => (
+          <Marker position={[item.latitude, item.longitude]}>
+            <Popup>
+              <Box sx={{ textAlign: "center" }}>
+                <Link to={"/station/" + item.stationCode}>{item.stationName}</Link>
+              </Box>
+            </Popup>
+          </Marker>
+        ))}
+        {stationList?.map(item => (
+          item.left.map(code => (
+            <Polyline pathOptions={{ color: "#" + info?.railwayColor ?? "808080" }} positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]} />
+          ))
+        ))}
+      </MapContainer>
+      <Toolbar />
     </Container>
   )
 };
