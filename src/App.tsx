@@ -6,6 +6,7 @@ import Top from "./Top";
 import StationList from "./StationList";
 import StationInfo from "./StationInfo";
 import StationGroupInfo from "./StationGroupInfo";
+import RailwayInfo from "./RailwayInfo";
 import SearchStation from "./SearchStation";
 import History from "./History";
 import NotFound from "./NotFound";
@@ -28,6 +29,7 @@ const App = () => {
           <Route path="/stationList" element={<StationList />} />
           <Route path="/station/:stationCode" element={<StationInfo />} />
           <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
+          <Route path="/railway/:railwayCode" element={<RailwayInfo />} />
           <Route path="/searchStation" element={<SearchStation />} />
           <Route path="/history" element={<History />} />
           <Route path="/*" element={<NotFound />} />
