@@ -10,6 +10,7 @@ import RailwayInfo from "./RailwayInfo";
 import SearchStation from "./SearchStation";
 import History from "./History";
 import NotFound from "./NotFound";
+import CompanyInfo from "./CompanyInfo";
 
 const ThinToolbar = styled(Toolbar)(({ theme }) => ({
   minHeight: 25,
@@ -30,6 +31,7 @@ const App = () => {
           <Route path="/station/:stationCode" element={<StationInfo />} />
           <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
           <Route path="/railway/:railwayCode" element={<RailwayInfo />} />
+          <Route path="/company/:companyCode" element={<CompanyInfo />} />
           <Route path="/searchStation" element={<SearchStation />} />
           <Route path="/history" element={<History />} />
           <Route path="/*" element={<NotFound />} />
