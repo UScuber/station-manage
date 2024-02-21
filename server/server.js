@@ -288,6 +288,45 @@ app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
   }
 });
 
+// 会社に属する路線の駅情報を全取得
+app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
+  const code = req.params.companyCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana,
+        Prefectures.name AS prefName,
+        Railways.railwayName,
+        Railways.railwayColor,
+        Companies.companyName AS railwayCompany
+      FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+          AND Railways.companyCode = ?
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
+    `).all(code);
+
+    data = data.map(station => insert_next_stations(station, station.stationCode));
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
 // 座標から近い駅/駅グループを複数取得
 app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   const lat = req.query.lat;

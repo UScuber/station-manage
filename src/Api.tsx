@@ -53,6 +53,7 @@ export type Station = {
   passDate: Date | undefined,
   prefName: string,
   kana: string,
+  railwayColor: string,
   left: number[],
   right: number[],
 };
@@ -181,6 +182,19 @@ export const useRailwaysInfoByCompanyCode = (code: number | undefined): UseQuery
     queryKey: ["CompanyRailways", code],
     queryFn: async() => {
       const { data } = await axios.get<Railway[]>("/api/companyRailways/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+// 会社に属する路線の駅情報を全取得
+export const useStationsInfoByCompanyCode = (code: number | undefined): UseQueryResult<Station[]> => {
+  return useQuery<Station[]>({
+    queryKey: ["CompanyStations", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Station[]>("/api/companyStations/" + code, ngrok_header);
       return data;
     },
     enabled: code !== undefined,
