@@ -9,9 +9,30 @@ import {
   Typography,
   ListItemText,
   Stack,
+  Toolbar,
 } from "@mui/material";
 import AccessButton from "./components/AccessButton";
 import AroundTime from "./components/AroundTime";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import Leaflet, { LatLng } from "leaflet";
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+
+const DefaultIcon = Leaflet.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconAnchor: [13, 40],
+  popupAnchor: [0, -35],
+});
+Leaflet.Marker.prototype.options.icon = DefaultIcon;
+
+const ChangeMapCenter = ({ position }: { position: LatLng }) => {
+  const map = useMap();
+  map.panTo(position);
+  return null;
+};
 
 
 const NextStation = (
@@ -128,6 +149,8 @@ const StationInfo = () => {
     );
   }
 
+  const position = new LatLng(info!.latitude, info!.longitude);
+
   return (
     <Container>
       <Box maxWidth="sm" sx={{ margin: "auto" }}>
@@ -187,10 +210,20 @@ const StationInfo = () => {
           <ListItemText primary="駅グループ" />
         </Button>
       </Box>
-      <Box>
-        <Typography variant="h6" sx={{ color: "gray", display: "inline-block" }}>駅コード:</Typography>
-        <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.stationCode}</Typography>
-      </Box>
+
+      <MapContainer center={position} zoom={15} style={{ height: "50vh" }}>
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={position}>
+          <Popup>
+            <Box sx={{ textAlign: "center" }}>{info?.stationName}</Box>
+          </Popup>
+        </Marker>
+        <ChangeMapCenter position={position} />
+      </MapContainer>
+      <Toolbar />
     </Container>
   );
 };
