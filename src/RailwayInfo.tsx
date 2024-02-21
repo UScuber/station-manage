@@ -9,20 +9,22 @@ import {
 } from "@mui/material";
 import { Station, useRailwayInfo, useStationsInfoByRailwayCode } from "./Api";
 import AroundTime from "./components/AroundTime";
-import { MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
+import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-const DefaultIcon = Leaflet.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconAnchor: [13, 40],
-  popupAnchor: [0, -35],
-});
-Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
+const FitMapZoom = (
+  { positions }
+  :{
+    positions: { lat: number, lng: number}[],
+  }
+) => {
+  const map = useMap();
+  const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
+  map.fitBounds(group.getBounds());
+  return null;
+};
 
 const StationItem = (
   { info }
@@ -100,25 +102,26 @@ const RailwayInfo = () => {
         ))}
       </Box>
 
-      <MapContainer center={centerPosition} zoom={8} style={{ height: "50vh" }}>
+      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {stationList?.map(item => (
-          <Marker position={[item.latitude, item.longitude]}>
+          item.left.map(code => (
+            <Polyline pathOptions={{ color: "#" + info?.railwayColor ?? "808080" }} weight={8} positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]} />
+          ))
+        ))}
+        {stationList?.map(item => (
+          <CircleMarker center={[item.latitude, item.longitude]} pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }} radius={6}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/station/" + item.stationCode}>{item.stationName}</Link>
               </Box>
             </Popup>
-          </Marker>
+          </CircleMarker>
         ))}
-        {stationList?.map(item => (
-          item.left.map(code => (
-            <Polyline pathOptions={{ color: "#" + info?.railwayColor ?? "808080" }} positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]} />
-          ))
-        ))}
+        <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
       </MapContainer>
       <Toolbar />
     </Container>
