@@ -26,12 +26,7 @@ const FitMapZoom = (
   return null;
 };
 
-const StationItem = (
-  { info }
-  :{
-    info: Station,
-  }
-): JSX.Element => {
+const StationItem = ({ info } :{ info: Station }): JSX.Element => {
   return (
     <Button
       component={Link}
@@ -41,12 +36,12 @@ const StationItem = (
       sx={{ display: "block", mb: 0.5, textTransform: "none" }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h6">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 10, lineHeight: 1 }}>{info?.kana}</Typography>
+        <Typography variant="h6">{info.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 10, lineHeight: 1 }}>{info.kana}</Typography>
       </Box>
 
-      <Typography variant="h6" sx={{ fontSize: 14 }}>乗降:<AroundTime date={info?.getDate} invalidMsg="なし" fontSize={14} /></Typography>
-      <Typography variant="h6" sx={{ fontSize: 14 }}>通過:<AroundTime date={info?.passDate} invalidMsg="なし" fontSize={14} /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 14 }}>乗降:<AroundTime date={info.getDate} invalidMsg="なし" fontSize={14} /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 14 }}>通過:<AroundTime date={info.passDate} invalidMsg="なし" fontSize={14} /></Typography>
     </Button>
   );
 };
@@ -65,7 +60,7 @@ const RailwayInfo = () => {
       <Container>
         <Typography variant="h5">Error</Typography>
       </Container>
-    )
+    );
   }
 
   if(railway.isLoading || stationsQuery.isLoading){
@@ -109,7 +104,7 @@ const RailwayInfo = () => {
         />
         {stationList?.map(item => (
           item.left.map(code => (
-            <Polyline pathOptions={{ color: "#" + info?.railwayColor ?? "808080" }} weight={8} positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]} />
+            <Polyline pathOptions={{ color: "#" + (info?.railwayColor ?? "808080") }} weight={8} positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]} />
           ))
         ))}
         {stationList?.map(item => (
