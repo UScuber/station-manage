@@ -517,7 +517,7 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next
     data = db.prepare(`
         SELECT
           StationGroupHistory.*,
-          3 AS state,
+          2 AS state,
           '' AS railwayName,
           '' AS railwayColor
         FROM StationGroupHistory
