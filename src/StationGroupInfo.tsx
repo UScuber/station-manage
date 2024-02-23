@@ -14,11 +14,13 @@ import {
   Typography,
 } from "@mui/material";
 import { KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
-import { Station, StationGroup, useSendStationGroupStateMutation, useStationGroupInfo, useStationsInfoByGroupCode } from "./Api";
+import { Station, StationGroup, useSendStationGroupStateMutation, useStationGroupAllHistory, useStationGroupInfo, useStationsInfoByGroupCode } from "./Api";
 import AccessButton from "./components/AccessButton";
 import AroundTime from "./components/AroundTime";
 import getDateString from "./utils/getDateString";
 
+
+const stateName = ["乗降", "通過", "立ち寄り"];
 
 const StationItem = (
   { info }
@@ -56,6 +58,9 @@ const StationGroupInfo = () => {
   });
   const groupStationData = groupStationQuery.data;
 
+  const stationGroupAllHistoryQuery = useStationGroupAllHistory(stationGroupCode);
+  const stationGroupAllHistory = stationGroupAllHistoryQuery.data;
+
   const mutation = useSendStationGroupStateMutation();
 
   const handleSubmit = () => {
@@ -72,7 +77,7 @@ const StationGroupInfo = () => {
   }, []);
 
 
-  if(groupStations.isError || groupStationQuery.isError){
+  if(groupStations.isError || groupStationQuery.isError || stationGroupAllHistoryQuery.isError){
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -80,7 +85,7 @@ const StationGroupInfo = () => {
     );
   }
 
-  if(groupStations.isLoading || groupStationQuery.isLoading){
+  if(groupStations.isLoading || groupStationQuery.isLoading || stationGroupAllHistoryQuery.isLoading){
     return (
       <Container>
         Loading...
@@ -107,6 +112,7 @@ const StationGroupInfo = () => {
         >
           {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
+
         <Collapse in={open} timeout="auto" unmountOnExit>
           <Box sx={{ margin: 1 }}>
             <Typography variant="h6" component="div">History</Typography>
@@ -114,18 +120,23 @@ const StationGroupInfo = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Date</TableCell>
+                  <TableCell>State</TableCell>
+                  <TableCell>Railway</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {groupStationData?.date && (
+                {stationGroupAllHistory?.map(history => (
                   <TableRow>
-                    <TableCell>{getDateString(groupStationData?.date)}</TableCell>
+                    <TableCell>{getDateString(history.date)}</TableCell>
+                    <TableCell>{stateName[history.state]}</TableCell>
+                    <TableCell>{history.railwayName ?? ""}</TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
           </Box>
         </Collapse>
+
         <AccessButton
           text="立ち寄り"
           loading={loading}
