@@ -13,8 +13,23 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
-import { Station, StationGroup, useSendStationGroupStateMutation, useStationGroupAllHistory, useStationGroupInfo, useStationsInfoByGroupCode } from "./Api";
+import {
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
+import {
+  RecordState,
+  Station,
+  StationGroup,
+  StationHistoryData,
+  useDeleteStationGroupHistoryMutation,
+  useDeleteStationHistoryMutation,
+  useSendStationGroupStateMutation,
+  useStationGroupAllHistory,
+  useStationGroupInfo,
+  useStationsInfoByGroupCode,
+} from "./Api";
 import AccessButton from "./components/AccessButton";
 import AroundTime from "./components/AroundTime";
 import getDateString from "./utils/getDateString";
@@ -49,6 +64,7 @@ const StationGroupInfo = () => {
   const stationGroupCode = Number(useParams<"stationGroupCode">().stationGroupCode);
 
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
@@ -58,18 +74,39 @@ const StationGroupInfo = () => {
   });
   const groupStationData = groupStationQuery.data;
 
-  const stationGroupAllHistoryQuery = useStationGroupAllHistory(stationGroupCode);
+  const stationGroupAllHistoryQuery = useStationGroupAllHistory(stationGroupCode, (data: StationHistoryData[]) => {
+    setDeleteLoading(false);
+  });
   const stationGroupAllHistory = stationGroupAllHistoryQuery.data;
 
-  const mutation = useSendStationGroupStateMutation();
+  const sendMutation = useSendStationGroupStateMutation();
+  const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
+  const deleteStationGroupHistoryMutation = useDeleteStationGroupHistoryMutation();
 
   const handleSubmit = () => {
     setLoading(true);
 
-    mutation.mutate({
+    sendMutation.mutate({
       stationGroupCode: stationGroupCode,
       date: new Date(),
     });
+  };
+
+  const handleDeleteHistory = (history: StationHistoryData) => {
+    if(history.state === RecordState.Get || history.state === RecordState.Pass){
+      deleteStationHistoryMutation.mutate({
+        stationCode: history.stationCode!,
+        stationGroupCode: history.stationGroupCode,
+        date: history.date,
+        state: history.state,
+      });
+    }else{
+      deleteStationGroupHistoryMutation.mutate({
+        stationGroupCode: history.stationGroupCode,
+        date: history.date,
+      });
+    }
+    setDeleteLoading(true);
   };
 
   useEffect(() => {
@@ -122,14 +159,25 @@ const StationGroupInfo = () => {
                   <TableCell>Date</TableCell>
                   <TableCell>State</TableCell>
                   <TableCell>Railway</TableCell>
+                  <TableCell />
                 </TableRow>
               </TableHead>
               <TableBody>
                 {stationGroupAllHistory?.map(history => (
-                  <TableRow>
+                  <TableRow key={`${history.date}|${history.state}`}>
                     <TableCell>{getDateString(history.date)}</TableCell>
                     <TableCell>{stateName[history.state]}</TableCell>
                     <TableCell>{history.railwayName ?? ""}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        aria-label="delete"
+                        size="small"
+                        onClick={() => handleDeleteHistory(history)}
+                        disabled={deleteLoading}
+                      >
+                        <DeleteIcon fontSize="inherit" />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
