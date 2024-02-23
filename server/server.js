@@ -519,14 +519,18 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next
           StationGroupHistory.*,
           2 AS state,
           '' AS railwayName,
-          '' AS railwayColor
+          '' AS railwayColor,
+          NULL AS stationCode
         FROM StationGroupHistory
         WHERE stationGroupCode = ?
       UNION ALL
         SELECT
-          StationHistory.*,
+          Stations.stationGroupCode,
+          StationHistory.date,
+          StationHistory.state,
           Railways.railwayName,
-          Railways.railwayColor
+          Railways.railwayColor,
+          StationHistory.stationCode
         FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
@@ -646,12 +650,12 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
     `).run(code, date);
 
     db.prepare(`
-      UPDATE StationGroupHistory SET date = (
+      UPDATE StationGroups SET date = (
         SELECT MAX(date) FROM StationGroupHistory
         WHERE stationGroupCode = ?
       )
-      WHERE stationGroupCode = ? AND date = datetime(?)
-    `).run(code, code, date);
+      WHERE stationGroupCode = ?
+    `).run(code, code);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
