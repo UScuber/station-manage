@@ -302,6 +302,7 @@ export const useStationAllHistory = (code: number | undefined): UseQueryResult<S
 
 export type StationHistoryData = {
   stationGroupCode: number,
+  stationCode: number | undefined,
   date: Date,
   state: number,
   railwayName?: string,
@@ -309,11 +310,15 @@ export type StationHistoryData = {
 };
 
 // 駅グループ全体の履歴を取得(各駅の行動も含める)
-export const useStationGroupAllHistory = (code: number | undefined): UseQueryResult<StationHistoryData[]> => {
+export const useStationGroupAllHistory = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationHistoryData[]) => unknown
+): UseQueryResult<StationHistoryData[]> => {
   return useQuery<StationHistoryData[]>({
     queryKey: ["StationGroupHistory", code],
     queryFn: async() => {
       const { data } = await axios.get<StationHistoryData[]>("/api/stationGroupHistory/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -359,6 +364,7 @@ export const useSendStationGroupStateMutation = () => {
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
       queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
     },
     onError: (err: Error) => {
       console.error(err);
@@ -379,6 +385,8 @@ export const useDeleteStationHistoryMutation = (
     },
     onSuccess: (data: string, variables: StationHistory) => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode].filter(v => v) });
+      queryClient.invalidateQueries({ queryKey: ["GroupStations", variables.stationGroupCode].filter(v => v) });
       onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
@@ -400,6 +408,7 @@ export const useDeleteStationGroupHistoryMutation = (
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
       queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
       onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
