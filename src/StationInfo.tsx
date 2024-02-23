@@ -96,6 +96,7 @@ const StationInfo = () => {
 
     mutation.mutate({
       stationCode: stationCode,
+      stationGroupCode: info?.stationGroupCode,
       state: state,
       date: new Date(),
     });

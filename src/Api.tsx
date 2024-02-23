@@ -258,6 +258,7 @@ export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?
 
 export type StationHistory = {
   stationCode: number,
+  stationGroupCode?: number,
   date: Date,
   state: number,
 };
@@ -286,6 +287,41 @@ export const useStationHistoryCount = (): UseQueryResult<number> => {
 };
 
 
+// 駅の履歴を取得
+export const useStationAllHistory = (code: number | undefined): UseQueryResult<StationHistory[]> => {
+  return useQuery<StationHistory[]>({
+    queryKey: ["StationHistory", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationHistory[]>("/api/stationHistory/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+export type StationHistoryData = {
+  stationGroupCode: number,
+  date: Date,
+  state: number,
+  railwayName?: string,
+  railwayColor?: string,
+};
+
+// 駅グループ全体の履歴を取得(各駅の行動も含める)
+export const useStationGroupAllHistory = (code: number | undefined): UseQueryResult<StationHistoryData[]> => {
+  return useQuery<StationHistoryData[]>({
+    queryKey: ["StationGroupHistory", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationHistoryData[]>("/api/stationGroupHistory/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+
 // 乗降/通過の情報を追加
 export const useSendStationStateMutation = () => {
   const queryClient = useQueryClient();
@@ -298,6 +334,8 @@ export const useSendStationStateMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
     },
     onError: (err: Error) => {
       console.error(err);
