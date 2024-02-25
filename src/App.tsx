@@ -11,6 +11,7 @@ import SearchStation from "./SearchStation";
 import History from "./History";
 import NotFound from "./NotFound";
 import CompanyInfo from "./CompanyInfo";
+import HistoryMap from "./HistoryMap";
 
 const ThinToolbar = styled(Toolbar)(({ theme }) => ({
   minHeight: 25,
@@ -34,6 +35,7 @@ const App = () => {
           <Route path="/company/:companyCode" element={<CompanyInfo />} />
           <Route path="/searchStation" element={<SearchStation />} />
           <Route path="/history" element={<History />} />
+          <Route path="/historyMap" element={<HistoryMap />} />
           <Route path="/*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
