@@ -287,6 +287,20 @@ export const useStationHistoryCount = (): UseQueryResult<number> => {
 };
 
 
+export type StationHistoryDetail = Station & StationHistory;
+
+// 駅情報を付与した履歴を取得
+export const useStationHistoryListAndInfo = (): UseQueryResult<StationHistoryDetail[]> => {
+  return useQuery<StationHistoryDetail[]>({
+    queryKey: ["StationHistoryDetail"],
+    queryFn: async() => {
+      const { data } = await axios.get<StationHistoryDetail[]>("/api/stationHistoryAndInfo", ngrok_header);
+      return data;
+    },
+  });
+};
+
+
 // 駅の履歴を取得
 export const useStationAllHistory = (code: number | undefined): UseQueryResult<StationHistory[]> => {
   return useQuery<StationHistory[]>({

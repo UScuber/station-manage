@@ -491,6 +491,39 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   res.json(data.count);
 });
 
+// 乗降/通過の履歴と駅情報を取得
+app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
+  // const off = req.query.off;
+  // const len = req.query.len;
+  // if(off === undefined || len === undefined){
+  //   next(new Error("Invalid input"));
+  //   return;
+  // }
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT
+        StationHistory.*,
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana
+      FROM StationHistory
+      INNER JOIN Stations
+        ON StationHistory.stationCode = Stations.stationCode
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+      ORDER BY date DESC
+    `).all();
+
+    data = data.map(station => insert_next_stations(station, station.stationCode));
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
 // 駅の履歴を取得
 app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
   const code = req.params.stationCode;
