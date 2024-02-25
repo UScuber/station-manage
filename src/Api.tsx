@@ -258,7 +258,7 @@ export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?
 
 export type StationHistory = {
   stationCode: number,
-  stationGroupCode?: number,
+  stationGroupCode: number,
   date: Date,
   state: number,
 };

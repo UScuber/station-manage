@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Railway, useCompanyInfo, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
-import { CircleMarker, FeatureGroup, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
 

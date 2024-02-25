@@ -91,12 +91,14 @@ const StationInfo = () => {
   const leftKeyRef = useRef(false);
 
   const handleSubmit = (state: number) => {
+    if(!info) return;
+
     if(state === RecordState.Get) setGetLoading(true);
     else setPassLoading(true);
 
     mutation.mutate({
       stationCode: stationCode,
-      stationGroupCode: info?.stationGroupCode,
+      stationGroupCode: info.stationGroupCode,
       state: state,
       date: new Date(),
     });
