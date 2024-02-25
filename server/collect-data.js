@@ -2,6 +2,7 @@ const fs = require("fs");
 const { parse } = require("csv-parse/sync");
 const execShPromise = require("exec-sh").promise;
 const { SearchAttribute } = require("./searchAttr");
+const { NextStationGen } = require("./create");
 require("dotenv").config();
 
 
@@ -242,7 +243,9 @@ buffer += route_data.map(data => {
         + `${parseFloat(data.lat).toFixed(6)} ${parseFloat(data.lng).toFixed(6)}`;
 }).join("\n") + "\n";
 
-const next_station_data = JSON.parse(fs.readFileSync("./result.json"));
+(async() => {
+
+const next_station_data = await new NextStationGen().get_next_station_data();
 buffer += next_station_data.length + "\n";
 buffer += next_station_data.map(data => (
   data.stationCode + " " +
@@ -254,8 +257,6 @@ buffer += next_station_data.map(data => (
 
 fs.writeFileSync("input.txt", buffer);
 
-
-(async() => {
 
 console.log("Compile & Run");
 
