@@ -104,11 +104,21 @@ const RailwayInfo = () => {
         />
         {stationList?.map(item => (
           item.left.map(code => (
-            <Polyline pathOptions={{ color: "#" + (info?.railwayColor ?? "808080") }} weight={8} positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]} />
+            <Polyline
+              pathOptions={{ color: "#" + (info?.railwayColor ?? "808080") }}
+              weight={8}
+              positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]}
+              key={code}
+            />
           ))
         ))}
         {stationList?.map(item => (
-          <CircleMarker center={[item.latitude, item.longitude]} pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }} radius={6}>
+          <CircleMarker
+            center={[item.latitude, item.longitude]}
+            pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
+            radius={6}
+            key={item.stationCode}
+          >
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/station/" + item.stationCode}>{item.stationName}</Link>

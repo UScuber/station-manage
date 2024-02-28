@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Box,
@@ -20,8 +21,12 @@ const FitMapZoom = (
   }
 ) => {
   const map = useMap();
-  const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
-  map.fitBounds(group.getBounds());
+  const [first, setFirst] = useState(true);
+  if(first){
+    const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
+    map.fitBounds(group.getBounds());
+    setFirst(false);
+  }
   return null;
 };
 
@@ -98,7 +103,7 @@ const CompanyInfo = () => {
       </Box>
       <Box>
         {railwayList?.map(item => (
-          <RailwayItem key={item.railwayCode} info={item} />
+          <RailwayItem info={item} key={item.railwayCode} />
         ))}
       </Box>
 
@@ -108,19 +113,28 @@ const CompanyInfo = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {stationList?.map(item => (
-          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }}>
+          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/railway/" + item.railwayCode}>{item.railwayName}</Link>
               </Box>
             </Popup>
             {item.left.map(code => (
-              <Polyline key={code} weight={8} positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]} />
+              <Polyline
+                key={code}
+                weight={8}
+                positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]}
+              />
             ))}
           </FeatureGroup>
         ))}
         {stationList?.map(item => (
-          <CircleMarker center={[item.latitude, item.longitude]} pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }} radius={6}>
+          <CircleMarker
+            center={[item.latitude, item.longitude]}
+            pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
+            radius={6}
+            key={item.stationCode}
+          >
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/station/" + item.stationCode}>{item.stationName}</Link>
