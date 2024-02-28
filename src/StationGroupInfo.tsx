@@ -11,6 +11,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Toolbar,
   Typography,
 } from "@mui/material";
 import {
@@ -33,9 +34,31 @@ import {
 import AccessButton from "./components/AccessButton";
 import AroundTime from "./components/AroundTime";
 import getDateString from "./utils/getDateString";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import Leaflet, { LatLng } from "leaflet";
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
 
 const stateName = ["乗降", "通過", "立ち寄り"];
+
+
+const DefaultIcon = Leaflet.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconAnchor: [13, 40],
+  popupAnchor: [0, -35],
+});
+Leaflet.Marker.prototype.options.icon = DefaultIcon;
+
+
+const ChangeMapCenter = ({ position }: { position: LatLng }) => {
+  const map = useMap();
+  map.panTo(position);
+  return null;
+};
+
 
 const StationItem = (
   { info }
@@ -59,6 +82,7 @@ const StationItem = (
     </Button>
   );
 };
+
 
 const StationGroupInfo = () => {
   const stationGroupCode = Number(useParams<"stationGroupCode">().stationGroupCode);
@@ -131,6 +155,8 @@ const StationGroupInfo = () => {
     );
   }
 
+  const position = new LatLng(groupStationData!.latitude, groupStationData!.longitude);
+
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
@@ -193,11 +219,25 @@ const StationGroupInfo = () => {
           onClick={handleSubmit}
           sx={{ mb: 2, display: "block" }}
         />
-      <Box>
+      <Box sx={{ mb: 2 }}>
         {stationList?.map(item => (
           <StationItem key={item.stationCode} info={item} />
         ))}
       </Box>
+
+      <MapContainer center={position} zoom={15} style={{ height: "50vh" }}>
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={position}>
+          <Popup>
+            <Box sx={{ textAlign: "center" }}>{groupStationData?.stationName}</Box>
+          </Popup>
+        </Marker>
+        <ChangeMapCenter position={position} />
+      </MapContainer>
+      <Toolbar />
     </Container>
   );
 };
