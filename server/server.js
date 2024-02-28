@@ -327,6 +327,86 @@ app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
   }
 });
 
+// 県に属する路線の路線情報を取得
+app.get("/api/prefRailways/:prefCode", accessLog, (req, res, next) => {
+  const code = req.params.prefCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT
+        Railways.railwayCode,
+        Railways.railwayName,
+        Railways.formalName,
+        Railways.railwayKana,
+        Railways.railwayColor,
+        Railways.companyCode,
+        Companies.companyName
+      FROM Railways
+      INNER JOIN Stations
+        ON Railways.railwayCode = Stations.railwayCode
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND StationGroups.prefCode = ?
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+      GROUP BY Railways.railwayCode
+    `).all(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
+// 県に属する路線の駅情報を全取得
+app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
+  const code = req.params.prefCode;
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT
+        Stations.*,
+        StationGroups.stationName,
+        StationGroups.kana,
+        Railways.railwayCode,
+        Railways.railwayName,
+        Railways.formalName,
+        Railways.railwayKana,
+        Railways.railwayColor,
+        Railways.companyCode,
+        Companies.companyName AS railwayCompany,
+        Prefectures.name AS prefName
+      FROM Railways
+      INNER JOIN Stations
+        ON Railways.railwayCode = Stations.railwayCode
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND StationGroups.prefCode = ?
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
+      GROUP BY Railways.railwayCode
+    `).all(code);
+
+    data = data.map(station => insert_next_stations(station, station.stationCode));
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
 // 座標から近い駅/駅グループを複数取得
 app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
   const lat = req.query.lat;
