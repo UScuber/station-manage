@@ -202,6 +202,32 @@ export const useStationsInfoByCompanyCode = (code: number | undefined): UseQuery
 };
 
 
+// 県に属する路線の路線情報を取得
+export const useRailwaysInfoByPrefCode = (code: number | undefined): UseQueryResult<Railway[]> => {
+  return useQuery<Railway[]>({
+    queryKey: ["PrefRailways", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Railway[]>("/api/prefRailways/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+// 県に属する路線の駅情報を全取得
+export const useStationsInfoByPrefCode = (code: number | undefined): UseQueryResult<Station[]> => {
+  return useQuery<Station[]>({
+    queryKey: ["PrefStations", code],
+    queryFn: async() => {
+      const { data } = await axios.get<Station[]>("/api/prefStations/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
 // 駅グループを名前で検索、区間指定
 export const useSearchStationGroupList = (
   { offset, length, name }

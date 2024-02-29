@@ -373,7 +373,6 @@ app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
         Stations.*,
         StationGroups.stationName,
         StationGroups.kana,
-        Railways.railwayCode,
         Railways.railwayName,
         Railways.formalName,
         Railways.railwayKana,
@@ -381,17 +380,25 @@ app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
         Railways.companyCode,
         Companies.companyName AS railwayCompany,
         Prefectures.name AS prefName
-      FROM Railways
-      INNER JOIN Stations
-        ON Railways.railwayCode = Stations.railwayCode
+      FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      INNER JOIN (
+        SELECT Railways.railwayCode FROM Railways
+        INNER JOIN Stations
+          ON Railways.railwayCode = Stations.railwayCode
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+            AND StationGroups.prefCode = ?
+        GROUP BY Railways.railwayCode
+      ) AS Codes
+        ON Stations.railwayCode = Codes.railwayCode
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
-          AND StationGroups.prefCode = ?
       INNER JOIN Companies
         ON Railways.companyCode = Companies.companyCode
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
-      GROUP BY Railways.railwayCode
     `).all(code);
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
