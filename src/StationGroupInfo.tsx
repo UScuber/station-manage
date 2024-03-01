@@ -164,7 +164,14 @@ const StationGroupInfo = () => {
           <Typography variant="h3" sx={{ lineHeight: 1 }}>{groupStationData?.stationName}</Typography>
           <Typography variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</Typography>
         </Box>
-          <Typography variant="h6">{groupStationData?.prefName}</Typography>
+          <Button
+            component={Link}
+            to={"/pref/" + groupStationData?.prefCode}
+            color="inherit"
+            sx={{ textTransform: "none", padding: 0 }}
+          >
+            <Typography variant="h6">{groupStationData?.prefName}</Typography>
+          </Button>
         </Box>
         <Typography variant="h6" sx={{ display: "inline-block" }}>
           立ち寄り: <AroundTime date={groupStationData?.date} invalidMsg="なし" />

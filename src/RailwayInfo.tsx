@@ -90,6 +90,15 @@ const RailwayInfo = () => {
       <Box sx={{ mb: 2 }}>
         <Typography variant="h3" sx={{ lineHeight: 1 }}>{info?.railwayName}</Typography>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.railwayKana}</Typography>
+
+        <Button
+          component={Link}
+          to={"/company/" + info?.companyCode}
+          color="inherit"
+          sx={{ textTransform: "none", padding: 0 }}
+        >
+          <Typography variant="h5">{info?.companyName}</Typography>
+        </Button>
       </Box>
       <Box>
         {stationList?.map(item => (

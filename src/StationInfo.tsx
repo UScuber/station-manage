@@ -175,11 +175,32 @@ const StationInfo = () => {
         </Box>
       </Box>
       <Box>
-        <Typography variant="h6" sx={{ mb: 2 }}>{info?.prefName}</Typography>
+        <Button
+          component={Link}
+          to={"/pref/" + info?.prefCode}
+          color="inherit"
+          sx={{ textTransform: "none", padding: 0 }}
+        >
+          <Typography variant="h6">{info?.prefName}</Typography>
+        </Button>
 
         <Box>
-          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-          <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+          <Button
+            component={Link}
+            to={"/company/" + info?.companyCode}
+            color="inherit"
+            sx={{ textTransform: "none", padding: 0 }}
+          >
+            <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+          </Button>
+          <Button
+            component={Link}
+            to={"/railway/" + info?.railwayCode}
+            color="inherit"
+            sx={{ textTransform: "none", padding: 0 }}
+          >
+            <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+          </Button>
         </Box>
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
