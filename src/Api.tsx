@@ -51,6 +51,7 @@ export type Station = {
   longitude: number,
   getDate: Date | undefined,
   passDate: Date | undefined,
+  prefCode: number,
   prefName: string,
   kana: string,
   railwayColor: string,

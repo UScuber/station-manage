@@ -94,6 +94,7 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
         Stations.*,
         StationGroups.stationName,
         StationGroups.kana,
+        Prefectures.code AS prefCode,
         Prefectures.name AS prefName,
         Railways.railwayName,
         Railways.railwayColor,
@@ -298,6 +299,7 @@ app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
         Stations.*,
         StationGroups.stationName,
         StationGroups.kana,
+        Prefectures.code AS prefCode,
         Prefectures.name AS prefName,
         Railways.railwayName,
         Railways.railwayColor,
@@ -379,6 +381,7 @@ app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
         Railways.railwayColor,
         Railways.companyCode,
         Companies.companyName AS railwayCompany,
+        Prefectures.code AS prefCode,
         Prefectures.name AS prefName
       FROM Stations
       INNER JOIN Railways
@@ -428,6 +431,7 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
     data = db.prepare(`
       SELECT
         StationGroups.*,
+        Prefectures.code AS prefCode,
         Prefectures.name AS prefName,
         (
           6371 * ACOS(
@@ -466,6 +470,7 @@ app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
       WITH StationData AS (
         SELECT
           StationGroups.*,
+          Prefectures.code AS prefCode,
           Prefectures.name AS prefName
         FROM StationGroups
         INNER JOIN Prefectures
