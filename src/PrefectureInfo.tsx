@@ -8,7 +8,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Railway, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";
+import { Railway, usePrefName, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
@@ -62,7 +62,10 @@ const PrefectureInfo = () => {
   const stationsQuery = useStationsInfoByPrefCode(prefCode);
   const stationList = stationsQuery.data;
 
-  if(railwaysQuery.isError || stationsQuery.isError){
+  const prefQuery = usePrefName(prefCode);
+  const prefName = prefQuery.data;
+
+  if(railwaysQuery.isError || stationsQuery.isError || prefQuery.isError){
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -70,7 +73,7 @@ const PrefectureInfo = () => {
     );
   }
 
-  if(railwaysQuery.isLoading || stationsQuery.isLoading){
+  if(railwaysQuery.isLoading || stationsQuery.isLoading || prefQuery.isLoading){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -95,7 +98,7 @@ const PrefectureInfo = () => {
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h3">{stationList && stationList[0].prefName}</Typography>
+        <Typography variant="h3">{prefName}</Typography>
       </Box>
       <Box>
         {railwayList?.map(item => (

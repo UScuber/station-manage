@@ -540,6 +540,22 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
 });
 
 
+// 都道府県名を取得
+app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
+  const code = req.params.prefCode;
+  try{
+    data = db.prepare(`
+      SELECT * FROM Prefectures
+      WHERE code = ?
+    `).get(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data.name);
+});
+
 ///// History
 
 // 乗降/通過の履歴を区間取得

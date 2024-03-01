@@ -282,6 +282,20 @@ export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?
 };
 
 
+// 都道府県名を取得
+export const usePrefName = (code: number | undefined): UseQueryResult<string> => {
+  return useQuery<string>({
+    queryKey: ["Prefecture", code],
+    queryFn: async() => {
+      const { data } = await axios.get<string>("/api/pref/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+    staleTime: Infinity,
+  });
+};
+
+
 export type StationHistory = {
   stationCode: number,
   stationGroupCode: number,
