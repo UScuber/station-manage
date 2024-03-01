@@ -97,7 +97,9 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
         Prefectures.code AS prefCode,
         Prefectures.name AS prefName,
         Railways.railwayName,
+        Railways.railwayCode,
         Railways.railwayColor,
+        Companies.companyCode,
         Companies.companyName AS railwayCompany
       FROM Stations
       INNER JOIN StationGroups
@@ -167,6 +169,7 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
         StationGroups.kana,
         StationGroups.date,
         Railways.railwayName,
+        Companies.companyCode,
         Companies.companyName AS railwayCompany
       FROM Stations
       INNER JOIN StationGroups
@@ -227,11 +230,23 @@ app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
       SELECT
         Stations.*,
         StationGroups.stationName,
-        StationGroups.kana
+        StationGroups.kana,
+        Prefectures.code AS prefCode,
+        Prefectures.name AS prefName,
+        Railways.railwayName,
+        Railways.railwayColor,
+        Companies.companyCode,
+        Companies.companyName AS railwayCompany
       FROM Stations
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND Stations.railwayCode = ?
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
     `).all(code);
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
@@ -303,6 +318,7 @@ app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
         Prefectures.name AS prefName,
         Railways.railwayName,
         Railways.railwayColor,
+        Companies.companyCode,
         Companies.companyName AS railwayCompany
       FROM Stations
       INNER JOIN Railways

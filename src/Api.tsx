@@ -96,6 +96,7 @@ export type StationGroup = {
   latitude: number,
   longitude: number,
   date: Date | undefined,
+  prefCode: number,
   prefName: string,
   kana: string,
   distance?: number,
