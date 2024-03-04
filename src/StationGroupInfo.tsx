@@ -26,6 +26,7 @@ import {
   StationHistoryData,
   useDeleteStationGroupHistoryMutation,
   useDeleteStationHistoryMutation,
+  useSearchKNearestStationGroups,
   useSendStationGroupStateMutation,
   useStationGroupAllHistory,
   useStationGroupInfo,
@@ -34,7 +35,7 @@ import {
 import AccessButton from "./components/AccessButton";
 import AroundTime from "./components/AroundTime";
 import getDateString from "./utils/getDateString";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -102,6 +103,12 @@ const StationGroupInfo = () => {
     setDeleteLoading(false);
   });
   const stationGroupAllHistory = stationGroupAllHistoryQuery.data;
+
+  const nearStationsQuery = useSearchKNearestStationGroups(
+    groupStationData ? { lat: groupStationData.latitude, lng: groupStationData.longitude } : undefined,
+    5
+  );
+  const nearStations = nearStationsQuery.data;
 
   const sendMutation = useSendStationGroupStateMutation();
   const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
@@ -232,7 +239,7 @@ const StationGroupInfo = () => {
         ))}
       </Box>
 
-      <MapContainer center={position} zoom={15} style={{ height: "50vh" }}>
+      <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -241,7 +248,17 @@ const StationGroupInfo = () => {
           <Popup>
             <Box sx={{ textAlign: "center" }}>{groupStationData?.stationName}</Box>
           </Popup>
+          <Tooltip direction="bottom" opacity={1} permanent>{groupStationData?.stationName}</Tooltip>
         </Marker>
+        {nearStations && nearStations.filter((v,i) => i).map(item => (
+          <Marker position={[item.latitude, item.longitude]}>
+            <Popup>
+              <Box sx={{ textAlign: "center" }}>
+                <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
+              </Box>
+            </Popup>
+          </Marker>
+        ))}
         <ChangeMapCenter position={position} />
       </MapContainer>
       <Toolbar />
