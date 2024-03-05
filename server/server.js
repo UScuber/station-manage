@@ -86,7 +86,7 @@ const insert_next_stations = (elem, code) => {
 
 // 駅情報取得
 app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
-  const code = req.params.stationCode;
+  const code = +req.params.stationCode;
   let data;
   try{
     data = db.prepare(`
@@ -128,7 +128,7 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
 
 // 駅グループの情報取得
 app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
-  const code = req.params.stationGroupCode;
+  const code = +req.params.stationGroupCode;
   let data;
   try{
     data = db.prepare(`
@@ -159,7 +159,7 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
 
 // 駅グループに属する駅の駅情報を取得
 app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next) => {
-  const code = req.params.stationGroupCode;
+  const code = +req.params.stationGroupCode;
   let data;
   try{
     data = db.prepare(`
@@ -196,7 +196,7 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
 
 // 路線情報取得
 app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
-  const code = req.params.railwayCode;
+  const code = +req.params.railwayCode;
   let data;
   try{
     data = db.prepare(`
@@ -223,7 +223,7 @@ app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
 
 // 路線に属する駅の駅情報を取得
 app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
-  const code = req.params.railwayCode;
+  const code = +req.params.railwayCode;
   let data;
   try{
     data = db.prepare(`
@@ -264,13 +264,21 @@ app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
 
 // 会社情報取得
 app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
-  const code = req.params.companyCode;
+  const code = +req.params.companyCode;
   let data;
   try{
-    data = db.prepare(`
-      SELECT * FROM Companies
-      WHERE companyCode = ?
-    `).get(code);
+    if(code === 0){
+      data = {
+        companyCode: 0,
+        companyName: "JR",
+        formalName: "JR",
+      };
+    }else{
+      data = db.prepare(`
+        SELECT * FROM Companies
+        WHERE companyCode = ?
+      `).get(code);
+    }
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -285,13 +293,20 @@ app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
 
 // 会社に属する路線の路線情報を取得
 app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
-  const code = req.params.companyCode;
+  const code = +req.params.companyCode;
   let data;
   try{
-    data = db.prepare(`
-      SELECT * FROM Railways
-      WHERE companyCode = ?
-    `).all(code);
+    if(code === 0){
+      data = db.prepare(`
+        SELECT * FROM Railways
+        WHERE companyCode <= 6
+      `).all();
+    }else{
+      data = db.prepare(`
+        SELECT * FROM Railways
+        WHERE companyCode = ?
+      `).all(code);
+    }
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -306,31 +321,56 @@ app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
 
 // 会社に属する路線の駅情報を全取得
 app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
-  const code = req.params.companyCode;
+  const code = +req.params.companyCode;
   let data;
   try{
-    data = db.prepare(`
-      SELECT
-        Stations.*,
-        StationGroups.stationName,
-        StationGroups.kana,
-        Prefectures.code AS prefCode,
-        Prefectures.name AS prefName,
-        Railways.railwayName,
-        Railways.railwayColor,
-        Companies.companyCode,
-        Companies.companyName AS railwayCompany
-      FROM Stations
-      INNER JOIN Railways
-        ON Stations.railwayCode = Railways.railwayCode
-          AND Railways.companyCode = ?
-      INNER JOIN Companies
-        ON Railways.companyCode = Companies.companyCode
-      INNER JOIN StationGroups
-        ON Stations.stationGroupCode = StationGroups.stationGroupCode
-      INNER JOIN Prefectures
-        ON StationGroups.prefCode = Prefectures.code
-    `).all(code);
+    if(code === 0){
+      data = db.prepare(`
+        SELECT
+          Stations.*,
+          StationGroups.stationName,
+          StationGroups.kana,
+          Prefectures.code AS prefCode,
+          Prefectures.name AS prefName,
+          Railways.railwayName,
+          Railways.railwayColor,
+          Companies.companyCode,
+          Companies.companyName AS railwayCompany
+        FROM Stations
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+            AND Railways.companyCode <= 6
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
+      `).all();
+    }else{
+      data = db.prepare(`
+        SELECT
+          Stations.*,
+          StationGroups.stationName,
+          StationGroups.kana,
+          Prefectures.code AS prefCode,
+          Prefectures.name AS prefName,
+          Railways.railwayName,
+          Railways.railwayColor,
+          Companies.companyCode,
+          Companies.companyName AS railwayCompany
+        FROM Stations
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+            AND Railways.companyCode = ?
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
+      `).all(code);
+    }
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
@@ -347,7 +387,7 @@ app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
 
 // 県に属する路線の路線情報を取得
 app.get("/api/prefRailways/:prefCode", accessLog, (req, res, next) => {
-  const code = req.params.prefCode;
+  const code = +req.params.prefCode;
   let data;
   try{
     data = db.prepare(`
@@ -383,7 +423,7 @@ app.get("/api/prefRailways/:prefCode", accessLog, (req, res, next) => {
 
 // 県に属する路線の駅情報を全取得
 app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
-  const code = req.params.prefCode;
+  const code = +req.params.prefCode;
   let data;
   try{
     data = db.prepare(`
