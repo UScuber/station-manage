@@ -88,7 +88,17 @@ const RailwayInfo = () => {
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h3" sx={{ lineHeight: 1 }}>{info?.railwayName}</Typography>
+        <Typography
+          variant="h3"
+          sx={{
+            lineHeight: 1,
+            textDecoration: "underline",
+            textDecorationColor: "#" + info?.railwayColor,
+            textDecorationThickness: 3,
+          }}
+        >
+          {info?.railwayName}
+        </Typography>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.railwayKana}</Typography>
 
         <Button

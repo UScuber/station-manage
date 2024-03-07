@@ -76,7 +76,18 @@ const StationItem = (
       sx={{ display: "block", mb: 0.5, textTransform: "none" }}
     >
       <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-      <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+      <Typography
+        variant="h6"
+        sx={{
+          mx: 1,
+          display: "inline-block",
+          textDecoration: "underline",
+          textDecorationColor: "#" + info.railwayColor,
+          textDecorationThickness: 3,
+        }}
+      >
+        {info?.railwayName}
+      </Typography>
 
       <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
       <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
@@ -208,7 +219,15 @@ const StationGroupInfo = () => {
                   <TableRow key={`${history.date}|${history.state}`}>
                     <TableCell>{getDateString(history.date)}</TableCell>
                     <TableCell>{stateName[history.state]}</TableCell>
-                    <TableCell>{history.railwayName ?? ""}</TableCell>
+                    <TableCell
+                      sx={{
+                        textDecoration: "underline",
+                        textDecorationColor: "#" + history?.railwayColor,
+                        textDecorationThickness: 2,
+                      }}
+                    >
+                      {history.railwayName ?? ""}
+                    </TableCell>
                     <TableCell>
                       <IconButton
                         aria-label="delete"

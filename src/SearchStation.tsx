@@ -64,7 +64,18 @@ const StationGroupInfo = (
           sx={{ display: "block", mb: 1, ml: 1, textTransform: "none" }}
         >
           <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-          <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              mx: 1,
+              display: "inline-block",
+              textDecoration: "underline",
+              textDecorationColor: "#" + info?.railwayColor,
+              textDecorationThickness: 3
+            }}
+          >
+            {info?.railwayName}
+          </Typography>
 
           <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" fontSize={16} /></Typography>
           <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" fontSize={16} /></Typography>

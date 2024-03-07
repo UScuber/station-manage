@@ -96,7 +96,17 @@ const HistoryContent = (
       </Box>
 
       <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-      <Typography variant="h6" sx={{ display: "inline-block" }}>{info?.railwayName}</Typography>
+      <Typography
+        variant="h6"
+        sx={{
+          display: "inline-block",
+          textDecoration: "underline",
+          textDecorationColor: "#" + info?.railwayColor,
+          textDecorationThickness: 3
+        }}
+      >
+        {info?.railwayName}
+      </Typography>
 
       <Typography variant="h6">{stateNames[history.state]}: {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}</Typography>
     </Button>

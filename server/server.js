@@ -169,6 +169,7 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
         StationGroups.kana,
         StationGroups.date,
         Railways.railwayName,
+        Railways.railwayColor,
         Companies.companyCode,
         Companies.companyName AS railwayCompany
       FROM Stations

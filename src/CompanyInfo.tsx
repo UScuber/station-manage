@@ -40,11 +40,14 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{ display: "block", mb: 0.5, textTransform: "none" }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h6" sx={{
-          textDecoration: "underline",
-          textDecorationColor: "#" + info.railwayColor,
-          textDecorationThickness: 3
-        }}>
+        <Typography
+          variant="h6"
+          sx={{
+            textDecoration: "underline",
+            textDecorationColor: "#" + info.railwayColor,
+            textDecorationThickness: 3,
+          }}
+        >
           {info.railwayName}
         </Typography>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>

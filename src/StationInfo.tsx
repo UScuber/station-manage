@@ -238,7 +238,18 @@ const StationInfo = () => {
             color="inherit"
             sx={{ textTransform: "none", padding: 0 }}
           >
-            <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                mx: 1,
+                display: "inline-block",
+                textDecoration: "underline",
+                textDecorationColor: "#" + info?.railwayColor,
+                textDecorationThickness: 3,
+              }}
+            >
+              {info?.railwayName}
+            </Typography>
           </Button>
         </Box>
 
