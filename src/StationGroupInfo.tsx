@@ -142,7 +142,8 @@ const StationGroupInfo = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    setOpen(false);
+  }, [stationGroupCode]);
 
 
   if(groupStations.isError || groupStationQuery.isError || stationGroupAllHistoryQuery.isError){
@@ -251,7 +252,7 @@ const StationGroupInfo = () => {
           <Tooltip direction="bottom" opacity={1} permanent>{groupStationData?.stationName}</Tooltip>
         </Marker>
         {nearStations && nearStations.filter((v,i) => i).map(item => (
-          <Marker position={[item.latitude, item.longitude]}>
+          <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>

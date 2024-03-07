@@ -344,11 +344,15 @@ export const useStationHistoryListAndInfo = (): UseQueryResult<StationHistoryDet
 
 
 // 駅の履歴を取得
-export const useStationAllHistory = (code: number | undefined): UseQueryResult<StationHistory[]> => {
+export const useStationAllHistory = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationHistory[]) => unknown
+): UseQueryResult<StationHistory[]> => {
   return useQuery<StationHistory[]>({
     queryKey: ["StationHistory", code],
     queryFn: async() => {
       const { data } = await axios.get<StationHistory[]>("/api/stationHistory/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
