@@ -620,7 +620,7 @@ app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
 
 ///// History
 
-// 乗降/通過の履歴を区間取得
+// 全体の乗降/通過の履歴を区間取得
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
   const off = req.query.off;
   const len = req.query.len;
@@ -641,7 +641,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
   res.json(data);
 });
 
-// 乗降/通過の履歴の個数を取得
+// 全体の乗降/通過の履歴の個数を取得
 app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   let data;
   try{
@@ -656,7 +656,7 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   res.json(data.count);
 });
 
-// 乗降/通過の履歴と駅情報を取得
+// 全体の乗降/通過の履歴と駅情報を取得
 app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
   // const off = req.query.off;
   // const len = req.query.len;
@@ -743,6 +743,86 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next
     return;
   }
   res.json(data);
+});
+
+// 路線の駅の個数と乗降/通過した駅の個数を取得
+app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
+  const code = +req.params.railwayCode;
+  let stationNum, getOrPassStationNum;
+  try{
+    stationNum = db.prepare(`
+      SELECT COUNT(*) AS num FROM Stations
+      WHERE railwayCode = ?
+    `).get(code);
+
+    getOrPassStationNum = db.prepare(`
+      SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
+      INNER JOIN Stations
+        ON StationHistory.stationCode = Stations.stationCode
+          AND Stations.railwayCode = ?
+    `).get(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
+});
+
+// 会社の駅の個数と乗降/通過した駅の個数を取得
+app.get("/api/companyProgress/:companyCode", accessLog, (req, res, next) => {
+  const code = +req.params.companyCode;
+  let stationNum, getOrPassStationNum;
+  try{
+    stationNum = db.prepare(`
+      SELECT COUNT(*) AS num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+          AND Railways.companyCode = ?
+    `).get(code);
+
+    getOrPassStationNum = db.prepare(`
+      SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
+      INNER JOIN Stations
+        ON StationHistory.stationCode = Stations.stationCode
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+          AND Railways.companyCode = ?
+    `).get(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
+});
+
+// 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
+app.get("/api/prefProgress/:prefCode", accessLog, (req, res, next) => {
+  const code = +req.params.prefCode;
+  let stationNum, getOrPassStationNum;
+  try{
+    stationNum = db.prepare(`
+      SELECT COUNT(*) AS num FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND StationGroups.prefCode = ?
+    `).get(code);
+
+    getOrPassStationNum = db.prepare(`
+      SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
+      INNER JOIN Stations
+        ON StationHistory.stationCode = Stations.stationCode
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+          AND StationGroups.prefCode = ?
+    `).get(code);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
 });
 
 // 乗降/通過の情報を追加
