@@ -35,7 +35,10 @@ const db = sqlite3(db_path);
 db.pragma("journal_mode = WAL");
 
 
+const is_valid_date = (date) => /^\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}$/.test(date);
+
 const convert_date = (date) => {
+  if(!is_valid_date(date)) return undefined;
   const date_options = {
     year: "numeric",
     month: "2-digit",
@@ -44,7 +47,7 @@ const convert_date = (date) => {
     minute: "2-digit",
     second: "2-digit",
   };
-  return date ? new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-") : undefined;
+  return new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-");
 };
 
 
@@ -63,7 +66,7 @@ app.get("/", accessLog, (req, res) => {
 });
 
 app.get("/api", accessLog, (req, res) => {
-  res.json({ res: "OK" });
+  res.end("OK");
 });
 
 
@@ -87,6 +90,10 @@ const insert_next_stations = (elem, code) => {
 // 駅情報取得
 app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
   const code = +req.params.stationCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -129,6 +136,10 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
 // 駅グループの情報取得
 app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
   const code = +req.params.stationGroupCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -160,6 +171,10 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
 // 駅グループに属する駅の駅情報を取得
 app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next) => {
   const code = +req.params.stationGroupCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -198,6 +213,10 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
 // 路線情報取得
 app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
   const code = +req.params.railwayCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -225,6 +244,10 @@ app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
 // 路線に属する駅の駅情報を取得
 app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
   const code = +req.params.railwayCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -266,6 +289,10 @@ app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
 // 会社情報取得
 app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
   const code = +req.params.companyCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     if(code === 0){
@@ -295,6 +322,10 @@ app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
 // 会社に属する路線の路線情報を取得
 app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
   const code = +req.params.companyCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     if(code === 0){
@@ -323,6 +354,10 @@ app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
 // 会社に属する路線の駅情報を全取得
 app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
   const code = +req.params.companyCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     if(code === 0){
@@ -389,6 +424,10 @@ app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
 // 県に属する路線の路線情報を取得
 app.get("/api/prefRailways/:prefCode", accessLog, (req, res, next) => {
   const code = +req.params.prefCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -425,6 +464,10 @@ app.get("/api/prefRailways/:prefCode", accessLog, (req, res, next) => {
 // 県に属する路線の駅情報を全取得
 app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
   const code = +req.params.prefCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -476,10 +519,10 @@ app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
 
 // 座標から近い駅/駅グループを複数取得
 app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
-  const lat = req.query.lat;
-  const lng = req.query.lng;
-  const num = req.query.num ? Math.min(Number(req.query.num), 20) : 20;
-  if(lat === undefined || lng == undefined){
+  const lat = +req.query.lat;
+  const lng = +req.query.lng;
+  const num = req.query.num ? Math.min(parseInt(req.query.num), 20) : 20;
+  if(isNaN(lat) || isNaN(lng)){
     next(new Error("Invalid input"));
     return;
   }
@@ -514,10 +557,10 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
 
 // 駅グループを名前で検索、区間指定
 app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
-  const off = req.query.off;
-  const len = req.query.len;
+  const off = +req.query.off;
+  const len = +req.query.len;
   const name = req.query.name ?? "";
-  if(off === undefined || len === undefined){
+  if(isNaN(off) || isNaN(len)){
     next(new Error("Invalid input"));
     return;
   }
@@ -604,7 +647,11 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
 
 // 都道府県名を取得
 app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
-  const code = req.params.prefCode;
+  const code = +req.params.prefCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   try{
     data = db.prepare(`
       SELECT * FROM Prefectures
@@ -622,9 +669,9 @@ app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
 
 // 全体の乗降/通過の履歴を区間取得
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
-  const off = req.query.off;
-  const len = req.query.len;
-  if(off === undefined || len === undefined){
+  const off = +req.query.off;
+  const len = +req.query.len;
+  if(isNaN(off) || isNaN(len)){
     next(new Error("Invalid input"));
     return;
   }
@@ -691,7 +738,11 @@ app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
 
 // 駅の履歴を取得
 app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
-  const code = req.params.stationCode;
+  const code = +req.params.stationCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -709,7 +760,11 @@ app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
 
 // 駅グループ全体の履歴を取得(各駅の行動も含める)
 app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next) => {
-  const code = req.params.stationGroupCode;
+  const code = +req.params.stationGroupCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
@@ -748,6 +803,10 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next
 // 路線の駅の個数と乗降/通過した駅の個数を取得
 app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
   const code = +req.params.railwayCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let stationNum, getOrPassStationNum;
   try{
     stationNum = db.prepare(`
@@ -772,6 +831,10 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
 // 会社の駅の個数と乗降/通過した駅の個数を取得
 app.get("/api/companyProgress/:companyCode", accessLog, (req, res, next) => {
   const code = +req.params.companyCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let stationNum, getOrPassStationNum;
   try{
     stationNum = db.prepare(`
@@ -800,6 +863,10 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res, next) => {
 // 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
 app.get("/api/prefProgress/:prefCode", accessLog, (req, res, next) => {
   const code = +req.params.prefCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
   let stationNum, getOrPassStationNum;
   try{
     stationNum = db.prepare(`
@@ -827,11 +894,10 @@ app.get("/api/prefProgress/:prefCode", accessLog, (req, res, next) => {
 
 // 乗降/通過の情報を追加
 app.get("/api/postStationDate", accessLog, (req, res, next) => {
-  const code = req.query.code;
+  const code = +req.query.code;
   const date = convert_date(req.query.date);
-  const state = req.query.state;
-  const value_name = ["getDate", "passDate"][state];
-  if(code === undefined || date === undefined || state === undefined){
+  const state = +req.query.state;
+  if(isNaN(code) || date === undefined || isNaN(state)){
     next(new Error("Invalid input"));
     return;
   }
@@ -839,6 +905,7 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
     next(new RangeError("Invalid input"));
     return;
   }
+  const value_name = ["getDate", "passDate"][state];
   try{
     db.prepare(
       "INSERT INTO StationHistory VALUES(?, datetime(?), ?)"
@@ -857,9 +924,9 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
 
 // 立ち寄りの情報を追加
 app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
-  const code = req.query.code;
+  const code = +req.query.code;
   const date = convert_date(req.query.date);
-  if(code === undefined || date === undefined){
+  if(isNaN(code) || date === undefined){
     next(new Error("Invalid input"));
     return;
   }
@@ -880,11 +947,10 @@ app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
 
 // 乗降/通過の履歴を削除
 app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
-  const code = req.query.code;
+  const code = +req.query.code;
   const date = convert_date(req.query.date);
-  const state = req.query.state;
-  const value_name = ["getDate", "passDate"][state];
-  if(code === undefined || date === undefined || state === undefined){
+  const state = +req.query.state;
+  if(isNaN(code) || date === undefined || isNaN(state)){
     next(new Error("Invalid input"));
     return;
   }
@@ -892,6 +958,7 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
     next(new RangeError("Invalid input"));
     return;
   }
+  const value_name = ["getDate", "passDate"][state];
   try{
     db.prepare(`
       DELETE FROM StationHistory
@@ -915,9 +982,9 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
 
 // 立ち寄りの履歴を削除
 app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
-  const code = req.query.code;
+  const code = +req.query.code;
   const date = convert_date(req.query.date);
-  if(code === undefined || date === undefined){
+  if(isNaN(code) || date === undefined){
     next(new Error("Invalid input"));
     return;
   }
