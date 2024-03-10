@@ -386,6 +386,49 @@ export const useStationGroupAllHistory = (
 };
 
 
+export type StationProgress = {
+  stationNum: number,
+  getOrPassStationNum: number,
+};
+
+// 路線の駅の個数と乗降/通過した駅の個数を取得
+export const useRailwayProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
+  return useQuery<StationProgress>({
+    queryKey: ["RailwayProgress", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress>("/api/railwayProgress/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+// 会社の駅の個数と乗降/通過した駅の個数を取得
+export const useCompanyProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
+  return useQuery<StationProgress>({
+    queryKey: ["CompanyProgress", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress>("/api/companyProgress/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+// 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
+export const usePrefProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
+  return useQuery<StationProgress>({
+    queryKey: ["PrefProgress", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress>("/api/prefProgress/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
 
 // 乗降/通過の情報を追加
 export const useSendStationStateMutation = () => {
@@ -401,6 +444,9 @@ export const useSendStationStateMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
     },
     onError: (err: Error) => {
       console.error(err);
@@ -445,8 +491,13 @@ export const useDeleteStationHistoryMutation = (
     },
     onSuccess: (data: string, variables: StationHistory) => {
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
-      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode].filter(v => v) });
-      queryClient.invalidateQueries({ queryKey: ["GroupStations", variables.stationGroupCode].filter(v => v) });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["GroupStations", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
       onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {

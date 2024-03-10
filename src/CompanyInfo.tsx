@@ -8,7 +8,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Railway, useCompanyInfo, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
+import { Railway, useCompanyInfo, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
@@ -31,6 +31,9 @@ const FitMapZoom = (
 };
 
 const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
+  const railwayProgressQuery = useRailwayProgress(info.railwayCode);
+  const railwayProgress = railwayProgressQuery.data;
+
   return (
     <Button
       component={Link}
@@ -43,6 +46,8 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
         <Typography
           variant="h6"
           sx={{
+            display: "inline",
+            mr: 2,
             textDecoration: "underline",
             textDecorationColor: "#" + info.railwayColor,
             textDecorationThickness: 3,
@@ -50,6 +55,45 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
         >
           {info.railwayName}
         </Typography>
+        {railwayProgress && (
+          <Box sx={{ position: "relative", display: "inline-block" }}>
+            <CircularProgress
+              variant="determinate"
+              sx={{
+                color: (theme) =>
+                  theme.palette.grey[theme.palette.mode === 'light' ? 200 : 800],
+              }}
+              size={20}
+              thickness={6}
+              value={100}
+            />
+            <CircularProgress
+              variant="determinate"
+              size={20}
+              thickness={6}
+              value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
+              sx={{ position: "absolute", left: 0 }}
+            />
+            <Box
+              sx={{
+                top: 0,
+                left: 25,
+                bottom: 0,
+                right: 0,
+                position: 'absolute',
+                display: 'flex',
+              }}
+            >
+              <Typography
+                variant="caption"
+                component="div"
+                color="text.secondary"
+              >
+                {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}aaa`}
+              </Typography>
+            </Box>
+          </Box>
+        )}
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
     </Button>
