@@ -43,57 +43,54 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{ display: "block", mb: 0.5, textTransform: "none" }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography
-          variant="h6"
-          sx={{
-            display: "inline",
-            mr: 2,
-            textDecoration: "underline",
-            textDecorationColor: "#" + info.railwayColor,
-            textDecorationThickness: 3,
-          }}
-        >
-          {info.railwayName}
-        </Typography>
-        {railwayProgress && (
-          <Box sx={{ position: "relative", display: "inline-block" }}>
-            <CircularProgress
-              variant="determinate"
-              sx={{
-                color: (theme) =>
-                  theme.palette.grey[theme.palette.mode === 'light' ? 200 : 800],
-              }}
-              size={20}
-              thickness={6}
-              value={100}
-            />
-            <CircularProgress
-              variant="determinate"
-              size={20}
-              thickness={6}
-              value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
-              sx={{ position: "absolute", left: 0 }}
-            />
-            <Box
-              sx={{
-                top: 0,
-                left: 25,
-                bottom: 0,
-                right: 0,
-                position: 'absolute',
-                display: 'flex',
-              }}
-            >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography
+            variant="h6"
+            sx={{
+              display: "inline-block",
+              mr: 2,
+              textDecoration: "underline",
+              textDecorationColor: "#" + info.railwayColor,
+              textDecorationThickness: 3,
+            }}
+          >
+            {info.railwayName}
+          </Typography>
+          {railwayProgress && (
+            <Box sx={{ position: "relative", display: "flex", height: 20 }}>
+              <CircularProgress
+                variant="determinate"
+                sx={{
+                  color: (theme) =>
+                    theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
+                }}
+                size={20}
+                thickness={6}
+                value={100}
+              />
+              <CircularProgress
+                variant="determinate"
+                size={20}
+                thickness={6}
+                value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
+                sx={{ position: "absolute", left: 0 }}
+              />
               <Typography
-                variant="caption"
+                variant="h6"
                 component="div"
                 color="text.secondary"
+                sx={{
+                  fontSize: 12,
+                  ml: 0.5,
+                  width: 50,
+                  display: "inline-block",
+                }}
               >
-                {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}aaa`}
+                {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
               </Typography>
             </Box>
-          </Box>
-        )}
+          )}
+        </Box>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
     </Button>
