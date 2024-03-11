@@ -57,32 +57,32 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
             {info.railwayName}
           </Typography>
           {railwayProgress && (
-            <Box sx={{ position: "relative", display: "flex", height: 20 }}>
+            <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
               <CircularProgress
                 variant="determinate"
                 sx={{
                   color: (theme) =>
                     theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
                 }}
-                size={20}
+                size={25}
                 thickness={6}
                 value={100}
               />
               <CircularProgress
                 variant="determinate"
-                size={20}
+                size={25}
                 thickness={6}
                 value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
                 sx={{ position: "absolute", left: 0 }}
               />
               <Typography
                 variant="h6"
-                component="div"
                 color="text.secondary"
                 sx={{
                   fontSize: 12,
-                  ml: 0.5,
-                  width: 50,
+                  ml: 1,
+                  width: 48,
+                  height: 20,
                   display: "inline-block",
                 }}
               >
