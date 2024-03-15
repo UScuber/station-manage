@@ -178,6 +178,18 @@ export const useCompanyInfo = (code: number | undefined): UseQueryResult<Company
 };
 
 
+// 会社情報全聚徳
+export const useCompanyList = (): UseQueryResult<Company[]> => {
+  return useQuery<Company[]>({
+    queryKey: ["Company"],
+    queryFn: async() => {
+      const { data } = await axios.get<Company[]>("/api/company", ngrok_header);
+      return data;
+    },
+  });
+};
+
+
 // 会社に属する路線の路線情報を取得
 export const useRailwaysInfoByCompanyCode = (code: number | undefined): UseQueryResult<Railway[]> => {
   return useQuery<Railway[]>({

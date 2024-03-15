@@ -10,6 +10,7 @@ import RailwayInfo from "./RailwayInfo";
 import SearchStation from "./SearchStation";
 import History from "./History";
 import NotFound from "./NotFound";
+import CompanyList from "./CompanyList";
 import CompanyInfo from "./CompanyInfo";
 import HistoryMap from "./HistoryMap";
 import PrefectureInfo from "./PrefectureInfo";
@@ -48,6 +49,7 @@ const App = () => {
             <Route path="/station/:stationCode" element={<StationInfo />} />
             <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
             <Route path="/railway/:railwayCode" element={<RailwayInfo />} />
+            <Route path="/company" element={<CompanyList />} />
             <Route path="/company/:companyCode" element={<CompanyInfo />} />
             <Route path="/pref/:prefCode" element={<PrefectureInfo />} />
             <Route path="/searchStation" element={<SearchStation />} />

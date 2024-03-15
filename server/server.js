@@ -319,6 +319,25 @@ app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
   }
 });
 
+// 会社情報全聚徳
+app.get("/api/company", accessLog, (req, res, next) => {
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT * FROM Companies
+    `).all();
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  if(!data){
+    next(new RangeError("Invalid Input"));
+  }else{
+    res.json(data);
+  }
+});
+
 // 会社に属する路線の路線情報を取得
 app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
   const code = +req.params.companyCode;
@@ -663,6 +682,20 @@ app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
     return;
   }
   res.json(data.name);
+});
+
+// 都道府県名を全聚徳
+app.get("/api/pref", accessLog, (req, res, next) => {
+  try{
+    data = db.prepare(`
+      SELECT * FROM Prefectures
+    `).all();
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
 });
 
 ///// History
