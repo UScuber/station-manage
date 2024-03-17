@@ -99,13 +99,13 @@ const PrefectureList = () => {
           </TableHead>
           <TableBody>
             {prefList?.map(item => (
-              <TableRow key={item.code}>
+              <TableRow key={item.prefCode}>
                 <TableCell>
-                  <CustomLink to={"/pref/" + item.code}>
-                    <Typography variant="h6" sx={{ fontSize: 14 }}>{item.name}</Typography>
+                  <CustomLink to={"/pref/" + item.prefCode}>
+                    <Typography variant="h6" sx={{ fontSize: 14 }}>{item.prefName}</Typography>
                   </CustomLink>
                 </TableCell>
-                <TableCell><PrefProgress code={item.code} /></TableCell>
+                <TableCell><PrefProgress code={item.prefCode} /></TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -296,12 +296,17 @@ export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?
 };
 
 
+export type Prefecture = {
+  prefCode: number,
+  prefName: string,
+};
+
 // 都道府県名を取得
-export const usePrefName = (code: number | undefined): UseQueryResult<string> => {
-  return useQuery<string>({
+export const usePrefName = (code: number | undefined): UseQueryResult<Prefecture> => {
+  return useQuery<Prefecture>({
     queryKey: ["Prefecture", code],
     queryFn: async() => {
-      const { data } = await axios.get<string>("/api/pref/" + code, ngrok_header);
+      const { data } = await axios.get<Prefecture>("/api/pref/" + code, ngrok_header);
       return data;
     },
     enabled: code !== undefined,
@@ -309,11 +314,6 @@ export const usePrefName = (code: number | undefined): UseQueryResult<string> =>
   });
 };
 
-
-export type Prefecture = {
-  code: number,
-  name: string,
-};
 
 // 都道府県名を全取得
 export const usePrefList = (): UseQueryResult<Prefecture[]> => {

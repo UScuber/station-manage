@@ -63,7 +63,7 @@ const PrefectureInfo = () => {
   const stationList = stationsQuery.data;
 
   const prefQuery = usePrefName(prefCode);
-  const prefName = prefQuery.data;
+  const pref = prefQuery.data;
 
   if(railwaysQuery.isError || stationsQuery.isError || prefQuery.isError){
     return (
@@ -98,7 +98,7 @@ const PrefectureInfo = () => {
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h3">{prefName}</Typography>
+        <Typography variant="h3">{pref?.prefName}</Typography>
       </Box>
       <Box>
         {railwayList?.map(item => (

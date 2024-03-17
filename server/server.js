@@ -673,7 +673,10 @@ app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
   }
   try{
     data = db.prepare(`
-      SELECT * FROM Prefectures
+      SELECT
+        Prefectures.code AS prefCode,
+        Prefectures.name AS prefName
+      FROM Prefectures
       WHERE code = ?
     `).get(code);
   }catch(err){
@@ -681,14 +684,17 @@ app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
     next(new Error("Server Error"));
     return;
   }
-  res.json(data.name);
+  res.json(data);
 });
 
 // 都道府県名を全取得
 app.get("/api/pref", accessLog, (req, res, next) => {
   try{
     data = db.prepare(`
-      SELECT * FROM Prefectures
+      SELECT
+        Prefectures.code AS prefCode,
+        Prefectures.name AS prefName
+      FROM Prefectures
     `).all();
   }catch(err){
     console.error(err);
