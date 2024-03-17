@@ -4,10 +4,11 @@ import {
   Button,
   CircularProgress,
   Container,
+  LinearProgress,
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Station, useRailwayInfo, useStationsInfoByRailwayCode } from "./Api";
+import { Station, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
 import AroundTime from "./components/AroundTime";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -52,6 +53,9 @@ const RailwayInfo = () => {
   const railway = useRailwayInfo(railwayCode);
   const stationsQuery = useStationsInfoByRailwayCode(railwayCode);
 
+  const railwayProgressQuery = useRailwayProgress(railwayCode);
+  const railwayProgress = railwayProgressQuery.data;
+
   const info = railway.data;
   const stationList = stationsQuery.data;
 
@@ -87,7 +91,7 @@ const RailwayInfo = () => {
 
   return (
     <Container>
-      <Box sx={{ mb: 2 }}>
+      <Box>
         <Typography
           variant="h3"
           sx={{
@@ -110,6 +114,26 @@ const RailwayInfo = () => {
           <Typography variant="h5">{info?.companyName}</Typography>
         </Button>
       </Box>
+
+      {railwayProgress && (
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              fontSize: 14,
+              textAlign: "right",
+            }}
+          >
+            {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
+          />
+        </Box>
+      )}
+
       <Box>
         {stationList?.map(item => (
           <StationItem key={item.stationCode} info={item} />
