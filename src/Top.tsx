@@ -13,21 +13,33 @@ const links: Array<{ text: string, url: string, description: JSX.Element }> = [
     text: "List",
     url: "/stationList",
     description: (
-      <Typography variant="body2">Hello World</Typography>
-    )
+      <Typography variant="caption">駅一覧・検索</Typography>
+    ),
   }, {
     text: "Search",
     url: "/searchStation",
     description: (
-      <Typography variant="body2">hoge hoge</Typography>
-    )
+      <Typography variant="caption">最寄り駅検索</Typography>
+    ),
   }, {
     text: "History",
     url: "/history",
     description: (
-      <Typography variant="body2">huga huga</Typography>
-    )
-  },
+      <Typography variant="caption">乗降の履歴</Typography>
+    ),
+  }, {
+    text: "Company",
+    url: "/company",
+    description: (
+      <Typography variant="caption">会社情報</Typography>
+    ),
+  }, {
+    text: "Prefecture",
+    url: "/pref",
+    description: (
+      <Typography variant="caption">都道府県の情報</Typography>
+    ),
+  }
 ];
 
 const Top = () => {
