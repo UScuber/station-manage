@@ -138,6 +138,20 @@ export const useRailwayInfo = (code: number | undefined): UseQueryResult<Railway
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
+  });
+};
+
+
+// 路線情報全取得
+export const useRailwayList = (): UseQueryResult<Railway[]> => {
+  return useQuery<Railway[]>({
+    queryKey: ["Railway"],
+    queryFn: async() => {
+      const { data } = await axios.get<Railway[]>("/api/railway", ngrok_header);
+      return data;
+    },
+    staleTime: Infinity,
   });
 };
 
@@ -174,11 +188,12 @@ export const useCompanyInfo = (code: number | undefined): UseQueryResult<Company
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
 
-// 会社情報全聚徳
+// 会社情報全取得
 export const useCompanyList = (): UseQueryResult<Company[]> => {
   return useQuery<Company[]>({
     queryKey: ["Company"],
@@ -186,6 +201,7 @@ export const useCompanyList = (): UseQueryResult<Company[]> => {
       const { data } = await axios.get<Company[]>("/api/company", ngrok_header);
       return data;
     },
+    staleTime: Infinity,
   });
 };
 
@@ -199,6 +215,7 @@ export const useRailwaysInfoByCompanyCode = (code: number | undefined): UseQuery
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -225,6 +242,7 @@ export const useRailwaysInfoByPrefCode = (code: number | undefined): UseQueryRes
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 

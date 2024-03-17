@@ -28,16 +28,22 @@ const links: Array<{ text: string, url: string, description: JSX.Element }> = [
       <Typography variant="caption">乗降の履歴</Typography>
     ),
   }, {
+    text: "Railway",
+    url: "/railway",
+    description: (
+      <Typography variant="caption">路線一覧</Typography>
+    ),
+  }, {
     text: "Company",
     url: "/company",
     description: (
-      <Typography variant="caption">会社情報</Typography>
+      <Typography variant="caption">会社一覧</Typography>
     ),
   }, {
     text: "Prefecture",
     url: "/pref",
     description: (
-      <Typography variant="caption">都道府県の情報</Typography>
+      <Typography variant="caption">都道府県一覧</Typography>
     ),
   }
 ];

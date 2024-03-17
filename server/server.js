@@ -241,6 +241,27 @@ app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
   }
 });
 
+// 路線情報全取得
+app.get("/api/railway", accessLog, (req, res, next) => {
+  let data;
+  try{
+    data = db.prepare(`
+      SELECT
+        Railways.*,
+        Companies.companyName,
+        Companies.formalName AS companyFormalName
+      FROM Railways
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+    `).all();
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
 // 路線に属する駅の駅情報を取得
 app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
   const code = +req.params.railwayCode;
@@ -319,7 +340,7 @@ app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
   }
 });
 
-// 会社情報全聚徳
+// 会社情報全取得
 app.get("/api/company", accessLog, (req, res, next) => {
   let data;
   try{
