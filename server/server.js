@@ -684,7 +684,7 @@ app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
   res.json(data.name);
 });
 
-// 都道府県名を全聚徳
+// 都道府県名を全取得
 app.get("/api/pref", accessLog, (req, res, next) => {
   try{
     data = db.prepare(`

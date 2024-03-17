@@ -12,8 +12,9 @@ import History from "./History";
 import NotFound from "./NotFound";
 import CompanyList from "./CompanyList";
 import CompanyInfo from "./CompanyInfo";
-import HistoryMap from "./HistoryMap";
 import PrefectureInfo from "./PrefectureInfo";
+import PrefectureList from "./PrefectureList";
+import HistoryMap from "./HistoryMap";
 
 
 const theme = createTheme({
@@ -51,6 +52,7 @@ const App = () => {
             <Route path="/railway/:railwayCode" element={<RailwayInfo />} />
             <Route path="/company" element={<CompanyList />} />
             <Route path="/company/:companyCode" element={<CompanyInfo />} />
+            <Route path="/pref" element={<PrefectureList />} />
             <Route path="/pref/:prefCode" element={<PrefectureInfo />} />
             <Route path="/searchStation" element={<SearchStation />} />
             <Route path="/history" element={<History />} />

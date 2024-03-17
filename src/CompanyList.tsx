@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Box,
   CircularProgress,
@@ -16,8 +17,7 @@ import {
   styled,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Company, useCompanyList, useCompanyProgress } from "./Api";
-import { Link } from "react-router-dom";
+import { useCompanyList, useCompanyProgress } from "./Api";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -140,7 +140,7 @@ const CompanyList = () => {
           </TableHead>
           <TableBody>
             {filteredCompanies?.map(item => (
-              <TableRow>
+              <TableRow key={item.companyCode}>
                 <TableCell>
                   <CustomLink to={"/company/" + item.companyCode}>
                     <Typography variant="h6" sx={{ fontSize: 14 }}>{item.companyName}</Typography>

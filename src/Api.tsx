@@ -310,6 +310,24 @@ export const usePrefName = (code: number | undefined): UseQueryResult<string> =>
 };
 
 
+export type Prefecture = {
+  code: number,
+  name: string,
+};
+
+// 都道府県名を全取得
+export const usePrefList = (): UseQueryResult<Prefecture[]> => {
+  return useQuery<Prefecture[]>({
+    queryKey: ["Prefecture"],
+    queryFn: async() => {
+      const { data } = await axios.get<Prefecture[]>("/api/pref", ngrok_header);
+      return data;
+    },
+    staleTime: Infinity,
+  });
+};
+
+
 export type StationHistory = {
   stationCode: number,
   stationGroupCode: number,
