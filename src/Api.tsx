@@ -354,11 +354,11 @@ export type StationHistory = {
 };
 
 // 乗降/通過の履歴を区間取得
-export const useStationHistoryList = (offset: number, length: number): UseQueryResult<StationHistory[]> => {
+export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string): UseQueryResult<StationHistory[]> => {
   return useQuery<StationHistory[]>({
-    queryKey: ["StationHistoryList", offset, length],
+    queryKey: ["StationHistoryList", offset, length, name, type],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}`, ngrok_header);
+      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`, ngrok_header);
       return data;
     },
   });
@@ -366,11 +366,11 @@ export const useStationHistoryList = (offset: number, length: number): UseQueryR
 
 
 // 乗降/通過の履歴の個数を取得
-export const useStationHistoryCount = (): UseQueryResult<number> => {
+export const useStationHistoryCount = (name?: string, type?: string): UseQueryResult<number> => {
   return useQuery<number>({
-    queryKey: ["StationHistoryCount"],
+    queryKey: ["StationHistoryCount", name, type],
     queryFn: async() => {
-      const { data } = await axios.get<number>("/api/stationHistoryCount", ngrok_header);
+      const { data } = await axios.get<number>(`/api/stationHistoryCount?name=${name}&type=${type}`, ngrok_header);
       return data;
     },
   });

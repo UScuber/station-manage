@@ -156,8 +156,8 @@ const StationList = () => {
     return (
       <Container>
         <TextField
-          id="name"
-          label="name"
+          id="stationName"
+          label="station name"
           variant="standard"
           value={inputName}
           sx={{ maxWidth: "50%" }}

@@ -731,15 +731,72 @@ app.get("/api/pref", accessLog, (req, res, next) => {
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
   const off = +req.query.off;
   const len = +req.query.len;
+  const name = req.query.name ?? "";
+  const type = req.query.type;
   if(isNaN(off) || isNaN(len)){
     next(new Error("Invalid input"));
     return;
   }
   let data;
   try{
-    data = db.prepare(
-      "SELECT * FROM StationHistory ORDER BY date DESC LIMIT ? OFFSET ?"
-    ).all(len, off);
+    if(type === "station" && name !== ""){
+      data = db.prepare(`
+        SELECT
+          StationHistory.stationCode,
+          StationHistory.date,
+          StationHistory.state
+        FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+            AND StationGroups.stationName = ?
+        ORDER BY StationHistory.date DESC
+        LIMIT ?
+        OFFSET ?
+      `).all(name, len, off);
+    }else if(type === "railway" && name !== ""){
+      data = db.prepare(`
+        SELECT
+          StationHistory.stationCode,
+          StationHistory.date,
+          StationHistory.state
+        FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+            AND Railways.railwayName = ?
+        ORDER BY StationHistory.date DESC
+        LIMIT ?
+        OFFSET ?
+      `).all(name, len, off);
+    }else if(type === "company" && name !== ""){
+      data = db.prepare(`
+        SELECT
+          StationHistory.stationCode,
+          StationHistory.date,
+          StationHistory.state
+        FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+            AND Companies.companyName = ?
+        ORDER BY StationHistory.date DESC
+        LIMIT ?
+        OFFSET ?
+      `).all(name, len, off);
+    }else{
+      data = db.prepare(`
+        SELECT * FROM StationHistory
+        ORDER BY date DESC
+        LIMIT ?
+        OFFSET ?
+      `).all(len, off);
+    }
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -750,11 +807,44 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
 
 // 全体の乗降/通過の履歴の個数を取得
 app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
+  const name = req.query.name ?? "";
+  const type = req.query.type;
   let data;
   try{
-    data = db.prepare(
-      "SELECT COUNT(*) AS count FROM StationHistory",
-    ).get();
+    if(type === "station" && name !== ""){
+      data = db.prepare(`
+        SELECT COUNT(*) AS count FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+            AND StationGroups.stationName = ?
+      `).get(name);
+    }else if(type === "railway" && name !== ""){
+      data = db.prepare(`
+        SELECT COUNT(*) AS count FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+            AND Railways.railwayName = ?
+      `).get(name);
+    }else if(type === "company" && name !== ""){
+      data = db.prepare(`
+        SELECT COUNT(*) AS count FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+            AND Companies.companyName = ?
+      `).get(name);
+    }else{
+      data = db.prepare(`
+        SELECT COUNT(*) AS count FROM StationHistory
+      `).get();
+    }
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
