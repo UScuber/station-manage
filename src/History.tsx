@@ -42,8 +42,9 @@ const aroundDayName = (date: Date): string => {
   }
   // 1 week
   past.setDate(past.getDate() - 2);
-  past.setDate(past.getDate() - past.getDay());
-  now.setDate(now.getDate() - now.getDay());
+  const pastDay = past.getDay(), nowDay = now.getDay();
+  past.setDate(past.getDate() - pastDay);
+  now.setDate(now.getDate() - nowDay);
   if(past.getTime() === now.getTime()){
     return "今週";
   }
@@ -51,7 +52,8 @@ const aroundDayName = (date: Date): string => {
   if(past.getTime() === now.getTime()){
     return "先週";
   }
-  past.setDate(past.getDate() - 7);
+  past.setDate(past.getDate() - 7 + pastDay);
+  now.setDate(now.getDate() + nowDay);
   past.setDate(1);
   now.setDate(1);
   if(past.getTime() === now.getTime()){
