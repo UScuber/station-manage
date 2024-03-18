@@ -64,7 +64,18 @@ const StationGroupInfo = (
           sx={{ display: "block", mb: 1, ml: 1, textTransform: "none" }}
         >
           <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-          <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              mx: 1,
+              display: "inline-block",
+              textDecoration: "underline",
+              textDecorationColor: "#" + info?.railwayColor,
+              textDecorationThickness: 3
+            }}
+          >
+            {info?.railwayName}
+          </Typography>
 
           <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" fontSize={16} /></Typography>
           <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" fontSize={16} /></Typography>
@@ -86,7 +97,21 @@ const SearchStation = () => {
     navigator.geolocation.getCurrentPosition(position => {
       const { latitude, longitude } = position.coords;
       setPosition({ lat: latitude, lng: longitude });
-    });
+    }, undefined, { timeout: 3000 });
+  };
+
+  const handlePosSearchButton = () => {
+    getCurrentPosition();
+    // watch
+    const watchId = navigator.geolocation.watchPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        setPosition({ lat: latitude, lng: longitude });
+      },
+      undefined,
+      { enableHighAccuracy: true, timeout: 3000 }
+    );
+    setTimeout(() => navigator.geolocation.clearWatch(watchId), 3000);
   };
 
   useEffect(() => {
@@ -120,7 +145,7 @@ const SearchStation = () => {
       {!isAvailable && <p>Geolocation is not available.</p>}
       {isAvailable && (
         <Box sx={{ mb: 1 }}>
-          <Button variant="outlined" onClick={getCurrentPosition}>Search</Button>
+          <Button variant="outlined" onClick={handlePosSearchButton}>Search</Button>
           <Typography variant="h6" sx={{ fontSize: 14 }}>緯度: {position?.lat}</Typography>
           <Typography variant="h6" sx={{ fontSize: 14 }}>経度: {position?.lng}</Typography>
         </Box>
