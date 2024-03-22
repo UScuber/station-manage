@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import {
   Box,
   CircularProgress,
@@ -11,15 +10,9 @@ import {
   TableHead,
   TableRow,
   Typography,
-  styled,
 } from "@mui/material";
 import { usePrefList, usePrefProgress } from "./Api";
-
-const CustomLink = styled(Link)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  textDecoration: "none",
-  textTransform: "none",
-}));
+import CustomLink from "./components/CustomLink";
 
 const PrefProgress = ({ code }: { code: number }) => {
   const prefProgressQuery = usePrefProgress(code);

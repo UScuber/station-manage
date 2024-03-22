@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Box,
   CircularProgress,
@@ -14,10 +13,10 @@ import {
   TableRow,
   TextField,
   Typography,
-  styled,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useRailwayList, useRailwayProgress } from "./Api";
+import CustomLink from "./components/CustomLink";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -28,12 +27,6 @@ const nameSimilarity = (name: string, input: string) => {
   if(pos === name.length - input.length) return 2;
   return 3;
 };
-
-const CustomLink = styled(Link)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  textDecoration: "none",
-  textTransform: "none",
-}));
 
 const RailwayProgress = ({ code }: { code: number }) => {
   const railwayProgressQuery = useRailwayProgress(code);

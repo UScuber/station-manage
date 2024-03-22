@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Box,
   CircularProgress,
@@ -17,20 +16,13 @@ import {
   TableRow,
   TextField,
   Typography,
-  styled,
 } from "@mui/material";
 import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
 import { StationGroup, useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
 import BinaryPagination from "./components/BinaryPagination";
 import AroundTime from "./components/AroundTime";
 import getDateString from "./utils/getDateString";
-
-
-const CustomLink = styled(Link)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  textDecoration: "none",
-  textTransform: "none",
-}));
+import CustomLink from "./components/CustomLink";
 
 
 const StationList = () => {
