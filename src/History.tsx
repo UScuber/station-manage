@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
-import BinaryPagination from "./components/BinaryPagination";
+import { BinaryPagination } from "./components";
 import getDateString from "./utils/getDateString";
 
 

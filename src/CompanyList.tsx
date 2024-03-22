@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useCompanyList, useCompanyProgress } from "./Api";
-import CustomLink from "./components/CustomLink";
+import { CustomLink } from "./components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {

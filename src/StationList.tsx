@@ -19,10 +19,8 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
 import { StationGroup, useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
-import BinaryPagination from "./components/BinaryPagination";
-import AroundTime from "./components/AroundTime";
+import { AroundTime, BinaryPagination, CustomLink } from "./components";
 import getDateString from "./utils/getDateString";
-import CustomLink from "./components/CustomLink";
 
 
 const StationList = () => {

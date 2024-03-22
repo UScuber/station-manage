@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { usePrefList, usePrefProgress } from "./Api";
-import CustomLink from "./components/CustomLink";
+import { CustomLink } from "./components";
 
 const PrefProgress = ({ code }: { code: number }) => {
   const prefProgressQuery = usePrefProgress(code);

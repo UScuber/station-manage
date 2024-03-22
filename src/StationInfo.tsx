@@ -24,8 +24,7 @@ import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import AccessButton from "./components/AccessButton";
-import AroundTime from "./components/AroundTime";
+import { AccessButton, AroundTime } from "./components";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";

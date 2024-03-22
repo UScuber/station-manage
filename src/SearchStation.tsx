@@ -9,7 +9,7 @@ import {
   Divider,
   Typography,
 } from "@mui/material";
-import AroundTime from "./components/AroundTime";
+import { AroundTime } from "./components";
 
 
 const StationGroupInfo = (

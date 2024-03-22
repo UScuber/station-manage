@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Station, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
-import AroundTime from "./components/AroundTime";
+import { AroundTime } from "./components";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";

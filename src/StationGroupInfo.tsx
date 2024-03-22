@@ -32,8 +32,7 @@ import {
   useStationGroupInfo,
   useStationsInfoByGroupCode,
 } from "./Api";
-import AccessButton from "./components/AccessButton";
-import AroundTime from "./components/AroundTime";
+import { AccessButton, AroundTime } from "./components";
 import getDateString from "./utils/getDateString";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
