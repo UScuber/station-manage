@@ -742,7 +742,16 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
     if(type === "station" && name !== ""){
       data = db.prepare(`
         SELECT
-          StationHistory.stationCode,
+          Stations.*,
+          StationGroups.stationName,
+          StationGroups.kana,
+          Prefectures.code AS prefCode,
+          Prefectures.name AS prefName,
+          Railways.railwayName,
+          Railways.railwayCode,
+          Railways.railwayColor,
+          Companies.companyCode,
+          Companies.companyName AS railwayCompany,
           StationHistory.date,
           StationHistory.state
         FROM StationHistory
@@ -751,6 +760,12 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
             AND StationGroups.stationName = ?
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
@@ -758,7 +773,16 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
     }else if(type === "railway" && name !== ""){
       data = db.prepare(`
         SELECT
-          StationHistory.stationCode,
+          Stations.*,
+          StationGroups.stationName,
+          StationGroups.kana,
+          Prefectures.code AS prefCode,
+          Prefectures.name AS prefName,
+          Railways.railwayName,
+          Railways.railwayCode,
+          Railways.railwayColor,
+          Companies.companyCode,
+          Companies.companyName AS railwayCompany,
           StationHistory.date,
           StationHistory.state
         FROM StationHistory
@@ -767,6 +791,12 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         INNER JOIN Railways
           ON Stations.railwayCode = Railways.railwayCode
             AND Railways.railwayName = ?
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
@@ -774,29 +804,66 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
     }else if(type === "company" && name !== ""){
       data = db.prepare(`
         SELECT
-          StationHistory.stationCode,
+          Stations.*,
+          StationGroups.stationName,
+          StationGroups.kana,
+          Prefectures.code AS prefCode,
+          Prefectures.name AS prefName,
+          Railways.railwayName,
+          Railways.railwayCode,
+          Railways.railwayColor,
+          Companies.companyCode,
+          Companies.companyName AS railwayCompany,
           StationHistory.date,
           StationHistory.state
         FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
         INNER JOIN Railways
           ON Stations.railwayCode = Railways.railwayCode
         INNER JOIN Companies
           ON Railways.companyCode = Companies.companyCode
             AND Companies.companyName = ?
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
       `).all(name, len, off);
     }else{
       data = db.prepare(`
-        SELECT * FROM StationHistory
+        SELECT
+          Stations.*,
+          StationGroups.stationName,
+          StationGroups.kana,
+          Prefectures.code AS prefCode,
+          Prefectures.name AS prefName,
+          Railways.railwayName,
+          Railways.railwayCode,
+          Railways.railwayColor,
+          Companies.companyCode,
+          Companies.companyName AS railwayCompany,
+          StationHistory.*
+        FROM StationHistory
+        INNER JOIN Stations
+          ON StationHistory.stationCode = Stations.stationCode
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        INNER JOIN Railways
+          ON Stations.railwayCode = Railways.railwayCode
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+        INNER JOIN Prefectures
+          ON StationGroups.prefCode = Prefectures.code
         ORDER BY date DESC
         LIMIT ?
         OFFSET ?
       `).all(len, off);
     }
+
+    data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));

@@ -353,12 +353,14 @@ export type StationHistory = {
   state: number,
 };
 
+export type StationHistoryDetail = Station & StationHistory;
+
 // 乗降/通過の履歴を区間取得
-export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string): UseQueryResult<StationHistory[]> => {
-  return useQuery<StationHistory[]>({
+export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string): UseQueryResult<StationHistoryDetail[]> => {
+  return useQuery<StationHistoryDetail[]>({
     queryKey: ["StationHistoryList", offset, length, name, type],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`, ngrok_header);
+      const { data } = await axios.get<StationHistoryDetail[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`, ngrok_header);
       return data;
     },
   });
@@ -376,8 +378,6 @@ export const useStationHistoryCount = (name?: string, type?: string): UseQueryRe
   });
 };
 
-
-export type StationHistoryDetail = Station & StationHistory;
 
 // 駅情報を付与した履歴を取得
 export const useStationHistoryListAndInfo = (): UseQueryResult<StationHistoryDetail[]> => {

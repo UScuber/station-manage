@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
+import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "./Api";
 import { BinaryPagination } from "./components";
 import getDateString from "./utils/getDateString";
 
@@ -79,45 +79,25 @@ const aroundDayName = (date: Date): string => {
 const HistoryContent = (
   { history }
   :{
-    history: StationHistory
+    history: StationHistoryDetail
   }
 ): JSX.Element => {
-  const station = useStationInfo(history.stationCode);
-  const info = station.data;
-
-  if(station.isLoading){
-    return (
-      <></>
-    );
-  }
-
   return (
     <Button
       component={Link}
-      to={"/station/" + info?.stationCode}
+      to={"/station/" + history.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5 }}
+      sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h5">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
+        <Typography variant="h5">{history.stationName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{history.kana}</Typography>
       </Box>
 
-      <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-      <Typography
-        variant="h6"
-        sx={{
-          display: "inline-block",
-          textDecoration: "underline",
-          textDecorationColor: "#" + info?.railwayColor,
-          textDecorationThickness: 3
-        }}
-      >
-        {info?.railwayName}
+      <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
+        {stateNames[history.state]} {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}
       </Typography>
-
-      <Typography variant="h6">{stateNames[history.state]}: {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}</Typography>
     </Button>
   );
 };
@@ -262,22 +242,35 @@ const History = () => {
       <Box>
         {historyList.data?.map((item, index, list) => {
           const date = item.date;
-          if(!index || list[index-1].date.getDay() !== date.getDay()){
-            return (
-              <Box key={`${date.toString()}|${item.stationCode}`}>
+          return (
+            <Box key={`${date.toString()}|${item.stationCode}|${item.state}`}>
+              {/* 日付 */}
+              {(!index || date.getTime() - list[index-1].date.getTime() >= 1000*60*60*24) && (
                 <Typography variant="h6">
                   {getDateString(date, true, true)}({dayNames[date.getDay()]})
                   ー {aroundDayName(item.date)}
                 </Typography>
-                <Box sx={{ ml: 2 }}>
-                  <HistoryContent history={item}/>
+              )}
+              {/* 路線名 */}
+              {(!index || item.railwayCode !== list[index-1].railwayCode) && (
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{item.railwayCompany}</Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      display: "inline-block",
+                      textDecoration: "underline",
+                      textDecorationColor: "#" + item.railwayColor,
+                      textDecorationThickness: 3,
+                    }}
+                  >
+                    {item.railwayName}
+                  </Typography>
                 </Box>
+              )}
+              <Box sx={{ ml: 2 }}>
+                <HistoryContent history={item}/>
               </Box>
-            );
-          }
-          return (
-            <Box key={`${date.toString()}|${item.stationCode}`} sx={{ ml: 2 }}>
-              <HistoryContent history={item}/>
             </Box>
           );
         })}
