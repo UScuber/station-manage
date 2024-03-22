@@ -58,7 +58,6 @@ const Top = () => {
             to={item.url}
             color="inherit"
             sx={{
-              textTransform: "none",
               textAlign: "center",
               display: { xs: "block", sm: "inline-flex" }
             }}

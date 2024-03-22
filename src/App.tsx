@@ -28,6 +28,9 @@ const theme = createTheme({
       '"MS PGothic"',
       "sans-serif",
     ].join(","),
+    button: {
+      textTransform: "none",
+    },
   },
 });
 

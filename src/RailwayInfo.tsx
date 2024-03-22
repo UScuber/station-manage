@@ -34,7 +34,7 @@ const StationItem = ({ info } :{ info: Station }): JSX.Element => {
       to={"/station/" + info.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
+      sx={{ display: "block", mb: 0.5 }}
     >
       <Box sx={{ mb: 1 }}>
         <Typography variant="h6">{info.stationName}</Typography>
@@ -109,7 +109,7 @@ const RailwayInfo = () => {
           component={Link}
           to={"/company/" + info?.companyCode}
           color="inherit"
-          sx={{ textTransform: "none", padding: 0 }}
+          sx={{ padding: 0 }}
         >
           <Typography variant="h5">{info?.companyName}</Typography>
         </Button>

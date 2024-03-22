@@ -44,7 +44,7 @@ const StationGroupInfo = (
             component={Link}
             to={"/stationGroup/" + code}
             color="inherit"
-            sx={{ display: "inline-block", textTransform: "none", padding: 0 }}
+            sx={{ display: "inline-block", padding: 0 }}
           >
             <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
             <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
@@ -61,7 +61,7 @@ const StationGroupInfo = (
           variant="outlined"
           color="inherit"
           key={info.stationCode}
-          sx={{ display: "block", mb: 1, ml: 1, textTransform: "none" }}
+          sx={{ display: "block", mb: 1, ml: 1 }}
         >
           <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
           <Typography

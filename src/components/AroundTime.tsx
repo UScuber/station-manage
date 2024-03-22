@@ -46,7 +46,7 @@ const AroundTime = (
     <Button
       color="inherit"
       onClick={() => setIsDisplayDate(true)}
-      sx={{ display: "inline-block", textTransform: "none", minWidth: 40, padding: 0 }}
+      sx={{ display: "inline-block", minWidth: 40, padding: 0 }}
     >
       <Typography variant="h6" sx={{ lineHeight: 1, fontSize: fontSize }}>
         {isDisplayDate && date ? getDateString(date, disableMinute) : getAroundTime(date, invalidMsg)}

@@ -73,7 +73,7 @@ const StationItem = (
       to={"/station/" + info.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
+      sx={{ display: "block", mb: 0.5 }}
     >
       <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
       <Typography
@@ -187,7 +187,7 @@ const StationGroupInfo = () => {
             component={Link}
             to={"/pref/" + groupStationData?.prefCode}
             color="inherit"
-            sx={{ textTransform: "none", padding: 0 }}
+            sx={{ padding: 0 }}
           >
             <Typography variant="h6">{groupStationData?.prefName}</Typography>
           </Button>

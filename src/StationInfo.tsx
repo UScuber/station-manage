@@ -74,7 +74,7 @@ const NextStation = (
         component={Link}
         to={"/station/" + code}
         color="inherit"
-        sx={{ display: "block", textTransform: "none", padding: 0 }}
+        sx={{ display: "block", padding: 0 }}
       >
         <Typography variant="h6">{info?.stationName}</Typography>
         <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
@@ -218,7 +218,7 @@ const StationInfo = () => {
           component={Link}
           to={"/pref/" + info?.prefCode}
           color="inherit"
-          sx={{ textTransform: "none", padding: 0 }}
+          sx={{ padding: 0 }}
         >
           <Typography variant="h6">{info?.prefName}</Typography>
         </Button>
@@ -228,7 +228,7 @@ const StationInfo = () => {
             component={Link}
             to={"/company/" + info?.companyCode}
             color="inherit"
-            sx={{ textTransform: "none", padding: 0 }}
+            sx={{ padding: 0 }}
           >
             <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
           </Button>
@@ -236,7 +236,7 @@ const StationInfo = () => {
             component={Link}
             to={"/railway/" + info?.railwayCode}
             color="inherit"
-            sx={{ textTransform: "none", padding: 0 }}
+            sx={{ padding: 0 }}
           >
             <Typography
               variant="h6"

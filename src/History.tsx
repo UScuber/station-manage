@@ -97,7 +97,7 @@ const HistoryContent = (
       to={"/station/" + info?.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
+      sx={{ display: "block", mb: 0.5 }}
     >
       <Box sx={{ mb: 1 }}>
         <Typography variant="h5">{info?.stationName}</Typography>

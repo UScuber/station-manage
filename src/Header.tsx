@@ -44,7 +44,7 @@ const Header = () => {
               component={Link}
               color="inherit"
               to="/"
-              sx={{ fontSize: "18px", fontWeight: 700, color: "#fff", textTransform: "none" }}
+              sx={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}
             >
               Station Manage
             </Button>
@@ -91,7 +91,7 @@ const Header = () => {
                 component={Link}
                 color="inherit"
                 to="/"
-                sx={{ fontSize: "20px", textTransform: "none" }}
+                sx={{ fontSize: "20px" }}
               >
                 Station Manage
               </Button>
