@@ -188,7 +188,6 @@ const CompanyInfo = () => {
         ))}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };

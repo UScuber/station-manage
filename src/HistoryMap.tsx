@@ -65,7 +65,6 @@ const HistoryMap = () => {
           </CircleMarker>
         ))}
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };

@@ -280,7 +280,6 @@ const StationGroupInfo = () => {
         ))}
         <ChangeMapCenter position={position} />
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };

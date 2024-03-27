@@ -358,7 +358,6 @@ const StationInfo = () => {
         ))}
         <ChangeMapCenter position={position} />
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };

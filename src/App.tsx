@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CssBaseline, ThemeProvider, Toolbar, createTheme, styled } from "@mui/material";
 import Header from "./Header";
 import Top from "./Top";
+import Footer from "./Footer";
 import StationList from "./StationList";
 import StationInfo from "./StationInfo";
 import StationGroupInfo from "./StationGroupInfo";
@@ -64,6 +65,7 @@ const App = () => {
             <Route path="/historyMap" element={<HistoryMap />} />
             <Route path="/*" element={<NotFound />} />
           </Routes>
+          <Footer />
         </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>
