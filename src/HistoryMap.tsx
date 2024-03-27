@@ -3,24 +3,51 @@ import {
   Box,
   CircularProgress,
   Container,
-  Toolbar,
   Typography,
 } from "@mui/material";
-import { useStationHistoryListAndInfo } from "./Api";
+import { StationHistoryDetail, useStationHistoryListAndInfo } from "./Api";
 import "leaflet/dist/leaflet.css";
-import Leaflet from "leaflet";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
+import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer } from "react-leaflet";
 
 
-const DefaultIcon = Leaflet.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconAnchor: [13, 40],
-  popupAnchor: [0, -35],
-});
-Leaflet.Marker.prototype.options.icon = DefaultIcon;
+type PathData = {
+  railwayCode: number,
+  railwayName: string,
+  railwayColor: string,
+  companyName: string,
+  path: [number, number][],
+};
+
+// 同じ路線の移動ごとに分割
+const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
+  if(!historyList.length) return [];
+  let result: PathData[] = [
+    {
+      railwayCode: historyList[0].railwayCode,
+      railwayName: historyList[0].railwayName,
+      railwayColor: historyList[0].railwayColor,
+      companyName: historyList[0].railwayCompany,
+      path: [[historyList[0].latitude, historyList[0].longitude]],
+    }
+  ];
+  for(let i = 1; i < historyList.length; i++){
+    const cur = historyList[i];
+    const prev = historyList[i-1];
+    if(cur.railwayCode === prev.railwayCode && cur.date.getTime() - prev.date.getTime() < 1000*60*60*24 && cur.left.concat(cur.right).includes(prev.stationCode)){
+      result[result.length-1].path.push([cur.latitude, cur.longitude]);
+    }else{
+      result.push({
+        railwayCode: cur.railwayCode,
+        railwayName: cur.railwayName,
+        railwayColor: cur.railwayColor,
+        companyName: cur.railwayCompany,
+        path: [[cur.latitude, cur.longitude]],
+      });
+    }
+  }
+  return result;
+};
+
 
 const HistoryMap = () => {
   const historyListQuery = useStationHistoryListAndInfo();
@@ -50,6 +77,16 @@ const HistoryMap = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {splitHistoryList(historyList!).map(item => (
+          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.railwayCode}>
+            <Popup>
+              <Box sx={{ textAlign: "center" }}>
+                <Link to={"/railway/" + item.railwayCode}>{item.railwayName}</Link>
+              </Box>
+            </Popup>
+            <Polyline weight={8} positions={item.path} />
+          </FeatureGroup>
+        ))}
         {historyList?.map(info => (
           <CircleMarker
             center={[info.latitude, info.longitude]}
