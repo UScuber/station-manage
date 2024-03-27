@@ -16,6 +16,7 @@ type PathData = {
   railwayColor: string,
   companyName: string,
   path: [number, number][],
+  key: string,
 };
 
 // 同じ路線の移動ごとに分割
@@ -28,6 +29,7 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
       railwayColor: historyList[0].railwayColor,
       companyName: historyList[0].railwayCompany,
       path: [[historyList[0].latitude, historyList[0].longitude]],
+      key: `${historyList[0].date.toString()}|${historyList[0].stationCode}`,
     }
   ];
   for(let i = 1; i < historyList.length; i++){
@@ -42,6 +44,7 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
         railwayColor: cur.railwayColor,
         companyName: cur.railwayCompany,
         path: [[cur.latitude, cur.longitude]],
+        key: `${cur.date.toString()}|${cur.stationCode}`,
       });
     }
   }
@@ -78,7 +81,7 @@ const HistoryMap = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {splitHistoryList(historyList!).map(item => (
-          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.railwayCode}>
+          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.key}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/railway/" + item.railwayCode}>{item.railwayName}</Link>
