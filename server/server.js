@@ -935,12 +935,25 @@ app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
         StationHistory.*,
         Stations.*,
         StationGroups.stationName,
-        StationGroups.kana
+        StationGroups.kana,
+        Prefectures.code AS prefCode,
+        Prefectures.name AS prefName,
+        Railways.railwayName,
+        Railways.railwayCode,
+        Railways.railwayColor,
+        Companies.companyCode,
+        Companies.companyName AS railwayCompany
       FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+      INNER JOIN Prefectures
+        ON StationGroups.prefCode = Prefectures.code
       ORDER BY date DESC
     `).all();
 
