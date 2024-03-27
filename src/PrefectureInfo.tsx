@@ -5,7 +5,6 @@ import {
   Button,
   CircularProgress,
   Container,
-  Toolbar,
   Typography,
 } from "@mui/material";
 import { Railway, usePrefName, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";

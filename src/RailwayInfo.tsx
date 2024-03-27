@@ -5,7 +5,6 @@ import {
   CircularProgress,
   Container,
   LinearProgress,
-  Toolbar,
   Typography,
 } from "@mui/material";
 import { Station, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";

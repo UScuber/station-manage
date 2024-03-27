@@ -9,7 +9,6 @@ import {
   Typography,
   ListItemText,
   Stack,
-  Toolbar,
   Divider,
   IconButton,
   Collapse,
