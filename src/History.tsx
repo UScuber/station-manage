@@ -254,18 +254,34 @@ const History = () => {
               {/* 路線名 */}
               {(!index || item.railwayCode !== list[index-1].railwayCode) && (
                 <Box sx={{ ml: 1 }}>
-                  <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{item.railwayCompany}</Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      display: "inline-block",
-                      textDecoration: "underline",
-                      textDecorationColor: "#" + item.railwayColor,
-                      textDecorationThickness: 3,
-                    }}
+                  <Button
+                    component={Link}
+                    to={"/company/" + item.companyCode}
+                    color="inherit"
+                    sx={{ padding: 0 }}
                   >
-                    {item.railwayName}
-                  </Typography>
+                    <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>
+                      {item.railwayCompany}
+                    </Typography>
+                  </Button>
+                  <Button
+                    component={Link}
+                    to={"/railway/" + item.railwayCode}
+                    color="inherit"
+                    sx={{ padding: 0 }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        display: "inline-block",
+                        textDecoration: "underline",
+                        textDecorationColor: "#" + item.railwayColor,
+                        textDecorationThickness: 3,
+                      }}
+                    >
+                      {item.railwayName}
+                    </Typography>
+                  </Button>
                 </Box>
               )}
               <Box sx={{ ml: 2 }}>
