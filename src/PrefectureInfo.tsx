@@ -5,9 +5,10 @@ import {
   Button,
   CircularProgress,
   Container,
+  LinearProgress,
   Typography,
 } from "@mui/material";
-import { Railway, usePrefName, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";
+import { Railway, usePrefName, usePrefProgress, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
@@ -103,6 +104,9 @@ const PrefectureInfo = () => {
   const stationsQuery = useStationsInfoByPrefCode(prefCode);
   const stationList = stationsQuery.data;
 
+  const prefProgressQuery = usePrefProgress(prefCode);
+  const prefProgress = prefProgressQuery.data;
+
   const prefQuery = usePrefName(prefCode);
   const pref = prefQuery.data;
 
@@ -141,6 +145,24 @@ const PrefectureInfo = () => {
       <Box sx={{ mb: 2 }}>
         <Typography variant="h3">{pref?.prefName}</Typography>
       </Box>
+      {prefProgress && (
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              fontSize: 14,
+              textAlign: "right",
+            }}
+          >
+            {`${prefProgress.getOrPassStationNum}/${prefProgress.stationNum}`}
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={prefProgress.getOrPassStationNum / prefProgress.stationNum * 100}
+          />
+        </Box>
+      )}
       <Box>
         {railwayList?.map(item => (
           <RailwayItem info={item} key={item.railwayCode} />
