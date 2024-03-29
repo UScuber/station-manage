@@ -35,6 +35,15 @@ const theme = createTheme({
   },
 });
 
+theme.typography.h3 = {
+  fontSize: 45,
+  fontWeight: 500,
+  [theme.breakpoints.down("md")]: {
+    fontSize: 28,
+    fontWeight: 600,
+  },
+};
+
 const ThinToolbar = styled(Toolbar)(({ theme }) => ({
   minHeight: 25,
 }));

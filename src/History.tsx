@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "./Api";
-import { BinaryPagination } from "./components";
+import { BinaryPagination, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -91,8 +91,8 @@ const HistoryContent = (
       sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h5">{history.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{history.kana}</Typography>
+        <RespStationName variant="h5">{history.stationName}</RespStationName>
+        <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history.kana}</RespStationName>
       </Box>
 
       <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>

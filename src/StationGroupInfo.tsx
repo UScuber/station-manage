@@ -31,7 +31,7 @@ import {
   useStationGroupInfo,
   useStationsInfoByGroupCode,
 } from "./Api";
-import { AccessButton, AroundTime } from "./components";
+import { AccessButton, AroundTime, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -178,8 +178,8 @@ const StationGroupInfo = () => {
     <Container>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ textAlign: "center", mb: 2 }}>
-          <Typography variant="h3" sx={{ lineHeight: 1 }}>{groupStationData?.stationName}</Typography>
-          <Typography variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</Typography>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{groupStationData?.stationName}</RespStationName>
+          <RespStationName variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</RespStationName>
         </Box>
           <Button
             component={Link}

@@ -17,13 +17,14 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  styled,
 } from "@mui/material";
 import {
   KeyboardArrowUp as KeyboardArrowUpIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { AccessButton, AroundTime } from "./components";
+import { AccessButton, AroundTime, RespStationName } from "./components";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
@@ -49,12 +50,21 @@ const ChangeMapCenter = ({ position }: { position: LatLng }) => {
 };
 
 
-const NextStation = (
-  { code }
-  :{
-    code: number,
-  }
-): JSX.Element => {
+const NextStationName = styled(Typography)(({ theme }) => ({
+  fontSize: 20,
+  [theme.breakpoints.down("md")]: {
+    fontSize: 18,
+  },
+}));
+const NextStationKana = styled(Typography)(({ theme }) => ({
+  fontSize: 11,
+  lineHeight: 1,
+  [theme.breakpoints.down("md")]: {
+    fontSize: 10,
+  },
+}));
+
+const NextStation = ({ code }: { code: number }): JSX.Element => {
   const station = useStationInfo(code);
   const info = station.data;
 
@@ -74,8 +84,8 @@ const NextStation = (
         color="inherit"
         sx={{ display: "block", padding: 0 }}
       >
-        <Typography variant="h6">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
+        <NextStationName variant="h6">{info?.stationName}</NextStationName>
+        <NextStationKana variant="h6">{info?.kana}</NextStationKana>
       </Button>
     </Stack>
   );
@@ -195,8 +205,8 @@ const StationInfo = () => {
     <Container>
       <Box maxWidth="sm" sx={{ margin: "auto" }}>
         <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h3" sx={{ lineHeight: 1 }}>{info?.stationName}</Typography>
-          <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.kana}</Typography>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{info?.stationName}</RespStationName>
+          <RespStationName variant="h6">{info?.kana}</RespStationName>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
           <Box sx={{ textAlign: "left" }}>
