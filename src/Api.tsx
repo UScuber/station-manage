@@ -30,8 +30,18 @@ axios.interceptors.response.use(res => {
 
 const ngrok_header = { headers: { "ngrok-skip-browser-warning": "a" } };
 
-const convert_date = (date: Date): string => {
-  return new Date(date).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+const convert_date = (date: Date) => {
+  return new Date(date).toLocaleString(
+    "ja-JP",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }
+  ).replaceAll("/", "-");
 };
 
 export enum RecordState {
