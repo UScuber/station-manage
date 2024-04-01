@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { RecordState, Station, StationHistoryData, useDeleteStationHistoryMutation, useSearchKNearestStationGroups, useSendStationStateMutation, useStationAllHistory, useStationInfo } from "./Api";
+import {
+  RecordState,
+  Station,
+  StationHistoryData,
+  useDeleteStationHistoryMutation,
+  useSearchKNearestStationGroups,
+  useSendStationStateMutation,
+  useStationAllHistory,
+  useStationInfo,
+} from "./Api";
 import {
   Box,
   Button,
@@ -24,7 +33,7 @@ import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { AccessButton, AroundTime, RespStationName } from "./components";
+import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
@@ -97,8 +106,10 @@ const StationInfo = () => {
 
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
 
   const station = useStationInfo(stationCode, (data: Station) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
@@ -149,6 +160,16 @@ const StationInfo = () => {
       state: history.state,
     });
     setDeleteLoading(true);
+  };
+
+  const handleDialogClose = (value: StationHistoryData | undefined) => {
+    setDialogOpen(false);
+    if(value) handleDeleteHistory(value);
+  };
+
+  const handleClickDeleteButton = (value: StationHistoryData) => {
+    setDialogOpen(true);
+    setDeleteHistoryItem(value);
   };
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -307,12 +328,12 @@ const StationInfo = () => {
         <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory?.length}件)</Typography>
         <IconButton
           aria-label="expand row"
-          onClick={() => setOpen(!open)}
+          onClick={() => setHistoryOpen(!historyOpen)}
         >
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
 
-        <Collapse in={open} timeout="auto" unmountOnExit>
+        <Collapse in={historyOpen} timeout="auto" unmountOnExit>
           <Box sx={{ margin: 1 }}>
             <Table size="small" aria-label="dates">
               <TableHead>
@@ -331,7 +352,7 @@ const StationInfo = () => {
                       <IconButton
                         aria-label="delete"
                         size="small"
-                        onClick={() => handleDeleteHistory(history)}
+                        onClick={() => handleClickDeleteButton(history)}
                         disabled={deleteLoading}
                       >
                         <DeleteIcon fontSize="inherit" />
@@ -342,6 +363,13 @@ const StationInfo = () => {
               </TableBody>
             </Table>
           </Box>
+          <ConfirmDialog
+            open={dialogOpen}
+            selectedValue={deleteHistoryItem}
+            onClose={handleDialogClose}
+            title="データを削除しますか"
+            descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
+          />
         </Collapse>
       </Box>
 

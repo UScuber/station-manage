@@ -31,7 +31,7 @@ import {
   useStationGroupInfo,
   useStationsInfoByGroupCode,
 } from "./Api";
-import { AccessButton, AroundTime, RespStationName } from "./components";
+import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -99,7 +99,9 @@ const StationGroupInfo = () => {
 
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
 
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
@@ -149,9 +151,19 @@ const StationGroupInfo = () => {
     setDeleteLoading(true);
   };
 
+  const handleDialogClose = (value: StationHistoryData | undefined) => {
+    setDialogOpen(false);
+    if(value) handleDeleteHistory(value);
+  };
+
+  const handleClickDeleteButton = (value: StationHistoryData) => {
+    setDialogOpen(true);
+    setDeleteHistoryItem(value);
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
-    setOpen(false);
+    setHistoryOpen(false);
   }, [stationGroupCode]);
 
 
@@ -195,12 +207,12 @@ const StationGroupInfo = () => {
         </Typography>
         <IconButton
           aria-label="expand row"
-          onClick={() => setOpen(!open)}
+          onClick={() => setHistoryOpen(!historyOpen)}
         >
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
 
-        <Collapse in={open} timeout="auto" unmountOnExit>
+        <Collapse in={historyOpen} timeout="auto" unmountOnExit>
           <Box sx={{ margin: 1 }}>
             <Typography variant="h6" component="div">History</Typography>
             <Table size="small" aria-label="dates">
@@ -230,7 +242,7 @@ const StationGroupInfo = () => {
                       <IconButton
                         aria-label="delete"
                         size="small"
-                        onClick={() => handleDeleteHistory(history)}
+                        onClick={() => handleClickDeleteButton(history)}
                         disabled={deleteLoading}
                       >
                         <DeleteIcon fontSize="inherit" />
@@ -241,6 +253,13 @@ const StationGroupInfo = () => {
               </TableBody>
             </Table>
           </Box>
+          <ConfirmDialog
+            open={dialogOpen}
+            selectedValue={deleteHistoryItem}
+            onClose={handleDialogClose}
+            title="データを削除しますか"
+            descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
+          />
         </Collapse>
 
         <AccessButton

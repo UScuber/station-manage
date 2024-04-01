@@ -551,6 +551,7 @@ export const useDeleteStationHistoryMutation = (
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["GroupStations", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
