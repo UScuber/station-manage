@@ -5,6 +5,7 @@ import {
   Button,
   CircularProgress,
   Collapse,
+  Divider,
   IconButton,
   Table,
   TableBody,
@@ -193,22 +194,49 @@ const StationGroupInfo = () => {
           <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{groupStationData?.stationName}</RespStationName>
           <RespStationName variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</RespStationName>
         </Box>
-          <Button
-            component={Link}
-            to={"/pref/" + groupStationData?.prefCode}
-            color="inherit"
-            sx={{ padding: 0 }}
-          >
-            <Typography variant="h6">{groupStationData?.prefName}</Typography>
-          </Button>
-        </Box>
-        <Typography variant="h6" sx={{ display: "inline-block" }}>
-          立ち寄り: <AroundTime date={groupStationData?.date} invalidMsg="なし" />
-        </Typography>
+        <Button
+          component={Link}
+          to={"/pref/" + groupStationData?.prefCode}
+          color="inherit"
+          sx={{ padding: 0 }}
+        >
+          <Typography variant="h6">{groupStationData?.prefName}</Typography>
+        </Button>
+      </Box>
+
+      <Typography variant="h6" sx={{ display: "inline-block" }}>
+        立ち寄り: <AroundTime date={groupStationData?.date} invalidMsg="なし" />
+      </Typography>
+
+      <AccessButton
+        text="立ち寄り"
+        loading={loading}
+        timeLimit={60*3}
+        accessedTime={groupStationData?.date}
+        onClick={handleSubmit}
+        sx={{ mb: 2, display: "block" }}
+      />
+
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">路線一覧</Typography>
+        <Divider sx={{ mb: 1 }} light />
+
+        {stationList?.map(item => (
+          <StationItem key={item.stationCode} info={item} />
+        ))}
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h5">詳細</Typography>
+        <Divider sx={{ mb: 1 }} light />
+
         <IconButton
           aria-label="expand row"
           onClick={() => setHistoryOpen(!historyOpen)}
+          color="inherit"
+          sx={{ padding: 0 }}
         >
+          <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationGroupAllHistory?.length}件)</Typography>
           {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
 
@@ -261,19 +289,6 @@ const StationGroupInfo = () => {
             descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
           />
         </Collapse>
-
-        <AccessButton
-          text="立ち寄り"
-          loading={loading}
-          timeLimit={60*3}
-          accessedTime={groupStationData?.date}
-          onClick={handleSubmit}
-          sx={{ mb: 2, display: "block" }}
-        />
-      <Box sx={{ mb: 2 }}>
-        {stationList?.map(item => (
-          <StationItem key={item.stationCode} info={item} />
-        ))}
       </Box>
 
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>

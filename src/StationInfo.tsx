@@ -325,11 +325,13 @@ const StationInfo = () => {
         <Typography variant="h5">詳細</Typography>
         <Divider sx={{ mb: 1 }} light />
 
-        <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory?.length}件)</Typography>
         <IconButton
           aria-label="expand row"
           onClick={() => setHistoryOpen(!historyOpen)}
+          color="inherit"
+          sx={{ padding: 0 }}
         >
+          <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory?.length}件)</Typography>
           {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
 
