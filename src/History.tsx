@@ -242,17 +242,18 @@ const History = () => {
       <Box>
         {historyList.data?.map((item, index, list) => {
           const date = item.date;
+          const isSameDate = index && list[index-1].date.getTime() - date.getTime() < 1000*60*60*24;
           return (
             <Box key={`${date.toString()}|${item.stationCode}|${item.state}`}>
               {/* 日付 */}
-              {(!index || date.getTime() - list[index-1].date.getTime() >= 1000*60*60*24) && (
-                <Typography variant="h6">
+              {!isSameDate && (
+                <Typography variant="h6" sx={{ mt: 1 }}>
                   {getDateString(date, true, true)}({dayNames[date.getDay()]})
                   ー {aroundDayName(item.date)}
                 </Typography>
               )}
               {/* 路線名 */}
-              {(!index || item.railwayCode !== list[index-1].railwayCode) && (
+              {(!isSameDate || item.railwayCode !== list[index-1].railwayCode) && (
                 <Box sx={{ ml: 1 }}>
                   <Button
                     component={Link}
