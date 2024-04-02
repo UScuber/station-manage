@@ -28,6 +28,12 @@ const links: Array<{ text: string, url: string, description: JSX.Element }> = [
       <Typography variant="caption">乗降の履歴</Typography>
     ),
   }, {
+    text: "Map",
+    url: "/historyMap",
+    description: (
+      <Typography variant="caption">乗車マップ</Typography>
+    ),
+  }, {
     text: "Railway",
     url: "/railway",
     description: (
@@ -52,14 +58,14 @@ const Top = () => {
   return (
     <Container>
       <Box>
-        {links.map((item) => (
+        {links.map(item => (
           <Button
             component={Link}
             to={item.url}
             color="inherit"
             sx={{
               textAlign: "center",
-              display: { xs: "block", sm: "inline-flex" }
+              display: { xs: "block", md: "inline-flex" }
             }}
             key={item.url}
           >
