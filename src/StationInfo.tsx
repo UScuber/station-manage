@@ -220,6 +220,7 @@ const StationInfo = () => {
     );
   }
 
+  const lastAccessTime = ((info?.getDate ?? 0) > (info?.passDate ?? 0)) ? info?.getDate : info?.passDate;
   const position = new LatLng(info!.latitude, info!.longitude);
 
   return (
@@ -301,14 +302,14 @@ const StationInfo = () => {
             text="乗降"
             loading={getLoading}
             timeLimit={60*3}
-            accessedTime={info?.getDate}
+            accessedTime={lastAccessTime}
             onClick={() => handleSubmit(RecordState.Get)}
           />
           <AccessButton
             text="通過"
             loading={passLoading}
             timeLimit={60*3}
-            accessedTime={info?.passDate}
+            accessedTime={lastAccessTime}
             onClick={() => handleSubmit(RecordState.Pass)}
           />
         </Stack>
