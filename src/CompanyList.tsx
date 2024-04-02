@@ -5,6 +5,7 @@ import {
   Container,
   InputAdornment,
   Paper,
+  SelectChangeEvent,
   Table,
   TableBody,
   TableCell,
@@ -16,7 +17,7 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useCompanyList, useCompanyProgress } from "./Api";
-import { CustomLink } from "./components";
+import { BinaryPagination, CustomLink } from "./components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -75,6 +76,8 @@ const CompanyProgress = ({ code }: { code: number }) => {
 };
 
 const CompanyList = () => {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
   const companyListQuery = useCompanyList();
@@ -84,11 +87,20 @@ const CompanyList = () => {
     setInputName(event.target.value);
   };
 
+  const handleChangePage = (newPage: number) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(1);
+  };
+
   const filteredCompanies =
     companyList
       ?.map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
       .filter(comp => comp.ord < 4)
       .sort((a, b) => a.ord - b.ord);
+  const dividedCompanies = filteredCompanies?.slice(page-1, page-1+rowsPerPage);
 
   if(companyListQuery.isError){
     return (
@@ -107,6 +119,18 @@ const CompanyList = () => {
     );
   }
 
+  const CustomPagination = (): JSX.Element => (
+    <BinaryPagination
+      page={page}
+      count={filteredCompanies!.length}
+      rowsPerPage={rowsPerPage}
+      rowsPerPageOptions={[10,25,50,100,200]}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
+      sx={{ my: 1 }}
+    />
+  );
+
   return (
     <Container>
       <TextField
@@ -124,15 +148,18 @@ const CompanyList = () => {
           ),
         }}
       />
+      <CustomPagination />
+
       <TableContainer component={Paper}>
         <Table aria-label="company table">
           <TableHead>
             <TableRow>
               <TableCell>Company</TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredCompanies?.map(item => (
+            {dividedCompanies?.map(item => (
               <TableRow key={item.companyCode}>
                 <TableCell>
                   <CustomLink to={"/company/" + item.companyCode}>
@@ -145,6 +172,8 @@ const CompanyList = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <CustomPagination />
     </Container>
   );
 };

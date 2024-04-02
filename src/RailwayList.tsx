@@ -5,6 +5,7 @@ import {
   Container,
   InputAdornment,
   Paper,
+  SelectChangeEvent,
   Table,
   TableBody,
   TableCell,
@@ -16,7 +17,7 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useRailwayList, useRailwayProgress } from "./Api";
-import { CustomLink } from "./components";
+import { BinaryPagination, CustomLink } from "./components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -75,6 +76,8 @@ const RailwayProgress = ({ code }: { code: number }) => {
 };
 
 const RailwayList = () => {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
   const railwayListQuery = useRailwayList();
@@ -84,11 +87,20 @@ const RailwayList = () => {
     setInputName(event.target.value);
   };
 
-  const filteredCompanies =
+  const handleChangePage = (newPage: number) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(1);
+  };
+
+  const filteredRailways =
     railwayList
       ?.map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
       .filter(rail => rail.ord < 4)
       .sort((a, b) => a.ord - b.ord);
+  const dividedRailways = filteredRailways?.slice(page-1, page-1+rowsPerPage);
 
   if(railwayListQuery.isError){
     return (
@@ -107,6 +119,18 @@ const RailwayList = () => {
     );
   }
 
+  const CustomPagination = (): JSX.Element => (
+    <BinaryPagination
+      page={page}
+      count={filteredRailways!.length}
+      rowsPerPage={rowsPerPage}
+      rowsPerPageOptions={[10,25,50,100,200]}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
+      sx={{ my: 1 }}
+    />
+  );
+
   return (
     <Container>
       <TextField
@@ -124,15 +148,18 @@ const RailwayList = () => {
           ),
         }}
       />
+      <CustomPagination />
+
       <TableContainer component={Paper}>
         <Table aria-label="railway table">
           <TableHead>
             <TableRow>
               <TableCell>Railway</TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredCompanies?.map(item => (
+            {dividedRailways?.map(item => (
               <TableRow key={item.railwayCode}>
                 <TableCell>
                   <CustomLink to={"/railway/" + item.railwayCode}>
@@ -153,6 +180,8 @@ const RailwayList = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <CustomPagination />
     </Container>
   );
 };
