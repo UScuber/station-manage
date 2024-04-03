@@ -100,7 +100,7 @@ const RailwayList = () => {
       ?.map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
       .filter(rail => rail.ord < 4)
       .sort((a, b) => a.ord - b.ord);
-  const dividedRailways = filteredRailways?.slice(page-1, page-1+rowsPerPage);
+  const dividedRailways = filteredRailways?.slice((page-1)*rowsPerPage, page*rowsPerPage);
 
   if(railwayListQuery.isError){
     return (

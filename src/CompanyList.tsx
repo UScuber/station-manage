@@ -100,7 +100,7 @@ const CompanyList = () => {
       ?.map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
       .filter(comp => comp.ord < 4)
       .sort((a, b) => a.ord - b.ord);
-  const dividedCompanies = filteredCompanies?.slice(page-1, page-1+rowsPerPage);
+  const dividedCompanies = filteredCompanies?.slice((page-1)*rowsPerPage, page*rowsPerPage);
 
   if(companyListQuery.isError){
     return (
