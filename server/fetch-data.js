@@ -91,17 +91,26 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
     [0,1,2].map(idx => ("0" + parseInt(col.substr(idx*3,3), 10).toString(16)).slice(-2)).join("")
   );
 
+  const find_color_from_rail = async(railwayName) => {
+    const json = await fetch_data("rail", { name: railwayName });
+    if(!json.Line?.Name) return undefined;
+    if(json.Line.Name === railwayName) return json.Line.Color;
+    return undefined;
+  };
+
   const get_row_data = async(offset) => {
     const json = await fetch_data("operationLine", { offset: offset+1 });
     const company_list = [].concat(json.Corporation);
-    return [].concat(json.Line).map(data => ({
-      railwayCode: parseInt(data.code),
-      railwayName: data.Name,
-      kana: data.Yomi,
-      companyName: company_list[parseInt(data.corporationIndex) - 1].Name,
-      companyCode: parseInt(company_list[parseInt(data.corporationIndex) - 1].code),
-      railwayColor: rgb10to16(data.Color),
-    }));
+    return Array.from(await Promise.all(
+      [].concat(json.Line).map(async(data) => ({
+        railwayCode: parseInt(data.code),
+        railwayName: data.Name,
+        kana: data.Yomi,
+        companyName: company_list[parseInt(data.corporationIndex) - 1].Name,
+        companyCode: parseInt(company_list[parseInt(data.corporationIndex) - 1].code),
+        railwayColor: rgb10to16(await find_color_from_rail(data.Name) ?? data.Color),
+      }))
+    ));
   };
 
   let railway_list = [];

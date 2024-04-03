@@ -21,6 +21,7 @@ N02_RAILROAD_FILE="data/..._RailroadSection.geojson" // 国土交通省の線路
 - セットアップ
 ```
 npm install
+node fetch-data.js
 node collect-data.js
 // unknown-data.jsonにあるnull値を記入する
 node init-database.js
