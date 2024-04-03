@@ -126,10 +126,8 @@ class NextStationGen {
   get_next_station_data = async() => {
     console.log("Create input data & Compile");
 
-    await (async() => {
-      setTimeout(this.create_data, 0);
-      this.compile_calc_cpp();
-    })();
+    await this.create_data();
+    await this.compile_calc_cpp();
 
     return await this.run_calc_cpp();
   };
