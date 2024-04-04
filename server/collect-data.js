@@ -28,7 +28,9 @@ const normalize_name = (s) => (
 const encode_str = (s) => btoa(String.fromCharCode.apply(null, new TextEncoder().encode(s)));
 
 let railway_data = {};
-parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((_, idx) => idx)
+parse(fs.readFileSync(process.env.LINE_CSV_FILE))
+  .filter((_, idx) => idx)
+  .filter(row => parseInt(row[11]) !== 2) // 廃止を除く
   .forEach(row => {
     railway_data[parseInt(row[0])] = {
       companyCode: parseInt(row[1]),
@@ -41,7 +43,9 @@ parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((_, idx) => idx)
   });
 
 let company_data = {};
-parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((_, idx) => idx)
+parse(fs.readFileSync(process.env.COMPANY_CSV_FILE))
+  .filter((_, idx) => idx)
+  .filter(row => parseInt(row[8]) !== 2) // 廃止を除く
   .forEach(row => {
     company_data[parseInt(row[0])] = {
       companyName: normalize_name(row[2]),
@@ -60,7 +64,9 @@ const arrange_stationGroupCode = (stationGroupCode, stationName) => {
   return parseInt(stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName]);
 };
 
-const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter((_, idx) => idx)
+const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE))
+  .filter((_, idx) => idx)
+  .filter(row => parseInt(row[13]) !== 2) // 廃止を除く
   .map(row => ({
     stationCode: parseInt(row[0]),
     stationGroupCode: arrange_stationGroupCode(row[1], row[2]),
@@ -78,12 +84,10 @@ const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter
     prefCode: parseInt(row[6]),
     lng: parseFloat(row[9]),
     lat: parseFloat(row[10]),
-    status: parseInt(row[13]),
   }));
 
 let join_data = {};
 station_data
-  .filter(data => data.status !== 2)
   .forEach(data => join_data[data.stationCode] = { left: [], right: [] });
 parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((_, idx) => idx)
   .forEach(row => {
@@ -94,7 +98,6 @@ parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((_, idx) => idx)
   });
 
 let filtered_station_data = station_data
-  .filter(data => data.status !== 2)
   .filter(data => join_data[data.stationCode].left.length + join_data[data.stationCode].right.length);
 
 Object.keys(join_data).forEach(stationCode => {
