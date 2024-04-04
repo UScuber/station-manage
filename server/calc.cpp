@@ -1,3 +1,4 @@
+// 国道交通省の線路データから隣駅を計算する
 #include <iostream>
 #include <vector>
 #include <algorithm>

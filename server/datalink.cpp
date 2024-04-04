@@ -1,3 +1,4 @@
+// 駅の読み仮名の対応付けと路線の色の対応付けをする
 #include <iostream>
 #include <vector>
 #include <string>
@@ -190,9 +191,9 @@ private:
   std::map<int, std::vector<Station*>> railway_stations_mut;
 };
 
-StationDatabase main_data;
-StationDatabase sub_data;
-StationDatabase route_data;
+StationDatabase eki_data;
+StationDatabase ekispert_data;
+StationDatabase kokudo_route_data;
 
 int str_dist(const std::string &s, const std::string &t){
   std::vector<std::vector<int>> dp((int)s.size()+1, std::vector<int>((int)t.size()+1));
@@ -316,9 +317,9 @@ void get_station_data(StationDatabase &data){
   }
 };
 void input(){
-  get_station_data(sub_data);
-  get_station_data(main_data);
-  get_station_data(route_data);
+  get_station_data(ekispert_data);
+  get_station_data(eki_data);
+  get_station_data(kokudo_route_data);
 }
 
 bool almost_same(const std::string &s, const std::string &t){
@@ -331,12 +332,12 @@ bool almost_same(const std::string &s, const std::string &t){
 // 読みを推測する、路線名までの一致判定は行わない
 void link_stations_name(std::vector<std::pair<int, int>> &main_sub_station_pairs, std::vector<const Station*> &unknown_stations){
   std::map<std::string, std::vector<const Station*>> name_map;
-  for(const auto &station : sub_data.stations){
+  for(const auto &station : ekispert_data.stations){
     name_map[station.info->name].emplace_back(&station);
   }
-  for(const auto &station : main_data.stations){
+  for(const auto &station : eki_data.stations){
     if(name_map.count(station.info->name)){
-      const Station *min_st = &sub_data.stations.front();
+      const Station *min_st = &ekispert_data.stations.front();
       double min_dist = 1e9;
       for(const auto st : name_map[station.info->name]){
         if(st->rail->name.find("新幹線") != std::string::npos) continue;
@@ -349,9 +350,9 @@ void link_stations_name(std::vector<std::pair<int, int>> &main_sub_station_pairs
       main_sub_station_pairs.emplace_back(station.code, min_st->code);
       continue;
     }
-    const Station *min_st = &sub_data.stations.front();
+    const Station *min_st = &ekispert_data.stations.front();
     double min_dist = 1e9;
-    for(const auto &sta : sub_data.stations){
+    for(const auto &sta : ekispert_data.stations){
       if(sta.rail->name.find("新幹線") != std::string::npos) continue;
       const double d = station.pos.dist_km(sta.pos) - almost_same(station.info->name, sta.info->name) - almost_same(station.rail->name, sta.rail->name);
       if(min_dist > d){
@@ -412,13 +413,13 @@ void link_railways_color(
     return avg_dist;
   };
 
-  for(const auto &main_railway : main_data.railways){
-     auto &main_railway_stations = main_data.get_railway_stations(main_railway.code);
+  for(const auto &main_railway : eki_data.railways){
+     auto &main_railway_stations = eki_data.get_railway_stations(main_railway.code);
     const auto main_first = main_railway_stations[0];
     bool ok = false;
 
-    for(const auto &sub_railway : sub_data.railways){
-      auto &sub_railway_stations = sub_data.get_railway_stations(sub_railway.code);
+    for(const auto &sub_railway : ekispert_data.railways){
+      auto &sub_railway_stations = ekispert_data.get_railway_stations(sub_railway.code);
       const auto sub_first = sub_railway_stations[0];
       // 名前の一致判定
       if(main_first->rail->name == sub_first->rail->name && main_first->rail->company->name == sub_first->rail->company->name){
@@ -472,11 +473,11 @@ void link_railways_color(
   // 全部一致していれば対応付ける
   for(auto &railway : unknown_railways){
     std::set<const Railway*> cnt;
-    for(const auto &station : main_data.stations){
+    for(const auto &station : eki_data.stations){
       if(station.rail->name != railway->name) continue;
       if(!same_station_pairs.count(station.code)) continue;
       const int sub_code = same_station_pairs[station.code];
-      cnt.insert(sub_data.get_station(sub_code)->rail);
+      cnt.insert(ekispert_data.get_station(sub_code)->rail);
     }
     if((int)cnt.size() != 1) continue;
     main_sub_railway_pairs.emplace_back(railway->code, (*cnt.begin())->code);
@@ -509,7 +510,7 @@ void output_shinkansen_data(
   std::set<std::string> valid_railNames = {
     "奥羽線", "上越線", "北陸線", "田沢湖線"
   };
-  // route_data only
+  // kokudo_route_data only
   auto is_shinkansen_railway = [&](const std::string &railwayName) -> bool {
     return railwayName.find("新幹線") != std::string::npos || valid_railNames.count(railwayName);
   };
@@ -518,9 +519,9 @@ void output_shinkansen_data(
     int railwayCode, companyCode;
     std::string railwayName;
     std::tie(railwayCode, companyCode, railwayName) = x;
-    for(const auto &company : main_data.companies){
+    for(const auto &company : eki_data.companies){
       if(company.code == companyCode){
-        main_data.railways.emplace_back(railwayCode, railwayName, &company);
+        eki_data.railways.emplace_back(railwayCode, railwayName, &company);
         break;
       }
     }
@@ -537,11 +538,11 @@ void output_shinkansen_data(
     return min_st;
   };
 
-  for(const auto &rail : sub_data.railways){
+  for(const auto &rail : ekispert_data.railways){
     if(rail.name.find("新幹線") == std::string::npos) continue;
     const std::string railName = rail.name.substr(2);
     const Railway *railway_ptr = nullptr;
-    for(const auto &r : main_data.railways){
+    for(const auto &r : eki_data.railways){
       if(almost_same(r.name, railName)){
         railway_ptr = &r;
         break;
@@ -551,28 +552,28 @@ void output_shinkansen_data(
     main_sub_railway_pairs.emplace_back(railway_ptr->code, rail.code);
 
     // 新幹線駅の追加
-    for(const auto station : sub_data.get_railway_stations(rail.code)){
+    for(const auto station : ekispert_data.get_railway_stations(rail.code)){
       if(station->info->name == "越後湯沢" && rail.name.find("上越新幹線(") != std::string::npos) continue;
-      const Station *min_st = find_almost_same_name_station(station, main_data.stations);
+      const Station *min_st = find_almost_same_name_station(station, eki_data.stations);
 
       if(min_st && min_st->pos.dist_km(station->pos) <= 1.5){
         min_st->info->stationCnt++;
-        main_data.stations.emplace_back(10000000 + station->code, min_st->info, railway_ptr, station->pos);
+        eki_data.stations.emplace_back(10000000 + station->code, min_st->info, railway_ptr, station->pos);
       }else{
         std::string name = station->info->name;
         if(name.find('(') != std::string::npos) name = name.substr(0, name.find('('));
-        main_data.stationGroups.emplace_back(10000000 + station->code, name);
-        StationGroup *group = &main_data.stationGroups.back();
+        eki_data.stationGroups.emplace_back(10000000 + station->code, name);
+        StationGroup *group = &eki_data.stationGroups.back();
         group->stationCnt++;
-        main_data.stations.emplace_back(10000000 + station->code, group, railway_ptr, station->pos);
+        eki_data.stations.emplace_back(10000000 + station->code, group, railway_ptr, station->pos);
       }
-      main_sub_station_pairs.emplace_back(main_data.stations.back().code, station->code);
+      main_sub_station_pairs.emplace_back(eki_data.stations.back().code, station->code);
     }
   }
 
   auto find_main_data_shinkansen = [](const Station *station) -> std::vector<Station*> {
     std::vector<Station*> res;
-    for(auto &sta : main_data.stations){
+    for(auto &sta : eki_data.stations){
       if(sta.rail->name.find("新幹線") == std::string::npos) continue;
       if(almost_same(station->info->name, sta.info->name)){
         res.emplace_back(&sta);
@@ -583,7 +584,7 @@ void output_shinkansen_data(
 
   auto find_similar_route_stations = [&is_shinkansen_railway](const Station *station) -> std::vector<Station*> {
     std::vector<Station*> res;
-    for(auto &sta : route_data.stations){
+    for(auto &sta : kokudo_route_data.stations){
       if(!is_shinkansen_railway(sta.rail->name)) continue;
       if(almost_same(station->info->name, sta.info->name)){
         res.emplace_back(&sta);
@@ -592,13 +593,13 @@ void output_shinkansen_data(
     return res;
   };
 
-  main_data.build();
+  eki_data.build();
 
   // 新幹線の隣駅を求める
   // (新幹線の駅では違う場所で同じ駅名は存在しないとする)
-  for(const auto &railway : main_data.railways){
+  for(const auto &railway : eki_data.railways){
     if(railway.name.find("新幹線") == std::string::npos) continue;
-    auto &one_railway_stations = main_data.get_railway_stations_mut(railway.code);
+    auto &one_railway_stations = eki_data.get_railway_stations_mut(railway.code);
     // 2駅が隣駅かどうか
     for(auto station : one_railway_stations){
       auto routes_stations = find_similar_route_stations(station);
@@ -634,7 +635,7 @@ void output_shinkansen_data(
   }
 
   // 重複削除
-  for(auto &station : main_data.stations){
+  for(auto &station : eki_data.stations){
     if(station.rail->name.find("新幹線") == std::string::npos) continue;
     std::sort(station.left.begin(), station.left.end());
     station.left.erase(std::unique(station.left.begin(), station.left.end()), station.left.end());
@@ -646,7 +647,7 @@ void output_shinkansen_data(
   std::cout << "  \"shinkansen\": {\n";
   std::cout << "    \"railways\": [\n";
   bool is_first = true;
-  for(const auto &rail : main_data.railways){
+  for(const auto &rail : eki_data.railways){
     if(rail.name.find("新幹線") == std::string::npos) continue;
     if(!is_first) std::cout << ",\n";
     is_first = false;
@@ -670,7 +671,7 @@ void output_shinkansen_data(
     }
     std::cout << "]";
   };
-  for(const auto &station : main_data.stations){
+  for(const auto &station : eki_data.stations){
     if(station.rail->name.find("新幹線") == std::string::npos) continue;
     if(station.left.empty() && station.right.empty()) continue;
     if(!is_first) std::cout << ",\n";
@@ -698,9 +699,9 @@ int main(){
 
   input();
 
-  main_data.build();
-  sub_data.build();
-  route_data.build();
+  eki_data.build();
+  ekispert_data.build();
+  kokudo_route_data.build();
 
   std::vector<std::pair<int, int>> main_sub_station_pairs;
   std::vector<const Station*> unknown_stations;
