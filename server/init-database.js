@@ -32,9 +32,9 @@ const change_width = (s) => (
 const station_railway_data = JSON.parse(fs.readFileSync(station_railway_data_path));
 const unknown_data = JSON.parse(fs.readFileSync(unknown_data_file_path));
 
-const company_data = parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((val, idx) => idx)
+const company_data = parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((_, idx) => idx)
   .map(row => ({
-    companyCode: parseInt(row[0]),
+    companyCode: +row[0],
     companyName: change_width(row[2]),
     kana: kanaToHira(row[3]),
     formalName: change_width(row[4]),

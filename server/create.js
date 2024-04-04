@@ -27,12 +27,12 @@ class NextStationGen {
       elem["coordinates"] = [elem.geometry.coordinates]; // 駅の座標の線分
       delete elem.geometry;
 
-      elem["railwayCode"] = parseInt(elem.properties.N02_001); // 鉄道路線の種類
-      elem["companyCode"] = parseInt(elem.properties.N02_002); // 鉄道路線の事業者
+      elem["railwayCode"] = +elem.properties.N02_001; // 鉄道路線の種類
+      elem["companyCode"] = +elem.properties.N02_002; // 鉄道路線の事業者
       elem["railwayName"] = elem.properties.N02_003; // 鉄道路線の名称
       elem["railwayCompany"] = elem.properties.N02_004; // 鉄道路線を運営する会社
       elem["stationName"] = elem.properties.N02_005; // 駅名
-      elem["stationCode"] = parseInt(elem.properties.N02_005c); // 一意の番号(jsonのこの番号はuniqueでない)
+      elem["stationCode"] = +elem.properties.N02_005c; // 一意の番号(jsonのこの番号はuniqueでない)
 
       delete elem.properties;
 
