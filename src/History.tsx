@@ -129,7 +129,10 @@ const History = () => {
     const text = event.target.value;
     clearInterval(timeoutId);
     setTimeoutId(
-      setTimeout(() => setSearchName(text), 500)
+      setTimeout(() => {
+        setSearchName(text);
+        setPage(1);
+      }, 500)
     );
   };
 
@@ -160,7 +163,7 @@ const History = () => {
     );
   }
 
-  if(!historyList.data || !historyListCount.data){
+  if(!historyList.data || historyListCount.data === undefined){
     return (
       <Container>
         <Box>
@@ -194,7 +197,7 @@ const History = () => {
             </Select>
           </FormControl>
         </Box>
-        {historyListCount.data && <CustomPagination />}
+        {historyListCount.data !== undefined && <CustomPagination />}
         <Box>
           Loading...
           <CircularProgress />

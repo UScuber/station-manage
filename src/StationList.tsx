@@ -53,7 +53,10 @@ const StationList = () => {
     const text = event.target.value;
     clearInterval(timeoutId);
     setTimeoutId(
-      setTimeout(() => setSearchName(text), 500)
+      setTimeout(() => {
+        setSearchName(text);
+        setPage(1);
+      }, 500)
     );
   };
 
@@ -139,7 +142,7 @@ const StationList = () => {
     );
   }
 
-  if(!stationGroupsInfo || !stationGroupCount.data){
+  if(!stationGroupsInfo || stationGroupCount.data === undefined){
     return (
       <Container>
         <TextField
@@ -157,7 +160,7 @@ const StationList = () => {
             ),
           }}
         />
-        {stationGroupCount.data && <CustomPagination />}
+        {stationGroupCount.data !== undefined && <CustomPagination />}
         <Box>
           Loading...
           <CircularProgress />
