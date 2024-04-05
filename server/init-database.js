@@ -3,7 +3,12 @@ const sqlite3 = require("better-sqlite3");
 const { parse } = require("csv-parse/sync");
 require("dotenv").config();
 
-const station_railway_data_path = "./station-railway-data.json";
+if(!fs.existsSync("data")){
+  console.error("data directory is not found.");
+  process.exit(1);
+}
+
+const station_railway_data_path = "./data/station-railway-data.json";
 if(!fs.existsSync(station_railway_data_path)){
   console.error(`Error: ${station_railway_data_path} does not exist`);
   process.exit(1);
@@ -13,6 +18,7 @@ if(!fs.existsSync(unknown_data_file_path)){
   console.error(`Error: ${unknown_data_file_path} does not exist`);
   process.exit(1);
 }
+
 
 const kanaToHira = (str) => {
   return str.replace(/[\u30a1-\u30f6]/g, (match) => {
@@ -32,9 +38,9 @@ const change_width = (s) => (
 const station_railway_data = JSON.parse(fs.readFileSync(station_railway_data_path));
 const unknown_data = JSON.parse(fs.readFileSync(unknown_data_file_path));
 
-const company_data = parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((val, idx) => idx)
+const company_data = parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((_, idx) => idx)
   .map(row => ({
-    companyCode: parseInt(row[0]),
+    companyCode: +row[0],
     companyName: change_width(row[2]),
     kana: kanaToHira(row[3]),
     formalName: change_width(row[4]),
