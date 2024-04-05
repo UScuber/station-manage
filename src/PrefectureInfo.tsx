@@ -12,6 +12,7 @@ import { Railway, usePrefName, usePrefProgress, useRailwayProgress, useRailwaysI
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
+import { CustomLink } from "./components";
 
 
 const FitMapZoom = (
@@ -144,6 +145,9 @@ const PrefectureInfo = () => {
     <Container>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h3">{pref?.prefName}</Typography>
+        <CustomLink to={"/pref"}>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>都道府県一覧</Typography>
+        </CustomLink>
       </Box>
       {prefProgress && (
         <Box sx={{ mb: 2 }}>

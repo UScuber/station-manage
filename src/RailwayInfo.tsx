@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Station, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
-import { AroundTime } from "./components";
+import { AroundTime, CustomLink } from "./components";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
@@ -108,10 +108,14 @@ const RailwayInfo = () => {
           component={Link}
           to={"/company/" + info?.companyCode}
           color="inherit"
-          sx={{ padding: 0 }}
+          sx={{ padding: 0, mb: 0.5 }}
         >
           <Typography variant="h5">{info?.companyName}</Typography>
         </Button>
+
+        <CustomLink to="/railway">
+          <Typography variant="h6" sx={{ fontSize: 14 }}>路線一覧</Typography>
+        </CustomLink>
       </Box>
 
       {railwayProgress && (

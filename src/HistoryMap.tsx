@@ -8,6 +8,7 @@ import {
 import { StationHistoryDetail, useStationHistoryListAndInfo } from "./Api";
 import "leaflet/dist/leaflet.css";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer } from "react-leaflet";
+import { CustomLink } from "./components";
 
 
 type PathData = {
@@ -75,6 +76,12 @@ const HistoryMap = () => {
 
   return (
     <Container>
+      <Box sx={{ mb: 2 }}>
+        <CustomLink to="/history">
+          <Typography variant="h6" sx={{ fontSize: 14 }}>履歴を見る</Typography>
+        </CustomLink>
+      </Box>
+
       <MapContainer center={[36.265185, 138.126471]} zoom={6} style={{ height: "90vh" }}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'

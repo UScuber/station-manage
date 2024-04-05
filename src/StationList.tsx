@@ -71,12 +71,7 @@ const StationList = () => {
     );
   };
 
-  const Row = (
-    { info }
-    :{
-      info: StationGroup,
-    }
-  ): JSX.Element => {
+  const Row = ({ info }: { info: StationGroup }): JSX.Element => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -91,7 +86,9 @@ const StationList = () => {
             </CustomLink>
           </TableCell>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
-            <Typography variant="h6" sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
+            <CustomLink color="inherit" to={"/pref/" + info.prefCode}>
+              <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
+            </CustomLink>
           </TableCell>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
             <AroundTime date={info.date} invalidMsg="" disableMinute fontSize={14}/>

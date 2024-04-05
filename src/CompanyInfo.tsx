@@ -11,6 +11,7 @@ import { Railway, useCompanyInfo, useRailwayProgress, useRailwaysInfoByCompanyCo
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
+import { CustomLink } from "./components";
 
 
 const FitMapZoom = (
@@ -142,7 +143,10 @@ const CompanyInfo = () => {
     <Container>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h3">{info?.companyName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.formalName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 16, mb: 0.5 }}>{info?.formalName}</Typography>
+        <CustomLink to="/company">
+          <Typography variant="h6" sx={{ fontSize: 14 }}>会社一覧</Typography>
+        </CustomLink>
       </Box>
       <Box>
         {railwayList?.map(item => (

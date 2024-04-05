@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "./Api";
-import { BinaryPagination, RespStationName } from "./components";
+import { BinaryPagination, CustomLink, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -238,6 +238,12 @@ const History = () => {
       </Box>
 
       <CustomPagination />
+
+      <Box>
+        <CustomLink to="/historyMap">
+          <Typography variant="h6" sx={{ fontSize: 14, textAlign: "right" }}>マップを見る</Typography>
+        </CustomLink>
+      </Box>
 
       <Box>
         {historyList.data?.map((item, index, list) => {
