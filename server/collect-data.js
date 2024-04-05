@@ -5,6 +5,11 @@ const { SearchAttribute } = require("./searchAttr");
 const { NextStationGen } = require("./create");
 require("dotenv").config();
 
+if(!fs.existsSync("data")){
+  console.error("data directory is not found.");
+  process.exit(1);
+}
+
 
 const max_same_station_dist = 0.45; // [km]
 const distance = (a, b) => {
@@ -258,20 +263,20 @@ buffer += next_station_data.map(data => (
 )).join("\n") + "\n";
 
 
-fs.writeFileSync("input.txt", buffer);
+fs.writeFileSync("data/input.txt", buffer);
 
 
 console.log("Compile & Run");
 
 try{
-  await execShPromise("g++ datalink.cpp", true);
+  await execShPromise("g++ datalink.cpp -o data/datalink", true);
 }catch(err){
   console.error(err);
   process.exit(1);
 }
 let result;
 try{
-  result = await execShPromise("./a.out < input.txt", true);
+  result = await execShPromise("./data/datalink < data/input.txt", true);
 }catch(err){
   console.error(err);
   process.exit(1);
@@ -410,7 +415,7 @@ const next_station_db = filtered_station_ekidata.map(data => ({
   right: join_ekidata[data.stationCode].right,
 }));
 
-fs.writeFileSync("station-railway-data.json", JSON.stringify(
+fs.writeFileSync("data/station-railway-data.json", JSON.stringify(
   {
     stations: stations_db,
     railways: railways_db,

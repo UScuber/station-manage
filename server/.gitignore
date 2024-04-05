@@ -2,7 +2,5 @@
 station.db*
 .env
 info.log
-railroad.txt
-calc
 unknown-*.json
 /data

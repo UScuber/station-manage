@@ -3,7 +3,12 @@ const sqlite3 = require("better-sqlite3");
 const { parse } = require("csv-parse/sync");
 require("dotenv").config();
 
-const station_railway_data_path = "./station-railway-data.json";
+if(!fs.existsSync("data")){
+  console.error("data directory is not found.");
+  process.exit(1);
+}
+
+const station_railway_data_path = "./data/station-railway-data.json";
 if(!fs.existsSync(station_railway_data_path)){
   console.error(`Error: ${station_railway_data_path} does not exist`);
   process.exit(1);
@@ -13,6 +18,7 @@ if(!fs.existsSync(unknown_data_file_path)){
   console.error(`Error: ${unknown_data_file_path} does not exist`);
   process.exit(1);
 }
+
 
 const kanaToHira = (str) => {
   return str.replace(/[\u30a1-\u30f6]/g, (match) => {

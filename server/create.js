@@ -6,7 +6,7 @@ class NextStationGen {
   constructor(){
     this.station_file_path =  process.env.N02_STATION_FILE;
     this.railroad_file_path = process.env.N02_RAILROAD_FILE;
-    this.output_file = "railroad.txt";
+    this.output_file = "data/railroad.txt";
 
     if(!fs.existsSync(this.station_file_path)){
       console.error(`Error: ${this.station_file_path} does not exist`);
@@ -105,7 +105,7 @@ class NextStationGen {
   };
   compile_calc_cpp = async() => {
     try{
-      await execShPromise("g++ calc.cpp -o calc -O2", true);
+      await execShPromise("g++ calc.cpp -o data/calc -O2", true);
     }catch(err){
       console.error(err);
       process.exit(1);
@@ -115,7 +115,7 @@ class NextStationGen {
   run_calc_cpp = async() => {
     let result;
     try{
-      result = await execShPromise("./calc < railroad.txt", true);
+      result = await execShPromise("./data/calc < data/railroad.txt", true);
     }catch(err){
       console.error(err);
       process.exit(1);
