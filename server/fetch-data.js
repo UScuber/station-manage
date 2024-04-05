@@ -88,7 +88,7 @@ const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
   const railway_num = await get_contents_num("operationLine");
 
   const rgb10to16 = (col) => (
-    [0,1,2].map(idx => ("0" + (+col).substr(idx*3,3).toString(16)).slice(-2)).join("")
+    [0,1,2].map(idx => ("0" + (+col.substr(idx*3,3)).toString(16)).slice(-2)).join("")
   );
 
   const find_color_from_rail = async(railwayName) => {
