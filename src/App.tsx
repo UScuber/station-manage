@@ -19,7 +19,17 @@ import PrefectureList from "./PrefectureList";
 import HistoryMap from "./HistoryMap";
 
 
-const theme = createTheme({
+declare module "@mui/material/styles" {
+  interface Palette {
+    access: Palette["primary"];
+  }
+
+  interface PaletteOptions {
+    access?: PaletteOptions["primary"];
+  }
+}
+
+let theme = createTheme({
   typography: {
     fontFamily: [
       '"Hiragino Kaku Gothic Pro"',
@@ -32,6 +42,18 @@ const theme = createTheme({
     button: {
       textTransform: "none",
     },
+  },
+});
+
+theme = createTheme(theme, {
+  palette: {
+    access: theme.palette.augmentColor({
+      color: {
+        // main: "#cfebd5",
+        main: "#d1e3f5",
+      },
+      name: "access",
+    }),
   },
 });
 

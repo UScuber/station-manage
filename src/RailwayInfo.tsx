@@ -26,14 +26,18 @@ const FitMapZoom = (
   return null;
 };
 
-const StationItem = ({ info } :{ info: Station }): JSX.Element => {
+const StationItem = ({ info }: { info: Station }): JSX.Element => {
   return (
     <Button
       component={Link}
       to={"/station/" + info.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5 }}
+      sx={{
+        display: "block",
+        mb: 0.5,
+        bgcolor: (info.getDate || info.passDate) ? "access.main" : "none",
+      }}
     >
       <Box sx={{ mb: 1 }}>
         <Typography variant="h6">{info.stationName}</Typography>
