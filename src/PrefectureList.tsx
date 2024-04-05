@@ -72,7 +72,7 @@ const PrefectureList = () => {
     );
   }
 
-  if(prefListQuery.isLoading){
+  if(!prefList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -91,7 +91,7 @@ const PrefectureList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {prefList?.map(item => (
+            {prefList.map(item => (
               <TableRow key={item.prefCode}>
                 <TableCell>
                   <CustomLink to={"/pref/" + item.prefCode}>

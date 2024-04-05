@@ -60,12 +60,7 @@ const ChangeMapCenter = ({ position }: { position: LatLng }) => {
 };
 
 
-const StationItem = (
-  { info }
-  :{
-    info: Station,
-  }
-): JSX.Element => {
+const StationItem = ({ info }: { info: Station }): JSX.Element => {
   return (
     <Button
       component={Link}
@@ -106,6 +101,7 @@ const StationGroupInfo = () => {
 
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
+
   const groupStationQuery = useStationGroupInfo(stationGroupCode, (data: StationGroup) => {
     setLoading(false);
   });
@@ -176,7 +172,7 @@ const StationGroupInfo = () => {
     );
   }
 
-  if(groupStations.isLoading || groupStationQuery.isLoading || stationGroupAllHistoryQuery.isLoading){
+  if(!stationList || !groupStationData || !stationGroupAllHistory){
     return (
       <Container>
         Loading...
@@ -185,34 +181,34 @@ const StationGroupInfo = () => {
     );
   }
 
-  const position = new LatLng(groupStationData!.latitude, groupStationData!.longitude);
+  const position = new LatLng(groupStationData.latitude, groupStationData.longitude);
 
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ textAlign: "center", mb: 2 }}>
-          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{groupStationData?.stationName}</RespStationName>
-          <RespStationName variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</RespStationName>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{groupStationData.stationName}</RespStationName>
+          <RespStationName variant="h6" sx={{ fontSize: 16 }}>{groupStationData.kana}</RespStationName>
         </Box>
         <Button
           component={Link}
-          to={"/pref/" + groupStationData?.prefCode}
+          to={"/pref/" + groupStationData.prefCode}
           color="inherit"
           sx={{ padding: 0 }}
         >
-          <Typography variant="h6">{groupStationData?.prefName}</Typography>
+          <Typography variant="h6">{groupStationData.prefName}</Typography>
         </Button>
       </Box>
 
       <Typography variant="h6" sx={{ display: "inline-block" }}>
-        立ち寄り: <AroundTime date={groupStationData?.date} invalidMsg="なし" />
+        立ち寄り: <AroundTime date={groupStationData.date} invalidMsg="なし" />
       </Typography>
 
       <AccessButton
         text="立ち寄り"
         loading={loading}
         timeLimit={60*3}
-        accessedTime={groupStationData?.date}
+        accessedTime={groupStationData.date}
         onClick={handleSubmit}
         sx={{ mb: 2, display: "block" }}
       />
@@ -236,7 +232,7 @@ const StationGroupInfo = () => {
           color="inherit"
           sx={{ padding: 0 }}
         >
-          <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationGroupAllHistory?.length}件)</Typography>
+          <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationGroupAllHistory.length}件)</Typography>
           {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
 
@@ -253,7 +249,7 @@ const StationGroupInfo = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {stationGroupAllHistory?.map(history => (
+                {stationGroupAllHistory.map(history => (
                   <TableRow key={`${history.date}|${history.state}`}>
                     <TableCell>{getDateString(history.date)}</TableCell>
                     <TableCell>{stateName[history.state]}</TableCell>
@@ -302,7 +298,7 @@ const StationGroupInfo = () => {
           </Popup>
           <Tooltip direction="bottom" opacity={1} permanent>{groupStationData?.stationName}</Tooltip>
         </Marker>
-        {nearStations && nearStations.filter((v,i) => i).map(item => (
+        {nearStations && nearStations.filter((_,i) => i).map(item => (
           <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>

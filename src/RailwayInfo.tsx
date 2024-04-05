@@ -50,13 +50,13 @@ const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
 
   const railway = useRailwayInfo(railwayCode);
+  const info = railway.data;
+
   const stationsQuery = useStationsInfoByRailwayCode(railwayCode);
+  const stationList = stationsQuery.data;
 
   const railwayProgressQuery = useRailwayProgress(railwayCode);
   const railwayProgress = railwayProgressQuery.data;
-
-  const info = railway.data;
-  const stationList = stationsQuery.data;
 
   if(railway.isError || stationsQuery.isError){
     return (
@@ -66,7 +66,7 @@ const RailwayInfo = () => {
     );
   }
 
-  if(railway.isLoading || stationsQuery.isLoading){
+  if(!info || !stationList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -75,7 +75,7 @@ const RailwayInfo = () => {
     );
   }
 
-  const centerPosition = stationList?.reduce((totPos, item) => ({
+  const centerPosition = stationList.reduce((totPos, item) => ({
     lat: totPos.lat + item.latitude / stationList.length,
     lng: totPos.lng + item.longitude / stationList.length,
   }), { lat: 0, lng: 0 });
@@ -96,21 +96,21 @@ const RailwayInfo = () => {
           sx={{
             lineHeight: 1,
             textDecoration: "underline",
-            textDecorationColor: "#" + info?.railwayColor,
+            textDecorationColor: "#" + info.railwayColor,
             textDecorationThickness: 3,
           }}
         >
-          {info?.railwayName}
+          {info.railwayName}
         </Typography>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.railwayKana}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 16 }}>{info.railwayKana}</Typography>
 
         <Button
           component={Link}
-          to={"/company/" + info?.companyCode}
+          to={"/company/" + info.companyCode}
           color="inherit"
           sx={{ padding: 0, mb: 0.5 }}
         >
-          <Typography variant="h5">{info?.companyName}</Typography>
+          <Typography variant="h5">{info.companyName}</Typography>
         </Button>
 
         <CustomLink to="/railway">
@@ -138,7 +138,7 @@ const RailwayInfo = () => {
       )}
 
       <Box>
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <StationItem key={item.stationCode} info={item} />
         ))}
       </Box>
@@ -148,17 +148,17 @@ const RailwayInfo = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList?.map(item => (
+        {stationList.map(item => (
           item.left.map(code => (
             <Polyline
-              pathOptions={{ color: "#" + (info?.railwayColor ?? "808080") }}
+              pathOptions={{ color: "#" + (info.railwayColor ?? "808080") }}
               weight={8}
               positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]}
               key={code}
             />
           ))
         ))}
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <CircleMarker
             center={[item.latitude, item.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}

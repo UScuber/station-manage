@@ -91,16 +91,9 @@ const CompanyList = () => {
     setPage(newPage);
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(+event.target.value);
     setPage(1);
   };
-
-  const filteredCompanies =
-    companyList
-      ?.map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
-      .filter(comp => comp.ord < 4)
-      .sort((a, b) => a.ord - b.ord);
-  const dividedCompanies = filteredCompanies?.slice((page-1)*rowsPerPage, page*rowsPerPage);
 
   if(companyListQuery.isError){
     return (
@@ -110,7 +103,7 @@ const CompanyList = () => {
     );
   }
 
-  if(companyListQuery.isLoading){
+  if(!companyList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -119,10 +112,17 @@ const CompanyList = () => {
     );
   }
 
+  const filteredCompanies =
+    companyList
+      .map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
+      .filter(comp => comp.ord < 4)
+      .sort((a, b) => a.ord - b.ord);
+  const dividedCompanies = filteredCompanies.slice((page-1)*rowsPerPage, page*rowsPerPage);
+
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
       page={page}
-      count={filteredCompanies!.length}
+      count={filteredCompanies.length}
       rowsPerPage={rowsPerPage}
       rowsPerPageOptions={[10,25,50,100,200]}
       onPageChange={handleChangePage}
@@ -159,7 +159,7 @@ const CompanyList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {dividedCompanies?.map(item => (
+            {dividedCompanies.map(item => (
               <TableRow key={item.companyCode}>
                 <TableCell>
                   <CustomLink to={"/company/" + item.companyCode}>

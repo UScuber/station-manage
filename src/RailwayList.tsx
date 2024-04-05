@@ -91,16 +91,9 @@ const RailwayList = () => {
     setPage(newPage);
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(+event.target.value);
     setPage(1);
   };
-
-  const filteredRailways =
-    railwayList
-      ?.map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
-      .filter(rail => rail.ord < 4)
-      .sort((a, b) => a.ord - b.ord);
-  const dividedRailways = filteredRailways?.slice((page-1)*rowsPerPage, page*rowsPerPage);
 
   if(railwayListQuery.isError){
     return (
@@ -110,7 +103,7 @@ const RailwayList = () => {
     );
   }
 
-  if(railwayListQuery.isLoading){
+  if(!railwayList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -119,10 +112,17 @@ const RailwayList = () => {
     );
   }
 
+  const filteredRailways =
+    railwayList
+      .map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
+      .filter(rail => rail.ord < 4)
+      .sort((a, b) => a.ord - b.ord);
+  const dividedRailways = filteredRailways.slice((page-1)*rowsPerPage, page*rowsPerPage);
+
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
       page={page}
-      count={filteredRailways!.length}
+      count={filteredRailways.length}
       rowsPerPage={rowsPerPage}
       rowsPerPageOptions={[10,25,50,100,200]}
       onPageChange={handleChangePage}
@@ -159,7 +159,7 @@ const RailwayList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {dividedRailways?.map(item => (
+            {dividedRailways.map(item => (
               <TableRow key={item.railwayCode}>
                 <TableCell>
                   <CustomLink to={"/railway/" + item.railwayCode}>

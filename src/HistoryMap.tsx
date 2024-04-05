@@ -65,7 +65,7 @@ const HistoryMap = () => {
     );
   }
 
-  if(historyListQuery.isLoading){
+  if(!historyList){
     return (
       <Container>
         Loading ...
@@ -87,7 +87,7 @@ const HistoryMap = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {splitHistoryList(historyList!).map(item => (
+        {splitHistoryList(historyList).map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.key}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
@@ -97,7 +97,7 @@ const HistoryMap = () => {
             <Polyline weight={8} positions={item.path} />
           </FeatureGroup>
         ))}
-        {historyList?.map(info => (
+        {historyList.map(info => (
           <CircleMarker
             center={[info.latitude, info.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}

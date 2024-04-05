@@ -119,7 +119,7 @@ const History = () => {
     setPage(newPage);
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(+event.target.value);
     setPage(1);
   };
 
@@ -160,7 +160,7 @@ const History = () => {
     );
   }
 
-  if(historyList.isLoading || historyListCount.isLoading){
+  if(!historyList.data || !historyListCount.data){
     return (
       <Container>
         <Box>
@@ -194,7 +194,7 @@ const History = () => {
             </Select>
           </FormControl>
         </Box>
-        {!historyListCount.isLoading && <CustomPagination />}
+        {historyListCount.data && <CustomPagination />}
         <Box>
           Loading...
           <CircularProgress />
@@ -246,7 +246,7 @@ const History = () => {
       </Box>
 
       <Box>
-        {historyList.data?.map((item, index, list) => {
+        {historyList.data.map((item, index, list) => {
           const date = item.date;
           const isSameDate = index && list[index-1].date.getTime() - date.getTime() < 1000*60*60*24;
           return (

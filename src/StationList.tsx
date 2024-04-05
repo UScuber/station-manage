@@ -43,7 +43,7 @@ const StationList = () => {
     setPage(newPage);
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(+event.target.value);
     setPage(1);
   };
 
@@ -139,7 +139,7 @@ const StationList = () => {
     );
   }
 
-  if(stationGroupList.isLoading || stationGroupCount.isLoading){
+  if(!stationGroupsInfo || !stationGroupCount.data){
     return (
       <Container>
         <TextField
@@ -157,7 +157,7 @@ const StationList = () => {
             ),
           }}
         />
-        {!stationGroupCount.isLoading && <CustomPagination />}
+        {stationGroupCount.data && <CustomPagination />}
         <Box>
           Loading...
           <CircularProgress />
@@ -196,7 +196,7 @@ const StationList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {stationGroupsInfo?.map(item => (
+            {stationGroupsInfo.map(item => (
               <Row key={item.stationGroupCode} info={item} />
             ))}
           </TableBody>

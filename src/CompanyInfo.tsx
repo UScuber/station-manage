@@ -117,7 +117,7 @@ const CompanyInfo = () => {
     );
   }
 
-  if(companyQuery.isLoading || railwaysQuery.isLoading || stationsQuery.isLoading){
+  if(!info || !railwayList || !stationList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -126,7 +126,7 @@ const CompanyInfo = () => {
     );
   }
 
-  const centerPosition = stationList?.reduce((totPos, item) => ({
+  const centerPosition = stationList.reduce((totPos, item) => ({
     lat: totPos.lat + item.latitude / stationList.length,
     lng: totPos.lng + item.longitude / stationList.length,
   }), { lat: 0, lng: 0 });
@@ -142,14 +142,14 @@ const CompanyInfo = () => {
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h3">{info?.companyName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 16, mb: 0.5 }}>{info?.formalName}</Typography>
+        <Typography variant="h3">{info.companyName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 16, mb: 0.5 }}>{info.formalName}</Typography>
         <CustomLink to="/company">
           <Typography variant="h6" sx={{ fontSize: 14 }}>会社一覧</Typography>
         </CustomLink>
       </Box>
       <Box>
-        {railwayList?.map(item => (
+        {railwayList.map(item => (
           <RailwayItem info={item} key={item.railwayCode} />
         ))}
       </Box>
@@ -159,7 +159,7 @@ const CompanyInfo = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
@@ -175,7 +175,7 @@ const CompanyInfo = () => {
             ))}
           </FeatureGroup>
         ))}
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <CircleMarker
             center={[item.latitude, item.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}

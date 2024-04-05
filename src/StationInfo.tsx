@@ -211,7 +211,7 @@ const StationInfo = () => {
     );
   }
 
-  if(station.isLoading || stationHistoryQuery.isLoading){
+  if(!info || !stationHistory){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -220,24 +220,24 @@ const StationInfo = () => {
     );
   }
 
-  const lastAccessTime = ((info?.getDate ?? 0) > (info?.passDate ?? 0)) ? info?.getDate : info?.passDate;
-  const position = new LatLng(info!.latitude, info!.longitude);
+  const lastAccessTime = ((info.getDate ?? 0) > (info.passDate ?? 0)) ? info.getDate : info.passDate;
+  const position = new LatLng(info.latitude, info.longitude);
 
   return (
     <Container>
       <Box maxWidth="sm" sx={{ margin: "auto" }}>
         <Box sx={{ textAlign: "center" }}>
-          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{info?.stationName}</RespStationName>
-          <RespStationName variant="h6">{info?.kana}</RespStationName>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{info.stationName}</RespStationName>
+          <RespStationName variant="h6">{info.kana}</RespStationName>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
           <Box sx={{ textAlign: "left" }}>
-            {info?.left.map(code => (
+            {info.left.map(code => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
           <Box sx={{ textAlign: "right" }}>
-            {info?.right.map(code => (
+            {info.right.map(code => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
@@ -246,25 +246,25 @@ const StationInfo = () => {
       <Box>
         <Button
           component={Link}
-          to={"/pref/" + info?.prefCode}
+          to={"/pref/" + info.prefCode}
           color="inherit"
           sx={{ padding: 0 }}
         >
-          <Typography variant="h6">{info?.prefName}</Typography>
+          <Typography variant="h6">{info.prefName}</Typography>
         </Button>
 
         <Box>
           <Button
             component={Link}
-            to={"/company/" + info?.companyCode}
+            to={"/company/" + info.companyCode}
             color="inherit"
             sx={{ padding: 0 }}
           >
-            <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+            <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
           </Button>
           <Button
             component={Link}
-            to={"/railway/" + info?.railwayCode}
+            to={"/railway/" + info.railwayCode}
             color="inherit"
             sx={{ padding: 0 }}
           >
@@ -274,11 +274,11 @@ const StationInfo = () => {
                 mx: 1,
                 display: "inline-block",
                 textDecoration: "underline",
-                textDecorationColor: "#" + info?.railwayColor,
+                textDecorationColor: "#" + info.railwayColor,
                 textDecorationThickness: 3,
               }}
             >
-              {info?.railwayName}
+              {info.railwayName}
             </Typography>
           </Button>
         </Box>
@@ -287,11 +287,11 @@ const StationInfo = () => {
         <Box sx={{ mx: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography variant="h6">乗降:&nbsp;</Typography>
-            <AroundTime date={info?.getDate} invalidMsg="なし" />
+            <AroundTime date={info.getDate} invalidMsg="なし" />
           </Box>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography variant="h6">通過:&nbsp;</Typography>
-            <AroundTime date={info?.passDate} invalidMsg="なし" />
+            <AroundTime date={info.passDate} invalidMsg="なし" />
           </Box>
         </Box>
       </Box>
@@ -315,7 +315,7 @@ const StationInfo = () => {
         </Stack>
         <Button
           component={Link}
-          to={"/stationGroup/" + info?.stationGroupCode}
+          to={"/stationGroup/" + info.stationGroupCode}
           variant="outlined"
         >
           <ListItemText primary="駅グループ" />
@@ -347,7 +347,7 @@ const StationInfo = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {stationHistory?.map(history => (
+                {stationHistory.map(history => (
                   <TableRow key={`${history.date}|${history.state}`}>
                     <TableCell>{getDateString(history.date)}</TableCell>
                     <TableCell>{stateName[history.state]}</TableCell>
@@ -387,7 +387,7 @@ const StationInfo = () => {
           </Popup>
           <Tooltip direction="bottom" opacity={1} permanent>{info?.stationName}</Tooltip>
         </Marker>
-        {nearStations && nearStations.filter((v,i) => i).map(item => (
+        {nearStations && nearStations.filter((_,i) => i).map(item => (
           <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>

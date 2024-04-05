@@ -119,7 +119,7 @@ const PrefectureInfo = () => {
     );
   }
 
-  if(railwaysQuery.isLoading || stationsQuery.isLoading || prefQuery.isLoading){
+  if(!railwayList || !stationList || !pref){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -128,14 +128,14 @@ const PrefectureInfo = () => {
     );
   }
 
-  const centerPosition = stationList?.reduce((totPos, item) => ({
+  const centerPosition = stationList.reduce((totPos, item) => ({
     lat: totPos.lat + item.latitude / stationList.length,
     lng: totPos.lng + item.longitude / stationList.length,
   }), { lat: 0, lng: 0 });
 
   const stationsPositionMap = (() => {
     let codeMap: { [key: number]: { lat: number, lng: number } } = {};
-    stationList?.forEach(item => {
+    stationList.forEach(item => {
       codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
     });
     return codeMap;
@@ -168,7 +168,7 @@ const PrefectureInfo = () => {
         </Box>
       )}
       <Box>
-        {railwayList?.map(item => (
+        {railwayList.map(item => (
           <RailwayItem info={item} key={item.railwayCode} />
         ))}
       </Box>
@@ -178,7 +178,7 @@ const PrefectureInfo = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
@@ -194,7 +194,7 @@ const PrefectureInfo = () => {
             ))}
           </FeatureGroup>
         ))}
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <CircleMarker
             center={[item.latitude, item.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}

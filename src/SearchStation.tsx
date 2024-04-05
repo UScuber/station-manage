@@ -28,7 +28,7 @@ const StationGroupInfo = (
     );
   }
 
-  if(stations.isLoading){
+  if(!infos){
     return (
       <Box sx={{ mb: 2 }}>
         <CircularProgress />
@@ -38,23 +38,22 @@ const StationGroupInfo = (
 
   return (
     <Box sx={{ mb: 4 }}>
-      {infos && (
-        <Box sx={{ mb: 0.5 }}>
-          <Button
-            component={Link}
-            to={"/stationGroup/" + code}
-            color="inherit"
-            sx={{ display: "inline-block", padding: 0 }}
-          >
-            <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
-            <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
-          </Button>
-        </Box>
-      )}
+      <Box sx={{ mb: 0.5 }}>
+        <Button
+          component={Link}
+          to={"/stationGroup/" + code}
+          color="inherit"
+          sx={{ display: "inline-block", padding: 0 }}
+        >
+          <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
+        </Button>
+      </Box>
+
       {distance && (
         <Typography variant="h6" sx={{ fontSize: 18 }}>{distance.toFixed(3)}[km]</Typography>
       )}
-      {infos?.map(info => (
+      {infos.map(info => (
         <Button
           component={Link}
           to={"/station/" + info.stationCode}
@@ -137,7 +136,7 @@ const SearchStation = () => {
     );
   }
 
-  if(isFirstRef.current || nearestStationGroups.isLoading){
+  if(isFirstRef.current || !groupStations){
     return (
       <Container>
         Loading...
@@ -159,7 +158,7 @@ const SearchStation = () => {
 
       <Typography variant="h6">List</Typography>
       <Divider sx={{ mb: 1 }} light />
-      {groupStations?.map(item => (
+      {groupStations.map(item => (
         <StationGroupInfo
           key={item.stationGroupCode}
           code={item.stationGroupCode}
