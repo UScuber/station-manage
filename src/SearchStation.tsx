@@ -70,19 +70,19 @@ const StationGroupInfo = (
               display: "inline-block",
               textDecoration: "underline",
               textDecorationColor: "#" + info?.railwayColor,
-              textDecorationThickness: 3
+              textDecorationThickness: 3,
             }}
           >
-            {info?.railwayName}
+            {info.railwayName}
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
             <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
-            <AroundTime date={info?.getDate} invalidMsg="なし" fontSize={16} />
+            <AroundTime date={info.getDate} invalidMsg="なし" fontSize={16} />
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
             <Typography variant="h6" sx={{ fontSize: 16 }}>通過:&nbsp;</Typography>
-            <AroundTime date={info?.passDate} invalidMsg="なし" fontSize={16} />
+            <AroundTime date={info.passDate} invalidMsg="なし" fontSize={16} />
           </Box>
         </Button>
       ))}

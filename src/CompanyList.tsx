@@ -16,7 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { useCompanyList, useCompanyProgress } from "./Api";
+import { Company, useCompanyList, useCompanyProgress } from "./Api";
 import { BinaryPagination, CustomLink } from "./components";
 
 // 文字列同士の類似度、価が小さいほど高い
@@ -29,49 +29,67 @@ const nameSimilarity = (name: string, input: string) => {
   return 3;
 };
 
-const CompanyProgress = ({ code }: { code: number }) => {
-  const companyProgressQuery = useCompanyProgress(code);
+const Row = ({ info }: { info: Company }) => {
+  const companyProgressQuery = useCompanyProgress(info.companyCode);
   const companyProgress = companyProgressQuery.data;
 
   if(!companyProgress){
     return (
-      <></>
+      <TableRow>
+        <TableCell>
+          <CustomLink to={"/company/" + info.companyCode}>
+            <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+          </CustomLink>
+        </TableCell>
+        <TableCell />
+      </TableRow>
     );
   }
 
   return (
-    <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-      <CircularProgress
-        variant="determinate"
-        sx={{
-          color: (theme) =>
-            theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-        }}
-        size={25}
-        thickness={6}
-        value={100}
-      />
-      <CircularProgress
-        variant="determinate"
-        size={25}
-        thickness={6}
-        value={companyProgress.getOrPassStationNum / companyProgress.stationNum * 100}
-        sx={{ position: "absolute", left: 0 }}
-      />
-      <Typography
-        variant="h6"
-        color="text.secondary"
-        sx={{
-          fontSize: 12,
-          ml: 1,
-          width: 48,
-          height: 20,
-          display: "inline-block",
-        }}
-      >
-        {`${companyProgress.getOrPassStationNum}/${companyProgress.stationNum}`}
-      </Typography>
-    </Box>
+    <TableRow sx={{
+      bgcolor: (companyProgress.getOrPassStationNum === companyProgress.stationNum ? "access.main" : "none")
+    }}>
+      <TableCell>
+        <CustomLink to={"/company/" + info.companyCode}>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+        </CustomLink>
+      </TableCell>
+      <TableCell>
+        <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
+          <CircularProgress
+            variant="determinate"
+            sx={{
+              color: (theme) =>
+                theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
+            }}
+            size={25}
+            thickness={6}
+            value={100}
+          />
+          <CircularProgress
+            variant="determinate"
+            size={25}
+            thickness={6}
+            value={companyProgress.getOrPassStationNum / companyProgress.stationNum * 100}
+            sx={{ position: "absolute", left: 0 }}
+          />
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              fontSize: 12,
+              ml: 1,
+              width: 48,
+              height: 20,
+              display: "inline-block",
+            }}
+          >
+            {`${companyProgress.getOrPassStationNum}/${companyProgress.stationNum}`}
+          </Typography>
+        </Box>
+      </TableCell>
+    </TableRow>
   );
 };
 
@@ -160,14 +178,7 @@ const CompanyList = () => {
           </TableHead>
           <TableBody>
             {dividedCompanies.map(item => (
-              <TableRow key={item.companyCode}>
-                <TableCell>
-                  <CustomLink to={"/company/" + item.companyCode}>
-                    <Typography variant="h6" sx={{ fontSize: 14 }}>{item.companyName}</Typography>
-                  </CustomLink>
-                </TableCell>
-                <TableCell><CompanyProgress code={item.companyCode} /></TableCell>
-              </TableRow>
+              <Row info={item} key={item.companyCode} />
             ))}
           </TableBody>
         </Table>

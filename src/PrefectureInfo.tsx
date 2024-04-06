@@ -41,7 +41,11 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       to={"/railway/" + info.railwayCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5 }}
+      sx={{
+        display: "block",
+        mb: 0.5,
+        bgcolor: (railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+      }}
     >
       <Box sx={{ mb: 1 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

@@ -11,52 +11,70 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { usePrefList, usePrefProgress } from "./Api";
+import { Prefecture, usePrefList, usePrefProgress } from "./Api";
 import { CustomLink } from "./components";
 
-const PrefProgress = ({ code }: { code: number }) => {
-  const prefProgressQuery = usePrefProgress(code);
+const Row = ({ info }: { info: Prefecture }) => {
+  const prefProgressQuery = usePrefProgress(info.prefCode);
   const prefProgress = prefProgressQuery.data;
 
   if(!prefProgress){
     return (
-      <></>
+      <TableRow>
+        <TableCell>
+          <CustomLink to={"/pref/" + info.prefCode}>
+            <Typography variant="h6" sx={{ fontSize: 14 }}>{info.prefName}</Typography>
+          </CustomLink>
+        </TableCell>
+        <TableCell />
+      </TableRow>
     );
   }
 
   return (
-    <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-      <CircularProgress
-        variant="determinate"
-        sx={{
-          color: (theme) =>
-            theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-        }}
-        size={25}
-        thickness={6}
-        value={100}
-      />
-      <CircularProgress
-        variant="determinate"
-        size={25}
-        thickness={6}
-        value={prefProgress.getOrPassStationNum / prefProgress.stationNum * 100}
-        sx={{ position: "absolute", left: 0 }}
-      />
-      <Typography
-        variant="h6"
-        color="text.secondary"
-        sx={{
-          fontSize: 12,
-          ml: 1,
-          width: 48,
-          height: 20,
-          display: "inline-block",
-        }}
-      >
-        {`${prefProgress.getOrPassStationNum}/${prefProgress.stationNum}`}
-      </Typography>
-    </Box>
+    <TableRow sx={{
+      bgcolor: (prefProgress.getOrPassStationNum === prefProgress.stationNum ? "access.main" : "none")
+    }}>
+      <TableCell>
+        <CustomLink to={"/pref/" + info.prefCode}>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>{info.prefName}</Typography>
+        </CustomLink>
+      </TableCell>
+      <TableCell>
+        <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
+          <CircularProgress
+            variant="determinate"
+            sx={{
+              color: (theme) =>
+                theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
+            }}
+            size={25}
+            thickness={6}
+            value={100}
+          />
+          <CircularProgress
+            variant="determinate"
+            size={25}
+            thickness={6}
+            value={prefProgress.getOrPassStationNum / prefProgress.stationNum * 100}
+            sx={{ position: "absolute", left: 0 }}
+          />
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              fontSize: 12,
+              ml: 1,
+              width: 48,
+              height: 20,
+              display: "inline-block",
+            }}
+          >
+            {`${prefProgress.getOrPassStationNum}/${prefProgress.stationNum}`}
+          </Typography>
+        </Box>
+      </TableCell>
+    </TableRow>
   );
 };
 
@@ -92,14 +110,7 @@ const PrefectureList = () => {
           </TableHead>
           <TableBody>
             {prefList.map(item => (
-              <TableRow key={item.prefCode}>
-                <TableCell>
-                  <CustomLink to={"/pref/" + item.prefCode}>
-                    <Typography variant="h6" sx={{ fontSize: 14 }}>{item.prefName}</Typography>
-                  </CustomLink>
-                </TableCell>
-                <TableCell><PrefProgress code={item.prefCode} /></TableCell>
-              </TableRow>
+              <Row info={item} key={item.prefCode} />
             ))}
           </TableBody>
         </Table>
