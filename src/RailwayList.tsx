@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Box,
   CircularProgress,
   Container,
   InputAdornment,
@@ -17,7 +16,7 @@ import {
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { Railway, useRailwayList, useRailwayProgress } from "./Api";
-import { BinaryPagination, CustomLink } from "./components";
+import { BinaryPagination, CircleProgress, CustomLink } from "./components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -72,38 +71,7 @@ const Row = ({ info }: { info: Railway }) => {
         </CustomLink>
       </TableCell>
       <TableCell>
-        <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-          <CircularProgress
-            variant="determinate"
-            sx={{
-              color: (theme) =>
-                theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-            }}
-            size={25}
-            thickness={6}
-            value={100}
-          />
-          <CircularProgress
-            variant="determinate"
-            size={25}
-            thickness={6}
-            value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
-            sx={{ position: "absolute", left: 0 }}
-          />
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{
-              fontSize: 12,
-              ml: 1,
-              width: 48,
-              height: 20,
-              display: "inline-block",
-            }}
-          >
-            {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
-          </Typography>
-        </Box>
+        <CircleProgress size={25} progress={railwayProgress} />
       </TableCell>
     </TableRow>
   );

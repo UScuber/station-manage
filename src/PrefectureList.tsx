@@ -1,5 +1,4 @@
 import {
-  Box,
   CircularProgress,
   Container,
   Paper,
@@ -12,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Prefecture, usePrefList, usePrefProgress } from "./Api";
-import { CustomLink } from "./components";
+import { CircleProgress, CustomLink } from "./components";
 
 const Row = ({ info }: { info: Prefecture }) => {
   const prefProgressQuery = usePrefProgress(info.prefCode);
@@ -41,38 +40,7 @@ const Row = ({ info }: { info: Prefecture }) => {
         </CustomLink>
       </TableCell>
       <TableCell>
-        <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-          <CircularProgress
-            variant="determinate"
-            sx={{
-              color: (theme) =>
-                theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-            }}
-            size={25}
-            thickness={6}
-            value={100}
-          />
-          <CircularProgress
-            variant="determinate"
-            size={25}
-            thickness={6}
-            value={prefProgress.getOrPassStationNum / prefProgress.stationNum * 100}
-            sx={{ position: "absolute", left: 0 }}
-          />
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{
-              fontSize: 12,
-              ml: 1,
-              width: 48,
-              height: 20,
-              display: "inline-block",
-            }}
-          >
-            {`${prefProgress.getOrPassStationNum}/${prefProgress.stationNum}`}
-          </Typography>
-        </Box>
+        <CircleProgress size={25} progress={prefProgress} />
       </TableCell>
     </TableRow>
   );

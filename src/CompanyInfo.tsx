@@ -11,7 +11,7 @@ import { Railway, useCompanyInfo, useRailwayProgress, useRailwaysInfoByCompanyCo
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
-import { CustomLink } from "./components";
+import { CircleProgress, CustomLink } from "./components";
 
 
 const FitMapZoom = (
@@ -60,40 +60,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {railwayProgress && (
-            <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-              <CircularProgress
-                variant="determinate"
-                sx={{
-                  color: (theme) =>
-                    theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-                }}
-                size={25}
-                thickness={6}
-                value={100}
-              />
-              <CircularProgress
-                variant="determinate"
-                size={25}
-                thickness={6}
-                value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
-                sx={{ position: "absolute", left: 0 }}
-              />
-              <Typography
-                variant="h6"
-                color="text.secondary"
-                sx={{
-                  fontSize: 12,
-                  ml: 1,
-                  width: 48,
-                  height: 20,
-                  display: "inline-block",
-                }}
-              >
-                {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
-              </Typography>
-            </Box>
-          )}
+          {railwayProgress && (<CircleProgress size={25} progress={railwayProgress} />)}
         </Box>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
