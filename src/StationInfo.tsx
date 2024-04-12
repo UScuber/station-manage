@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   RecordState,
@@ -27,12 +27,21 @@ import {
   TableCell,
   TableBody,
   styled,
+  FormControlLabel,
+  RadioGroup,
+  Radio,
+  FormControl,
+  FormHelperText,
 } from "@mui/material";
 import {
   KeyboardArrowUp as KeyboardArrowUpIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
+import "dayjs/locale/ja";
 import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -101,6 +110,96 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
 };
 
 
+const CustomSubmitForm = (
+  { onSubmit }
+  :{
+    onSubmit: (date: Date, state: RecordState) => unknown,
+  }
+) => {
+  const [customOpen, setCustomOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [date, setDate] = useState<Dayjs | null>(null);
+  const [time, setTime] = useState<Dayjs | null>(null);
+  const [radioState, setRadioState] = useState<RecordState | null>(null);
+  const [error, setError] = useState(false);
+  const [helperText, setHelperText] = useState("");
+
+  const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    setSubmitted(true);
+    if(date === null || time === null || date > dayjs()){
+      setError(true);
+      setHelperText("日付を選択してください");
+    }else if(radioState === null){
+      setError(true);
+      setHelperText("選択してください");
+      return;
+    }else{
+      setError(false);
+      setHelperText("");
+      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")), radioState);
+    }
+  };
+
+  return (
+    <Box sx={{ mb: 2 }}>
+      <IconButton
+        aria-label="expand row"
+        onClick={() => setCustomOpen(!customOpen)}
+        color="inherit"
+        sx={{ padding: 0 }}
+      >
+        <Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>
+        {customOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+      </IconButton>
+      <Collapse in={customOpen} timeout="auto" sx={{ mx: 2 }} unmountOnExit>
+        <form onSubmit={onSubmitForm}>
+          <FormControl error={error} variant="standard" required>
+            <LocalizationProvider
+              dateAdapter={AdapterDayjs}
+              adapterLocale="ja"
+              dateFormats={{ year: "YYYY", month: "M月" }}
+            >
+              <DatePicker
+                label="日付"
+                value={date}
+                onChange={(date) => setDate(date)}
+                slotProps={{
+                  textField: { size: "small" },
+                  toolbar: { toolbarFormat: "YYYY年 M月" },
+                }}
+                format="YYYY-MM-DD"
+                sx={{ display: "inline-block", mb: 1 }}
+                disableFuture
+              />
+              <TimePicker
+                label="時間"
+                value={time}
+                onChange={(time) => setTime(time)}
+                slotProps={{ textField: { size: "small" } }}
+                views={["hours", "minutes", "seconds"]}
+                sx={{ mb: 1 }}
+              />
+            </LocalizationProvider>
+            <RadioGroup
+              name="state"
+              value={radioState}
+              onChange={(e) => setRadioState(+e.target.value)}
+              row
+            >
+              <FormControlLabel value={RecordState.Get} control={<Radio size="small" />} label="乗降" />
+              <FormControlLabel value={RecordState.Pass} control={<Radio size="small" />} label="通過" />
+            </RadioGroup>
+            <FormHelperText>{helperText}</FormHelperText>
+            <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+          </FormControl>
+        </form>
+      </Collapse>
+    </Box>
+  );
+};
+
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
 
@@ -160,6 +259,17 @@ const StationInfo = () => {
       state: history.state,
     });
     setDeleteLoading(true);
+  };
+
+  const handleSubmitCustomDate = (date: Date, state: RecordState) => {
+    if(!info) return;
+
+    mutation.mutate({
+      stationCode: stationCode,
+      stationGroupCode: info.stationGroupCode,
+      state: Number(state),
+      date: date,
+    })
   };
 
   const handleDialogClose = (value: StationHistoryData | undefined) => {
@@ -324,56 +434,60 @@ const StationInfo = () => {
 
       <Box sx={{ mb: 2 }}>
         <Typography variant="h5">詳細</Typography>
-        <Divider sx={{ mb: 1 }} light />
+        <Divider sx={{ mb: 1 }} />
 
-        <IconButton
-          aria-label="expand row"
-          onClick={() => setHistoryOpen(!historyOpen)}
-          color="inherit"
-          sx={{ padding: 0 }}
-        >
-          <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory?.length}件)</Typography>
-          {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-        </IconButton>
+        <Box>
+          <IconButton
+            aria-label="expand row"
+            onClick={() => setHistoryOpen(!historyOpen)}
+            color="inherit"
+            sx={{ padding: 0 }}
+          >
+            <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory?.length}件)</Typography>
+            {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
 
-        <Collapse in={historyOpen} timeout="auto" unmountOnExit>
-          <Box sx={{ margin: 1 }}>
-            <Table size="small" aria-label="dates">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>State</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {stationHistory.map(history => (
-                  <TableRow key={`${history.date}|${history.state}`}>
-                    <TableCell>{getDateString(history.date)}</TableCell>
-                    <TableCell>{stateName[history.state]}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        aria-label="delete"
-                        size="small"
-                        onClick={() => handleClickDeleteButton(history)}
-                        disabled={deleteLoading}
-                      >
-                        <DeleteIcon fontSize="inherit" />
-                      </IconButton>
-                    </TableCell>
+          <Collapse in={historyOpen} timeout="auto" unmountOnExit>
+            <Box sx={{ margin: 1 }}>
+              <Table size="small" aria-label="dates">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>State</TableCell>
+                    <TableCell />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-          <ConfirmDialog
-            open={dialogOpen}
-            selectedValue={deleteHistoryItem}
-            onClose={handleDialogClose}
-            title="データを削除しますか"
-            descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
-          />
-        </Collapse>
+                </TableHead>
+                <TableBody>
+                  {stationHistory.map(history => (
+                    <TableRow key={`${history.date}|${history.state}`}>
+                      <TableCell>{getDateString(history.date)}</TableCell>
+                      <TableCell>{stateName[history.state]}</TableCell>
+                      <TableCell>
+                        <IconButton
+                          aria-label="delete"
+                          size="small"
+                          onClick={() => handleClickDeleteButton(history)}
+                          disabled={deleteLoading}
+                        >
+                          <DeleteIcon fontSize="inherit" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+            <ConfirmDialog
+              open={dialogOpen}
+              selectedValue={deleteHistoryItem}
+              onClose={handleDialogClose}
+              title="データを削除しますか"
+              descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
+            />
+          </Collapse>
+        </Box>
+
+        <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
 
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
