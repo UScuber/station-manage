@@ -62,14 +62,14 @@ const StationGroupInfo = (
           key={info.stationCode}
           sx={{ display: "block", mb: 1, ml: 1 }}
         >
-          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
           <Typography
             variant="h6"
             sx={{
               mx: 1,
               display: "inline-block",
               textDecoration: "underline",
-              textDecorationColor: "#" + info?.railwayColor,
+              textDecorationColor: "#" + info.railwayColor,
               textDecorationThickness: 3,
             }}
           >

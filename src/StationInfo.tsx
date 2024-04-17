@@ -20,7 +20,6 @@ import {
   Stack,
   Divider,
   IconButton,
-  Collapse,
   Table,
   TableHead,
   TableRow,
@@ -33,11 +32,7 @@ import {
   FormControl,
   FormHelperText,
 } from "@mui/material";
-import {
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
+import { Delete as DeleteIcon } from "@mui/icons-material";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
@@ -47,7 +42,7 @@ import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-picker
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ja";
-import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
+import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -86,7 +81,7 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
   const station = useStationInfo(code);
   const info = station.data;
 
-  if(station.isLoading){
+  if(!info){
     return (
       <Box>
         <CircularProgress />
@@ -102,8 +97,8 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
         color="inherit"
         sx={{ display: "block", padding: 0 }}
       >
-        <NextStationName variant="h6">{info?.stationName}</NextStationName>
-        <NextStationKana variant="h6">{info?.kana}</NextStationKana>
+        <NextStationName variant="h6">{info.stationName}</NextStationName>
+        <NextStationKana variant="h6">{info.kana}</NextStationKana>
       </Button>
     </Stack>
   );
@@ -116,7 +111,6 @@ const CustomSubmitForm = (
     onSubmit: (date: Date, state: RecordState) => unknown,
   }
 ) => {
-  const [customOpen, setCustomOpen] = useState(false);
   const [date, setDate] = useState<Dayjs | null>(null);
   const [time, setTime] = useState<Dayjs | null>(null);
   const [radioState, setRadioState] = useState<RecordState | null>(null);
@@ -145,60 +139,53 @@ const CustomSubmitForm = (
   };
 
   return (
-    <Box sx={{ mb: 2 }}>
-      <IconButton
-        aria-label="expand row"
-        onClick={() => setCustomOpen(!customOpen)}
-        color="inherit"
-        sx={{ padding: 0 }}
-      >
-        <Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>
-        {customOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-      </IconButton>
-      <Collapse in={customOpen} timeout="auto" sx={{ mx: 2 }} unmountOnExit>
-        <form onSubmit={onSubmitForm}>
-          <FormControl error={error} variant="standard" required>
-            <LocalizationProvider
-              dateAdapter={AdapterDayjs}
-              adapterLocale="ja"
-              dateFormats={{ year: "YYYY", month: "M月" }}
-            >
-              <DatePicker
-                label="日付"
-                value={date}
-                onChange={(date) => setDate(date)}
-                slotProps={{
-                  textField: { size: "small" },
-                  toolbar: { toolbarFormat: "YYYY年 M月" },
-                }}
-                format="YYYY-MM-DD"
-                sx={{ display: "inline-block", mb: 1 }}
-                disableFuture
-              />
-              <TimePicker
-                label="時間"
-                value={time}
-                onChange={(time) => setTime(time)}
-                slotProps={{ textField: { size: "small" } }}
-                views={["hours", "minutes", "seconds"]}
-                sx={{ mb: 1 }}
-              />
-            </LocalizationProvider>
-            <RadioGroup
-              name="state"
-              value={radioState}
-              onChange={(e) => setRadioState(+e.target.value)}
-              row
-            >
-              <FormControlLabel value={RecordState.Get} control={<Radio size="small" />} label="乗降" />
-              <FormControlLabel value={RecordState.Pass} control={<Radio size="small" />} label="通過" />
-            </RadioGroup>
-            <FormHelperText>{helperText}</FormHelperText>
-            <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
-          </FormControl>
-        </form>
-      </Collapse>
-    </Box>
+    <Collapser
+      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
+      sx={{ mb: 2 }}
+      collapseSx={{ mx: 2 }}
+    >
+      <form onSubmit={onSubmitForm}>
+        <FormControl error={error} variant="standard" required>
+          <LocalizationProvider
+            dateAdapter={AdapterDayjs}
+            adapterLocale="ja"
+            dateFormats={{ year: "YYYY", month: "M月" }}
+          >
+            <DatePicker
+              label="日付"
+              value={date}
+              onChange={(date) => setDate(date)}
+              slotProps={{
+                textField: { size: "small" },
+                toolbar: { toolbarFormat: "YYYY年 M月" },
+              }}
+              format="YYYY-MM-DD"
+              sx={{ display: "inline-block", mb: 1 }}
+              disableFuture
+            />
+            <TimePicker
+              label="時間"
+              value={time}
+              onChange={(time) => setTime(time)}
+              slotProps={{ textField: { size: "small" } }}
+              views={["hours", "minutes", "seconds"]}
+              sx={{ mb: 1 }}
+            />
+          </LocalizationProvider>
+          <RadioGroup
+            name="state"
+            value={radioState}
+            onChange={(e) => setRadioState(+e.target.value)}
+            row
+          >
+            <FormControlLabel value={RecordState.Get} control={<Radio size="small" />} label="乗降" />
+            <FormControlLabel value={RecordState.Pass} control={<Radio size="small" />} label="通過" />
+          </RadioGroup>
+          <FormHelperText>{helperText}</FormHelperText>
+          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+        </FormControl>
+      </form>
+    </Collapser>
   );
 };
 
@@ -207,7 +194,6 @@ const StationInfo = () => {
 
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
@@ -323,7 +309,7 @@ const StationInfo = () => {
     );
   }
 
-  if(!info || !stationHistory){
+  if(!info){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -438,18 +424,11 @@ const StationInfo = () => {
         <Typography variant="h5">詳細</Typography>
         <Divider sx={{ mb: 1 }} />
 
-        <Box>
-          <IconButton
-            aria-label="expand row"
-            onClick={() => setHistoryOpen(!historyOpen)}
-            color="inherit"
-            sx={{ padding: 0 }}
+        {!stationHistory && (<Typography variant="h6" sx={{ display: "inline" }}>履歴 <CircularProgress size={20} /></Typography>)}
+        {stationHistory && (
+          <Collapser
+            buttonText={<Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory.length}件)</Typography>}
           >
-            <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory?.length}件)</Typography>
-            {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-
-          <Collapse in={historyOpen} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Table size="small" aria-label="dates">
                 <TableHead>
@@ -486,8 +465,8 @@ const StationInfo = () => {
               title="データを削除しますか"
               descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
             />
-          </Collapse>
-        </Box>
+          </Collapser>
+        )}
 
         <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
@@ -499,9 +478,9 @@ const StationInfo = () => {
         />
         <Marker position={position}>
           <Popup>
-            <Box sx={{ textAlign: "center" }}>{info?.stationName}</Box>
+            <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
           </Popup>
-          <Tooltip direction="bottom" opacity={1} permanent>{info?.stationName}</Tooltip>
+          <Tooltip direction="bottom" opacity={1} permanent>{info.stationName}</Tooltip>
         </Marker>
         {nearStations && nearStations.filter((_,i) => i).map(item => (
           <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>

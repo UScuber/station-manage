@@ -17,7 +17,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Collapse,
   Container,
   Divider,
   FormControl,
@@ -30,11 +29,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import {
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
+import { Delete as DeleteIcon } from "@mui/icons-material";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
@@ -43,7 +38,7 @@ import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import dayjs, { Dayjs } from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
-import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
+import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -75,7 +70,7 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
       color="inherit"
       sx={{ display: "block", mb: 0.5 }}
     >
-      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
       <Typography
         variant="h6"
         sx={{
@@ -86,11 +81,11 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
           textDecorationThickness: 3,
         }}
       >
-        {info?.railwayName}
+        {info.railwayName}
       </Typography>
 
-      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
-      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info.getDate} invalidMsg="なし" /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info.passDate} invalidMsg="なし" /></Typography>
     </Button>
   );
 };
@@ -102,7 +97,6 @@ const CustomSubmitForm = (
     onSubmit: (date: Date) => unknown,
   }
 ) => {
-  const [customOpen, setCustomOpen] = useState(false);
   const [date, setDate] = useState<Dayjs | null>(null);
   const [time, setTime] = useState<Dayjs | null>(null);
   const [error, setError] = useState(false);
@@ -125,51 +119,44 @@ const CustomSubmitForm = (
   };
 
   return (
-    <Box sx={{ mb: 2 }}>
-      <IconButton
-        aria-label="expand row"
-        onClick={() => setCustomOpen(!customOpen)}
-        color="inherit"
-        sx={{ padding: 0 }}
-      >
-        <Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>
-        {customOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-      </IconButton>
-      <Collapse in={customOpen} timeout="auto" sx={{ mx: 2 }} unmountOnExit>
-        <form onSubmit={onSubmitForm}>
-          <FormControl error={error} variant="standard" required>
-            <LocalizationProvider
-              dateAdapter={AdapterDayjs}
-              adapterLocale="ja"
-              dateFormats={{ year: "YYYY", month: "M月" }}
-            >
-              <DatePicker
-                label="日付"
-                value={date}
-                onChange={(date) => setDate(date)}
-                slotProps={{
-                  textField: { size: "small" },
-                  toolbar: { toolbarFormat: "YYYY年 M月" },
-                }}
-                format="YYYY-MM-DD"
-                sx={{ display: "inline-block", mb: 1 }}
-                disableFuture
-              />
-              <TimePicker
-                label="時間"
-                value={time}
-                onChange={(time) => setTime(time)}
-                slotProps={{ textField: { size: "small" } }}
-                views={["hours", "minutes", "seconds"]}
-                sx={{ mb: 1 }}
-              />
-            </LocalizationProvider>
-            <FormHelperText>{helperText}</FormHelperText>
-            <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
-          </FormControl>
-        </form>
-      </Collapse>
-    </Box>
+    <Collapser
+      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
+      sx={{ mb: 2 }}
+      collapseSx={{ mx: 2 }}
+    >
+      <form onSubmit={onSubmitForm}>
+        <FormControl error={error} variant="standard" required>
+          <LocalizationProvider
+            dateAdapter={AdapterDayjs}
+            adapterLocale="ja"
+            dateFormats={{ year: "YYYY", month: "M月" }}
+          >
+            <DatePicker
+              label="日付"
+              value={date}
+              onChange={(date) => setDate(date)}
+              slotProps={{
+                textField: { size: "small" },
+                toolbar: { toolbarFormat: "YYYY年 M月" },
+              }}
+              format="YYYY-MM-DD"
+              sx={{ display: "inline-block", mb: 1 }}
+              disableFuture
+            />
+            <TimePicker
+              label="時間"
+              value={time}
+              onChange={(time) => setTime(time)}
+              slotProps={{ textField: { size: "small" } }}
+              views={["hours", "minutes", "seconds"]}
+              sx={{ mb: 1 }}
+            />
+          </LocalizationProvider>
+          <FormHelperText>{helperText}</FormHelperText>
+          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+        </FormControl>
+      </form>
+    </Collapser>
   );
 };
 
@@ -179,7 +166,6 @@ const StationGroupInfo = () => {
 
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
 
@@ -251,7 +237,6 @@ const StationGroupInfo = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    setHistoryOpen(false);
   }, [stationGroupCode]);
 
 
@@ -263,7 +248,7 @@ const StationGroupInfo = () => {
     );
   }
 
-  if(!stationList || !groupStationData || !stationGroupAllHistory){
+  if(!stationList || !groupStationData){
     return (
       <Container>
         Loading...
@@ -315,67 +300,62 @@ const StationGroupInfo = () => {
 
       <Box sx={{ mb: 2 }}>
         <Typography variant="h5">詳細</Typography>
-        <Divider sx={{ mb: 1 }} light />
+        <Divider sx={{ mb: 1 }} />
 
-        <IconButton
-          aria-label="expand row"
-          onClick={() => setHistoryOpen(!historyOpen)}
-          color="inherit"
-          sx={{ padding: 0 }}
-        >
-          <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationGroupAllHistory.length}件)</Typography>
-          {historyOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-        </IconButton>
-
-        <Collapse in={historyOpen} timeout="auto" unmountOnExit>
-          <Box sx={{ margin: 1 }}>
-            <Typography variant="h6" component="div">History</Typography>
-            <Table size="small" aria-label="dates">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>State</TableCell>
-                  <TableCell>Railway</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {stationGroupAllHistory.map(history => (
-                  <TableRow key={`${history.date}|${history.state}`}>
-                    <TableCell>{getDateString(history.date)}</TableCell>
-                    <TableCell>{stateName[history.state]}</TableCell>
-                    <TableCell
-                      sx={{
-                        textDecoration: "underline",
-                        textDecorationColor: "#" + history?.railwayColor,
-                        textDecorationThickness: 2,
-                      }}
-                    >
-                      {history.railwayName ?? ""}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        aria-label="delete"
-                        size="small"
-                        onClick={() => handleClickDeleteButton(history)}
-                        disabled={deleteLoading}
-                      >
-                        <DeleteIcon fontSize="inherit" />
-                      </IconButton>
-                    </TableCell>
+        {!stationGroupAllHistory && (<Typography variant="h6" sx={{ display: "inline" }}>履歴 <CircularProgress size={20} /></Typography>)}
+        {stationGroupAllHistory && (
+          <Collapser
+            buttonText={<Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationGroupAllHistory.length}件)</Typography>}
+          >
+            <Box sx={{ margin: 1 }}>
+              <Typography variant="h6" component="div">History</Typography>
+              <Table size="small" aria-label="dates">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>State</TableCell>
+                    <TableCell>Railway</TableCell>
+                    <TableCell />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-          <ConfirmDialog
-            open={dialogOpen}
-            selectedValue={deleteHistoryItem}
-            onClose={handleDialogClose}
-            title="データを削除しますか"
-            descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
-          />
-        </Collapse>
+                </TableHead>
+                <TableBody>
+                  {stationGroupAllHistory.map(history => (
+                    <TableRow key={`${history.date}|${history.state}`}>
+                      <TableCell>{getDateString(history.date)}</TableCell>
+                      <TableCell>{stateName[history.state]}</TableCell>
+                      <TableCell
+                        sx={{
+                          textDecoration: "underline",
+                          textDecorationColor: "#" + history?.railwayColor,
+                          textDecorationThickness: 2,
+                        }}
+                      >
+                        {history.railwayName ?? ""}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          aria-label="delete"
+                          size="small"
+                          onClick={() => handleClickDeleteButton(history)}
+                          disabled={deleteLoading}
+                        >
+                          <DeleteIcon fontSize="inherit" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+            <ConfirmDialog
+              open={dialogOpen}
+              selectedValue={deleteHistoryItem}
+              onClose={handleDialogClose}
+              title="データを削除しますか"
+              descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
+            />
+          </Collapser>
+        )}
 
         <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
