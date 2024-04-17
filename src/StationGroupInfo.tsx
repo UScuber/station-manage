@@ -1,24 +1,5 @@
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Box, Container } from "@mui/system";
-import {
-  Button,
-  CircularProgress,
-  Collapse,
-  Divider,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
-import {
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
 import {
   RecordState,
   Station,
@@ -32,13 +13,38 @@ import {
   useStationGroupInfo,
   useStationsInfoByGroupCode,
 } from "./Api";
-import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
-import getDateString from "./utils/getDateString";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Collapse,
+  Container,
+  Divider,
+  FormControl,
+  FormHelperText,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import {
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import dayjs, { Dayjs } from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
+import getDateString from "./utils/getDateString";
 
 
 const stateName = ["乗降", "通過", "立ち寄り"];
@@ -86,6 +92,84 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
       <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
       <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
     </Button>
+  );
+};
+
+
+const CustomSubmitForm = (
+  { onSubmit }
+  :{
+    onSubmit: (date: Date) => unknown,
+  }
+) => {
+  const [customOpen, setCustomOpen] = useState(false);
+  const [date, setDate] = useState<Dayjs | null>(null);
+  const [time, setTime] = useState<Dayjs | null>(null);
+  const [error, setError] = useState(false);
+  const [helperText, setHelperText] = useState("");
+
+  const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if(date === null || time === null || date > dayjs()){
+      setError(true);
+      setHelperText("日付を選択してください");
+    }else{
+      setError(false);
+      setHelperText("追加されました");
+      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")));
+      // reset
+      setDate(null);
+      setTime(null);
+    }
+  };
+
+  return (
+    <Box sx={{ mb: 2 }}>
+      <IconButton
+        aria-label="expand row"
+        onClick={() => setCustomOpen(!customOpen)}
+        color="inherit"
+        sx={{ padding: 0 }}
+      >
+        <Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>
+        {customOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+      </IconButton>
+      <Collapse in={customOpen} timeout="auto" sx={{ mx: 2 }} unmountOnExit>
+        <form onSubmit={onSubmitForm}>
+          <FormControl error={error} variant="standard" required>
+            <LocalizationProvider
+              dateAdapter={AdapterDayjs}
+              adapterLocale="ja"
+              dateFormats={{ year: "YYYY", month: "M月" }}
+            >
+              <DatePicker
+                label="日付"
+                value={date}
+                onChange={(date) => setDate(date)}
+                slotProps={{
+                  textField: { size: "small" },
+                  toolbar: { toolbarFormat: "YYYY年 M月" },
+                }}
+                format="YYYY-MM-DD"
+                sx={{ display: "inline-block", mb: 1 }}
+                disableFuture
+              />
+              <TimePicker
+                label="時間"
+                value={time}
+                onChange={(time) => setTime(time)}
+                slotProps={{ textField: { size: "small" } }}
+                views={["hours", "minutes", "seconds"]}
+                sx={{ mb: 1 }}
+              />
+            </LocalizationProvider>
+            <FormHelperText>{helperText}</FormHelperText>
+            <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+          </FormControl>
+        </form>
+      </Collapse>
+    </Box>
   );
 };
 
@@ -146,6 +230,13 @@ const StationGroupInfo = () => {
       });
     }
     setDeleteLoading(true);
+  };
+
+  const handleSubmitCustomDate = (date: Date) => {
+    sendMutation.mutate({
+      stationGroupCode: stationGroupCode,
+      date: date,
+    })
   };
 
   const handleDialogClose = (value: StationHistoryData | undefined) => {
@@ -285,6 +376,8 @@ const StationGroupInfo = () => {
             descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
           />
         </Collapse>
+
+        <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
 
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>

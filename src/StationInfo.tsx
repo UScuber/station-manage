@@ -38,16 +38,16 @@ import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs, { Dayjs } from "dayjs";
-import "dayjs/locale/ja";
-import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
+import "dayjs/locale/ja";
+import { AccessButton, AroundTime, ConfirmDialog, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -117,7 +117,6 @@ const CustomSubmitForm = (
   }
 ) => {
   const [customOpen, setCustomOpen] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [date, setDate] = useState<Dayjs | null>(null);
   const [time, setTime] = useState<Dayjs | null>(null);
   const [radioState, setRadioState] = useState<RecordState | null>(null);
@@ -127,7 +126,6 @@ const CustomSubmitForm = (
   const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    setSubmitted(true);
     if(date === null || time === null || date > dayjs()){
       setError(true);
       setHelperText("日付を選択してください");
@@ -137,8 +135,12 @@ const CustomSubmitForm = (
       return;
     }else{
       setError(false);
-      setHelperText("");
+      setHelperText("追加されました");
       onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")), radioState);
+      // reset
+      setDate(null);
+      setTime(null);
+      setRadioState(null);
     }
   };
 
