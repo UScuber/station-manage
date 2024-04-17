@@ -1,6 +1,6 @@
 const fs = require("fs");
 const sqlite3 = require("better-sqlite3");
-const { SearchAttribute } = require("./searchAttr");
+const { SearchAttribute } = require("../searchAttr");
 
 if(process.argv.length <= 3){
   console.error("Argument Error: node convert-geojson.js [geojson-file-name] [json-station-name]");

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Box,
   CircularProgress,
@@ -17,20 +16,11 @@ import {
   TableRow,
   TextField,
   Typography,
-  styled,
 } from "@mui/material";
 import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
 import { StationGroup, useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
-import BinaryPagination from "./components/BinaryPagination";
-import AroundTime from "./components/AroundTime";
+import { AroundTime, BinaryPagination, CustomLink } from "./components";
 import getDateString from "./utils/getDateString";
-
-
-const CustomLink = styled(Link)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  textDecoration: "none",
-  textTransform: "none",
-}));
 
 
 const StationList = () => {
@@ -53,7 +43,7 @@ const StationList = () => {
     setPage(newPage);
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(+event.target.value);
     setPage(1);
   };
 
@@ -63,7 +53,10 @@ const StationList = () => {
     const text = event.target.value;
     clearInterval(timeoutId);
     setTimeoutId(
-      setTimeout(() => setSearchName(text), 500)
+      setTimeout(() => {
+        setSearchName(text);
+        setPage(1);
+      }, 500)
     );
   };
 
@@ -81,12 +74,7 @@ const StationList = () => {
     );
   };
 
-  const Row = (
-    { info }
-    :{
-      info: StationGroup,
-    }
-  ): JSX.Element => {
+  const Row = ({ info }: { info: StationGroup }): JSX.Element => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -101,7 +89,9 @@ const StationList = () => {
             </CustomLink>
           </TableCell>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
-            <Typography variant="h6" sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
+            <CustomLink color="inherit" to={"/pref/" + info.prefCode}>
+              <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
+            </CustomLink>
           </TableCell>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
             <AroundTime date={info.date} invalidMsg="" disableMinute fontSize={14}/>
@@ -152,12 +142,12 @@ const StationList = () => {
     );
   }
 
-  if(stationGroupList.isLoading || stationGroupCount.isLoading){
+  if(!stationGroupsInfo || stationGroupCount.data === undefined){
     return (
       <Container>
         <TextField
-          id="name"
-          label="name"
+          id="stationName"
+          label="station name"
           variant="standard"
           value={inputName}
           sx={{ maxWidth: "50%" }}
@@ -170,7 +160,7 @@ const StationList = () => {
             ),
           }}
         />
-        {!stationGroupCount.isLoading && <CustomPagination />}
+        {stationGroupCount.data !== undefined && <CustomPagination />}
         <Box>
           Loading...
           <CircularProgress />
@@ -209,7 +199,7 @@ const StationList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {stationGroupsInfo?.map(item => (
+            {stationGroupsInfo.map(item => (
               <Row key={item.stationGroupCode} info={item} />
             ))}
           </TableBody>

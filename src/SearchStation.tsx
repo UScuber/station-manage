@@ -9,7 +9,7 @@ import {
   Divider,
   Typography,
 } from "@mui/material";
-import AroundTime from "./components/AroundTime";
+import { AroundTime } from "./components";
 
 
 const StationGroupInfo = (
@@ -28,7 +28,7 @@ const StationGroupInfo = (
     );
   }
 
-  if(stations.isLoading){
+  if(!infos){
     return (
       <Box sx={{ mb: 2 }}>
         <CircularProgress />
@@ -38,36 +38,52 @@ const StationGroupInfo = (
 
   return (
     <Box sx={{ mb: 4 }}>
-      {infos && (
-        <Box sx={{ mb: 0.5 }}>
-          <Button
-            component={Link}
-            to={"/stationGroup/" + code}
-            color="inherit"
-            sx={{ display: "inline-block", textTransform: "none", padding: 0 }}
-          >
-            <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
-            <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
-          </Button>
-        </Box>
-      )}
+      <Box sx={{ mb: 0.5 }}>
+        <Button
+          component={Link}
+          to={"/stationGroup/" + code}
+          color="inherit"
+          sx={{ display: "inline-block", padding: 0 }}
+        >
+          <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
+        </Button>
+      </Box>
+
       {distance && (
         <Typography variant="h6" sx={{ fontSize: 18 }}>{distance.toFixed(3)}[km]</Typography>
       )}
-      {infos?.map(info => (
+      {infos.map(info => (
         <Button
           component={Link}
           to={"/station/" + info.stationCode}
           variant="outlined"
           color="inherit"
           key={info.stationCode}
-          sx={{ display: "block", mb: 1, ml: 1, textTransform: "none" }}
+          sx={{ display: "block", mb: 1, ml: 1 }}
         >
-          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-          <Typography variant="h6" sx={{ mx: 1, display: "inline-block" }}>{info?.railwayName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              mx: 1,
+              display: "inline-block",
+              textDecoration: "underline",
+              textDecorationColor: "#" + info.railwayColor,
+              textDecorationThickness: 3,
+            }}
+          >
+            {info.railwayName}
+          </Typography>
 
-          <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" fontSize={16} /></Typography>
-          <Typography variant="h6" sx={{ color: "gray", fontSize: 16 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" fontSize={16} /></Typography>
+          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+            <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
+            <AroundTime date={info.getDate} invalidMsg="なし" fontSize={16} />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+            <Typography variant="h6" sx={{ fontSize: 16 }}>通過:&nbsp;</Typography>
+            <AroundTime date={info.passDate} invalidMsg="なし" fontSize={16} />
+          </Box>
         </Button>
       ))}
     </Box>
@@ -86,7 +102,21 @@ const SearchStation = () => {
     navigator.geolocation.getCurrentPosition(position => {
       const { latitude, longitude } = position.coords;
       setPosition({ lat: latitude, lng: longitude });
-    });
+    }, undefined, { timeout: 3000 });
+  };
+
+  const handlePosSearchButton = () => {
+    getCurrentPosition();
+    // watch
+    const watchId = navigator.geolocation.watchPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        setPosition({ lat: latitude, lng: longitude });
+      },
+      undefined,
+      { enableHighAccuracy: true, timeout: 3000 }
+    );
+    setTimeout(() => navigator.geolocation.clearWatch(watchId), 3000);
   };
 
   useEffect(() => {
@@ -106,7 +136,7 @@ const SearchStation = () => {
     );
   }
 
-  if(isFirstRef.current || nearestStationGroups.isLoading){
+  if(isFirstRef.current || !groupStations){
     return (
       <Container>
         Loading...
@@ -120,7 +150,7 @@ const SearchStation = () => {
       {!isAvailable && <p>Geolocation is not available.</p>}
       {isAvailable && (
         <Box sx={{ mb: 1 }}>
-          <Button variant="outlined" onClick={getCurrentPosition}>Search</Button>
+          <Button variant="outlined" onClick={handlePosSearchButton}>Search</Button>
           <Typography variant="h6" sx={{ fontSize: 14 }}>緯度: {position?.lat}</Typography>
           <Typography variant="h6" sx={{ fontSize: 14 }}>経度: {position?.lng}</Typography>
         </Box>
@@ -128,7 +158,7 @@ const SearchStation = () => {
 
       <Typography variant="h6">List</Typography>
       <Divider sx={{ mb: 1 }} light />
-      {groupStations?.map(item => (
+      {groupStations.map(item => (
         <StationGroupInfo
           key={item.stationGroupCode}
           code={item.stationGroupCode}

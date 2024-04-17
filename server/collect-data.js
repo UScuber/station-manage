@@ -2,7 +2,13 @@ const fs = require("fs");
 const { parse } = require("csv-parse/sync");
 const execShPromise = require("exec-sh").promise;
 const { SearchAttribute } = require("./searchAttr");
+const { NextStationGen } = require("./create");
 require("dotenv").config();
+
+if(!fs.existsSync("data")){
+  console.error("data directory is not found.");
+  process.exit(1);
+}
 
 
 const max_same_station_dist = 0.45; // [km]
@@ -27,10 +33,12 @@ const normalize_name = (s) => (
 const encode_str = (s) => btoa(String.fromCharCode.apply(null, new TextEncoder().encode(s)));
 
 let railway_data = {};
-parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((_, idx) => idx)
+parse(fs.readFileSync(process.env.LINE_CSV_FILE))
+  .filter((_, idx) => idx)
+  .filter(row => +row[11] !== 2) // 廃止を除く
   .forEach(row => {
-    railway_data[parseInt(row[0])] = {
-      companyCode: parseInt(row[1]),
+    railway_data[+row[0]] = {
+      companyCode: +row[1],
       railwayName: normalize_name(row[2]),
       prevRailwayName: row[2],
       railwayKana: row[3],
@@ -40,9 +48,11 @@ parse(fs.readFileSync(process.env.LINE_CSV_FILE)).filter((_, idx) => idx)
   });
 
 let company_data = {};
-parse(fs.readFileSync(process.env.COMPANY_CSV_FILE)).filter((_, idx) => idx)
+parse(fs.readFileSync(process.env.COMPANY_CSV_FILE))
+  .filter((_, idx) => idx)
+  .filter(row => +row[8] !== 2) // 廃止を除く
   .forEach(row => {
-    company_data[parseInt(row[0])] = {
+    company_data[+row[0]] = {
       companyName: normalize_name(row[2]),
       prevCompanyName: row[2],
     };
@@ -59,13 +69,15 @@ const arrange_stationGroupCode = (stationGroupCode, stationName) => {
   return parseInt(stationGroupCode + "" + stationGroupCode_data[stationGroupCode][stationName]);
 };
 
-const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter((_, idx) => idx)
+const station_ekidata = parse(fs.readFileSync(process.env.STATION_CSV_FILE))
+  .filter((_, idx) => idx)
+  .filter(row => +row[13] !== 2) // 廃止を除く
   .map(row => ({
-    stationCode: parseInt(row[0]),
+    stationCode: +row[0],
     stationGroupCode: arrange_stationGroupCode(row[1], row[2]),
     stationName: normalize_name(row[2]),
     prevStationName: row[2],
-    railwayCode: parseInt(row[5]),
+    railwayCode: +row[5],
     railwayName: railway_data[row[5]].railwayName,
     prevRailwayName: railway_data[row[5]].prevRailwayName,
     railwayFormalName: railway_data[row[5]].railwayFormalName,
@@ -74,35 +86,32 @@ const station_data = parse(fs.readFileSync(process.env.STATION_CSV_FILE)).filter
     companyCode: railway_data[row[5]].companyCode,
     companyName: company_data[railway_data[row[5]].companyCode].companyName,
     prevCompanyName: company_data[railway_data[row[5]].companyCode].prevCompanyName,
-    prefCode: parseInt(row[6]),
-    lng: parseFloat(row[9]),
-    lat: parseFloat(row[10]),
-    status: parseInt(row[13]),
+    prefCode: +row[6],
+    lng: +row[9],
+    lat: +row[10],
   }));
 
-let join_data = {};
-station_data
-  .filter(data => data.status !== 2)
-  .forEach(data => join_data[data.stationCode] = { left: [], right: [] });
+let join_ekidata = {};
+station_ekidata
+  .forEach(data => join_ekidata[data.stationCode] = { left: [], right: [] });
 parse(fs.readFileSync(process.env.JOIN_CSV_FILE)).filter((_, idx) => idx)
   .forEach(row => {
-    const left = parseInt(row[1]), right = parseInt(row[2]);
-    if(!(left in join_data) || !(right in join_data)) return;
-    join_data[left].right.push(right);
-    join_data[right].left.push(left);
+    const left = +row[1], right = +row[2];
+    if(!(left in join_ekidata) || !(right in join_ekidata)) return;
+    join_ekidata[left].right.push(right);
+    join_ekidata[right].left.push(left);
   });
 
-let filtered_station_data = station_data
-  .filter(data => data.status !== 2)
-  .filter(data => join_data[data.stationCode].left.length + join_data[data.stationCode].right.length);
+let filtered_station_ekidata = station_ekidata
+  .filter(data => join_ekidata[data.stationCode].left.length + join_ekidata[data.stationCode].right.length);
 
-Object.keys(join_data).forEach(stationCode => {
-  join_data[stationCode].left = Array.from(new Set(join_data[stationCode].left));
-  join_data[stationCode].right = Array.from(new Set(join_data[stationCode].right));
+Object.keys(join_ekidata).forEach(stationCode => {
+  join_ekidata[stationCode].left = Array.from(new Set(join_ekidata[stationCode].left));
+  join_ekidata[stationCode].right = Array.from(new Set(join_ekidata[stationCode].right));
 });
 
 
-const main_station_data = JSON.parse(fs.readFileSync("./data/station.json"))
+const ekispert_station_data = JSON.parse(fs.readFileSync("./data/station.json"))
   .flatMap(data => data.railway.map(rail => ({
     stationCode: data.stationGroupCode + ("00" + rail.railwayCode).slice(-3),
     stationGroupCode: data.stationGroupCode,
@@ -118,18 +127,18 @@ const main_station_data = JSON.parse(fs.readFileSync("./data/station.json"))
   })));
 
 
-let route_data = JSON.parse(fs.readFileSync(process.env.N02_STATION_FILE)).features
+let kokudo_route_data = JSON.parse(fs.readFileSync(process.env.N02_STATION_FILE)).features
   .map(elem => {
     delete elem.type;
     elem["coordinates"] = [elem.geometry.coordinates]; // 駅の座標の線分
     delete elem.geometry;
 
-    elem["railwayCode"] = parseInt(elem.properties.N02_001); // 鉄道路線の種類
-    elem["companyCode"] = parseInt(elem.properties.N02_002); // 鉄道路線の事業者
+    elem["railwayCode"] = +elem.properties.N02_001; // 鉄道路線の種類
+    elem["companyCode"] = +elem.properties.N02_002; // 鉄道路線の事業者
     elem["railwayName"] = elem.properties.N02_003; // 鉄道路線の名称
     elem["railwayCompany"] = elem.properties.N02_004; // 鉄道路線を運営する会社
     elem["stationName"] = elem.properties.N02_005; // 駅名
-    elem["stationCode"] = parseInt(elem.properties.N02_005c); // 一意の番号(jsonのこの番号はuniqueでない)
+    elem["stationCode"] = +elem.properties.N02_005c; // 一意の番号(jsonのこの番号はuniqueでない)
 
     delete elem.properties;
 
@@ -139,17 +148,17 @@ let route_data = JSON.parse(fs.readFileSync(process.env.N02_STATION_FILE)).featu
   });
 // 同じ駅,路線名,会社のものを一つにする
 let station_code_map = {};
-route_data.forEach((elem, index) => {
+kokudo_route_data.forEach((elem, index) => {
   const codes = `${elem.stationCode}|${elem.stationName}|${elem.railwayCompany}|${elem.groupCode}`;
   if(codes in station_code_map){
     const prev_index = station_code_map[codes];
-    route_data[prev_index].coordinates.push(elem.coordinates[0]);
-    route_data[index] = null;
+    kokudo_route_data[prev_index].coordinates.push(elem.coordinates[0]);
+    kokudo_route_data[index] = null;
   }else{
     station_code_map[codes] = index;
   }
 });
-route_data = route_data.filter(elem => elem !== null)
+kokudo_route_data = kokudo_route_data.filter(elem => elem !== null)
   // 重心を求める
   .map(elem => {
     const lat = elem.coordinates.reduce((tot, pos) => (
@@ -168,31 +177,31 @@ route_data = route_data.filter(elem => elem !== null)
 
 // 駅の集合を探す
 const black_list = ["堀田"];
-let station_group_map = {};
-let group_codes = new Array(route_data.length).fill(-1);
-route_data.forEach((elem, index) => {
+let kokudo_station_group_map = {};
+let group_codes = new Array(kokudo_route_data.length).fill(-1);
+kokudo_route_data.forEach((elem, index) => {
   const station_name = elem.stationName;
-  if(station_name in station_group_map){
-    const station_name_indices = station_group_map[station_name];
+  if(station_name in kokudo_station_group_map){
+    const station_name_indices = kokudo_station_group_map[station_name];
     for(let i = 0; i < station_name_indices.length; i++){
-      let dist = distance(route_data[index], route_data[station_name_indices[i][0]]);
+      let dist = distance(kokudo_route_data[index], kokudo_route_data[station_name_indices[i][0]]);
       if(isNaN(dist)){
         dist = 0;
       }
       if(dist <= max_same_station_dist && !black_list.includes(station_name)){
-        station_group_map[station_name].push([index, station_name_indices[i][1]]);
+        kokudo_station_group_map[station_name].push([index, station_name_indices[i][1]]);
         group_codes[index] = station_name_indices[i][1];
         return;
       }
     }
-    station_group_map[station_name].push([index, index]);
+    kokudo_station_group_map[station_name].push([index, index]);
     group_codes[index] = index;
   }else{
-    station_group_map[station_name] = [[index, index]];
+    kokudo_station_group_map[station_name] = [[index, index]];
     group_codes[index] = index;
   }
 });
-route_data = route_data.map((elem, index) => {
+kokudo_route_data = kokudo_route_data.map((elem, index) => {
   elem["stationGroupCode"] = group_codes[index];
   return elem;
 });
@@ -200,36 +209,36 @@ route_data = route_data.map((elem, index) => {
 
 let buffer = "";
 
-buffer += main_station_data.length + "\n";
-buffer += main_station_data.map(data => (
+buffer += ekispert_station_data.length + "\n";
+buffer += ekispert_station_data.map(data => (
   `${data.stationCode} ${data.stationGroupCode} ${encode_str(data.stationName)} `
   + `${data.railwayCode} ${encode_str(data.railwayName)} `
   + `${data.companyCode} ${encode_str(data.companyName)} `
-  + `${parseFloat(data.lat).toFixed(6)} ${parseFloat(data.lng).toFixed(6)}`
+  + `${(+data.lat).toFixed(6)} ${(+data.lng).toFixed(6)}`
 )).join("\n") + "\n";
 
 buffer += "0\n";
 
-buffer += filtered_station_data.length + "\n";
-buffer += filtered_station_data.map(data => (
+buffer += filtered_station_ekidata.length + "\n";
+buffer += filtered_station_ekidata.map(data => (
   `${data.stationCode} ${data.stationGroupCode} ${encode_str(data.stationName)} `
   + `${data.railwayCode} ${encode_str(data.railwayFormalName)} `
   + `${data.companyCode} ${encode_str(data.companyName)} `
-  + `${parseFloat(data.lat).toFixed(6)} ${parseFloat(data.lng).toFixed(6)}`
+  + `${(+data.lat).toFixed(6)} ${(+data.lng).toFixed(6)}`
 )).join("\n") + "\n";
 
-buffer += filtered_station_data.length + "\n";
-buffer += filtered_station_data.map(data => (
+buffer += filtered_station_ekidata.length + "\n";
+buffer += filtered_station_ekidata.map(data => (
   data.stationCode + " " +
   ["left", "right"]
-    .map(dir => join_data[data.stationCode][dir].length + " " + join_data[data.stationCode][dir].join(" "))
+    .map(dir => join_ekidata[data.stationCode][dir].length + " " + join_ekidata[data.stationCode][dir].join(" "))
     .join(" ")
 )).join("\n") + "\n";
 
 
-buffer += route_data.length + "\n";
+buffer += kokudo_route_data.length + "\n";
 let railwayName_cnt = {}, company_cnt = {};
-buffer += route_data.map(data => {
+buffer += kokudo_route_data.map(data => {
   if(!(data.railwayName in railwayName_cnt)){
     railwayName_cnt[data.railwayName] = Object.keys(railwayName_cnt).length;
   }
@@ -239,10 +248,12 @@ buffer += route_data.map(data => {
   return `${data.stationCode} ${data.stationGroupCode} ${encode_str(data.stationName)} `
         + `${railwayName_cnt[data.railwayName]} ${encode_str(data.railwayName)} `
         + `${company_cnt[data.railwayCompany]} ${encode_str(data.railwayCompany)} `
-        + `${parseFloat(data.lat).toFixed(6)} ${parseFloat(data.lng).toFixed(6)}`;
+        + `${(+data.lat).toFixed(6)} ${(+data.lng).toFixed(6)}`;
 }).join("\n") + "\n";
 
-const next_station_data = JSON.parse(fs.readFileSync("./result.json"));
+(async() => {
+
+const next_station_data = await new NextStationGen().get_next_station_data();
 buffer += next_station_data.length + "\n";
 buffer += next_station_data.map(data => (
   data.stationCode + " " +
@@ -252,22 +263,20 @@ buffer += next_station_data.map(data => (
 )).join("\n") + "\n";
 
 
-fs.writeFileSync("input.txt", buffer);
+fs.writeFileSync("data/input.txt", buffer);
 
-
-(async() => {
 
 console.log("Compile & Run");
 
 try{
-  await execShPromise("g++ datalink.cpp", true);
+  await execShPromise("g++ datalink.cpp -o data/datalink", true);
 }catch(err){
   console.error(err);
   process.exit(1);
 }
 let result;
 try{
-  result = await execShPromise("./a.out < input.txt", true);
+  result = await execShPromise("./data/datalink < data/input.txt", true);
 }catch(err){
   console.error(err);
   process.exit(1);
@@ -314,14 +323,14 @@ const find_station_data = (code) => {
 }
 
 // 新幹線の情報を追加
-filtered_station_data = filtered_station_data.concat(result_json.shinkansen.stations.map(data => {
+filtered_station_ekidata = filtered_station_ekidata.concat(result_json.shinkansen.stations.map(data => {
   const sub_stationCode = find_station_pair(data.stationCode);
   if(!sub_stationCode){
     console.error("shinkansen is not linked");
     process.exit(1);
   }
-  const info = find_station_data(parseInt(sub_stationCode.toString().substr(0, 5)));
-  join_data[data.stationCode] = {
+  const info = find_station_data((+sub_stationCode).toString().substring(0, 5));
+  join_ekidata[data.stationCode] = {
     left: data.left,
     right: data.right,
   };
@@ -345,7 +354,7 @@ filtered_station_data = filtered_station_data.concat(result_json.shinkansen.stat
 const sattr = new SearchAttribute();
 
 let name_unlinked_stations = [];
-const stations_db = Array.from(await Promise.all(filtered_station_data.map(async(data) => {
+const stations_db = Array.from(await Promise.all(filtered_station_ekidata.map(async(data) => {
   const sub_stationCode = find_station_pair(data.stationCode);
   let kana = "";
   if(!sub_stationCode){
@@ -357,7 +366,7 @@ const stations_db = Array.from(await Promise.all(filtered_station_data.map(async
     kana = kana_cand;
   }
   if(!kana){
-    const info = find_station_data(parseInt(sub_stationCode.toString().substr(0, 5)));
+    const info = find_station_data((+sub_stationCode).toString().substring(0, 5));
     kana = info.kana;
   }
   return {
@@ -379,7 +388,7 @@ const stations_db = Array.from(await Promise.all(filtered_station_data.map(async
 
 
 railway_data = {};
-filtered_station_data.forEach(data => {
+filtered_station_ekidata.forEach(data => {
   railway_data[data.railwayCode] = data;
 });
 const railways_db = Object.keys(railway_data).map(railwayCode => {
@@ -389,7 +398,7 @@ const railways_db = Object.keys(railway_data).map(railwayCode => {
   }
   const detail = find_railway_data(sub_railwayCode);
   return {
-    railwayCode: parseInt(railwayCode),
+    railwayCode: +railwayCode,
     railwayName: railway_data[railwayCode].prevRailwayName,
     railwayFormalName: railway_data[railwayCode].prevRailwayFormalName,
     railwayKana: railway_data[railwayCode].railwayKana,
@@ -400,13 +409,13 @@ const railways_db = Object.keys(railway_data).map(railwayCode => {
 }).filter(data => data);
 
 // next stations
-const next_station_db = filtered_station_data.map(data => ({
+const next_station_db = filtered_station_ekidata.map(data => ({
   stationCode: data.stationCode,
-  left: join_data[data.stationCode].left,
-  right: join_data[data.stationCode].right,
+  left: join_ekidata[data.stationCode].left,
+  right: join_ekidata[data.stationCode].right,
 }));
 
-fs.writeFileSync("station-railway-data.json", JSON.stringify(
+fs.writeFileSync("data/station-railway-data.json", JSON.stringify(
   {
     stations: stations_db,
     railways: railways_db,
@@ -438,7 +447,7 @@ const unknown_station_data = name_unlinked_stations
 const unknown_railway_data = Object.keys(railway_data)
   .filter(railwayCode => !find_railway_pair(railwayCode))
   .map(railwayCode => ({
-    railwayCode: parseInt(railwayCode),
+    railwayCode: +railwayCode,
     railwayName: railway_data[railwayCode].prevRailwayName,
     railwayFormalName: railway_data[railwayCode].prevRailwayFormalName,
     railwayKana: railway_data[railwayCode].railwayKana,
