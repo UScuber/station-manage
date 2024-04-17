@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  Box,
   CircularProgress,
   Container,
   InputAdornment,
   Paper,
+  SelectChangeEvent,
   Table,
   TableBody,
   TableCell,
@@ -14,10 +13,10 @@ import {
   TableRow,
   TextField,
   Typography,
-  styled,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { useRailwayList, useRailwayProgress } from "./Api";
+import { Railway, useRailwayList, useRailwayProgress } from "./Api";
+import { BinaryPagination, CircleProgress, CustomLink } from "./components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -29,59 +28,58 @@ const nameSimilarity = (name: string, input: string) => {
   return 3;
 };
 
-const CustomLink = styled(Link)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  textDecoration: "none",
-  textTransform: "none",
-}));
-
-const RailwayProgress = ({ code }: { code: number }) => {
-  const railwayProgressQuery = useRailwayProgress(code);
+const Row = ({ info }: { info: Railway }) => {
+  const railwayProgressQuery = useRailwayProgress(info.railwayCode);
   const railwayProgress = railwayProgressQuery.data;
 
   if(!railwayProgress){
     return (
-      <></>
+      <TableRow>
+        <TableCell>
+          <CustomLink to={"/railway/" + info.railwayCode}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: 14,
+                textDecoration: "underline",
+                textDecorationColor: "#" + info.railwayColor,
+                textDecorationThickness: 2,
+              }}
+            >{info.railwayName}</Typography>
+          </CustomLink>
+        </TableCell>
+        <TableCell />
+      </TableRow>
     );
   }
 
   return (
-    <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-      <CircularProgress
-        variant="determinate"
-        sx={{
-          color: (theme) =>
-            theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-        }}
-        size={25}
-        thickness={6}
-        value={100}
-      />
-      <CircularProgress
-        variant="determinate"
-        size={25}
-        thickness={6}
-        value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
-        sx={{ position: "absolute", left: 0 }}
-      />
-      <Typography
-        variant="h6"
-        color="text.secondary"
-        sx={{
-          fontSize: 12,
-          ml: 1,
-          width: 48,
-          height: 20,
-          display: "inline-block",
-        }}
-      >
-        {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
-      </Typography>
-    </Box>
+    <TableRow sx={{
+      bgcolor: (railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none")
+    }}>
+      <TableCell>
+        <CustomLink to={"/railway/" + info.railwayCode}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: 14,
+              textDecoration: "underline",
+              textDecorationColor: "#" + info.railwayColor,
+              textDecorationThickness: 2,
+            }}
+          >{info.railwayName}</Typography>
+        </CustomLink>
+      </TableCell>
+      <TableCell>
+        <CircleProgress size={25} progress={railwayProgress} />
+      </TableCell>
+    </TableRow>
   );
 };
 
 const RailwayList = () => {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
   const railwayListQuery = useRailwayList();
@@ -91,11 +89,13 @@ const RailwayList = () => {
     setInputName(event.target.value);
   };
 
-  const filteredCompanies =
-    railwayList
-      ?.map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
-      .filter(rail => rail.ord < 4)
-      .sort((a, b) => a.ord - b.ord);
+  const handleChangePage = (newPage: number) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
+    setRowsPerPage(+event.target.value);
+    setPage(1);
+  };
 
   if(railwayListQuery.isError){
     return (
@@ -105,7 +105,7 @@ const RailwayList = () => {
     );
   }
 
-  if(railwayListQuery.isLoading){
+  if(!railwayList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -113,6 +113,25 @@ const RailwayList = () => {
       </Container>
     );
   }
+
+  const filteredRailways =
+    railwayList
+      .map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
+      .filter(rail => rail.ord < 4)
+      .sort((a, b) => a.ord - b.ord);
+  const dividedRailways = filteredRailways.slice((page-1)*rowsPerPage, page*rowsPerPage);
+
+  const CustomPagination = (): JSX.Element => (
+    <BinaryPagination
+      page={page}
+      count={filteredRailways.length}
+      rowsPerPage={rowsPerPage}
+      rowsPerPageOptions={[10,25,50,100,200]}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
+      sx={{ my: 1 }}
+    />
+  );
 
   return (
     <Container>
@@ -131,35 +150,25 @@ const RailwayList = () => {
           ),
         }}
       />
+      <CustomPagination />
+
       <TableContainer component={Paper}>
         <Table aria-label="railway table">
           <TableHead>
             <TableRow>
               <TableCell>Railway</TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredCompanies?.map(item => (
-              <TableRow key={item.railwayCode}>
-                <TableCell>
-                  <CustomLink to={"/railway/" + item.railwayCode}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontSize: 14,
-                        textDecoration: "underline",
-                        textDecorationColor: "#" + item.railwayColor,
-                        textDecorationThickness: 2,
-                      }}
-                    >{item.railwayName}</Typography>
-                  </CustomLink>
-                </TableCell>
-                <TableCell><RailwayProgress code={item.railwayCode} /></TableCell>
-              </TableRow>
+            {dividedRailways.map(item => (
+              <Row info={item} key={item.railwayCode} />
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <CustomPagination />
     </Container>
   );
 };

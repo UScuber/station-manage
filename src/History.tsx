@@ -15,8 +15,8 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { StationHistory, useStationInfo, useStationHistoryList, useStationHistoryCount } from "./Api";
-import BinaryPagination from "./components/BinaryPagination";
+import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "./Api";
+import { BinaryPagination, CustomLink, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -79,45 +79,25 @@ const aroundDayName = (date: Date): string => {
 const HistoryContent = (
   { history }
   :{
-    history: StationHistory
+    history: StationHistoryDetail
   }
 ): JSX.Element => {
-  const station = useStationInfo(history.stationCode);
-  const info = station.data;
-
-  if(station.isLoading){
-    return (
-      <></>
-    );
-  }
-
   return (
     <Button
       component={Link}
-      to={"/station/" + info?.stationCode}
+      to={"/station/" + history.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
+      sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h5">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
+        <RespStationName variant="h5">{history.stationName}</RespStationName>
+        <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history.kana}</RespStationName>
       </Box>
 
-      <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
-      <Typography
-        variant="h6"
-        sx={{
-          display: "inline-block",
-          textDecoration: "underline",
-          textDecorationColor: "#" + info?.railwayColor,
-          textDecorationThickness: 3
-        }}
-      >
-        {info?.railwayName}
+      <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
+        {stateNames[history.state]} {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}
       </Typography>
-
-      <Typography variant="h6">{stateNames[history.state]}: {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}</Typography>
     </Button>
   );
 };
@@ -139,7 +119,7 @@ const History = () => {
     setPage(newPage);
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(+event.target.value);
     setPage(1);
   };
 
@@ -149,7 +129,10 @@ const History = () => {
     const text = event.target.value;
     clearInterval(timeoutId);
     setTimeoutId(
-      setTimeout(() => setSearchName(text), 500)
+      setTimeout(() => {
+        setSearchName(text);
+        setPage(1);
+      }, 500)
     );
   };
 
@@ -180,7 +163,7 @@ const History = () => {
     );
   }
 
-  if(historyList.isLoading || historyListCount.isLoading){
+  if(!historyList.data || historyListCount.data === undefined){
     return (
       <Container>
         <Box>
@@ -214,7 +197,7 @@ const History = () => {
             </Select>
           </FormControl>
         </Box>
-        {!historyListCount.isLoading && <CustomPagination />}
+        {historyListCount.data !== undefined && <CustomPagination />}
         <Box>
           Loading...
           <CircularProgress />
@@ -260,24 +243,60 @@ const History = () => {
       <CustomPagination />
 
       <Box>
-        {historyList.data?.map((item, index, list) => {
+        <CustomLink to="/historyMap">
+          <Typography variant="h6" sx={{ fontSize: 14, textAlign: "right" }}>マップを見る</Typography>
+        </CustomLink>
+      </Box>
+
+      <Box>
+        {historyList.data.map((item, index, list) => {
           const date = item.date;
-          if(!index || list[index-1].date.getDay() !== date.getDay()){
-            return (
-              <Box key={`${date.toString()}|${item.stationCode}`}>
-                <Typography variant="h6">
+          const isSameDate = index && list[index-1].date.getTime() - date.getTime() < 1000*60*60*24;
+          return (
+            <Box key={`${date.toString()}|${item.stationCode}|${item.state}`}>
+              {/* 日付 */}
+              {!isSameDate && (
+                <Typography variant="h6" sx={{ mt: 1 }}>
                   {getDateString(date, true, true)}({dayNames[date.getDay()]})
                   ー {aroundDayName(item.date)}
                 </Typography>
-                <Box sx={{ ml: 2 }}>
-                  <HistoryContent history={item}/>
+              )}
+              {/* 路線名 */}
+              {(!isSameDate || item.railwayCode !== list[index-1].railwayCode) && (
+                <Box sx={{ ml: 1 }}>
+                  <Button
+                    component={Link}
+                    to={"/company/" + item.companyCode}
+                    color="inherit"
+                    sx={{ padding: 0 }}
+                  >
+                    <Typography variant="h6" sx={{ mr: 1, fontSize: 15, display: "inline-block" }}>
+                      {item.railwayCompany}
+                    </Typography>
+                  </Button>
+                  <Button
+                    component={Link}
+                    to={"/railway/" + item.railwayCode}
+                    color="inherit"
+                    sx={{ padding: 0 }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        display: "inline-block",
+                        textDecoration: "underline",
+                        textDecorationColor: "#" + item.railwayColor,
+                        textDecorationThickness: 3,
+                      }}
+                    >
+                      {item.railwayName}
+                    </Typography>
+                  </Button>
                 </Box>
+              )}
+              <Box sx={{ ml: 2 }}>
+                <HistoryContent history={item}/>
               </Box>
-            );
-          }
-          return (
-            <Box key={`${date.toString()}|${item.stationCode}`} sx={{ ml: 2 }}>
-              <HistoryContent history={item}/>
             </Box>
           );
         })}

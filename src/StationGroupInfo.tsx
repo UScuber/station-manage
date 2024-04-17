@@ -1,24 +1,5 @@
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Box, Container } from "@mui/system";
-import {
-  Button,
-  CircularProgress,
-  Collapse,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-import {
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
 import {
   RecordState,
   Station,
@@ -32,14 +13,33 @@ import {
   useStationGroupInfo,
   useStationsInfoByGroupCode,
 } from "./Api";
-import AccessButton from "./components/AccessButton";
-import AroundTime from "./components/AroundTime";
-import getDateString from "./utils/getDateString";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Divider,
+  FormControl,
+  FormHelperText,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import { Delete as DeleteIcon } from "@mui/icons-material";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import dayjs, { Dayjs } from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "./components";
+import getDateString from "./utils/getDateString";
 
 
 const stateName = ["乗降", "通過", "立ち寄り"];
@@ -61,21 +61,16 @@ const ChangeMapCenter = ({ position }: { position: LatLng }) => {
 };
 
 
-const StationItem = (
-  { info }
-  :{
-    info: Station,
-  }
-): JSX.Element => {
+const StationItem = ({ info }: { info: Station }): JSX.Element => {
   return (
     <Button
       component={Link}
       to={"/station/" + info.stationCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
+      sx={{ display: "block", mb: 0.5 }}
     >
-      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
       <Typography
         variant="h6"
         sx={{
@@ -86,12 +81,82 @@ const StationItem = (
           textDecorationThickness: 3,
         }}
       >
-        {info?.railwayName}
+        {info.railwayName}
       </Typography>
 
-      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
-      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info.getDate} invalidMsg="なし" /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info.passDate} invalidMsg="なし" /></Typography>
     </Button>
+  );
+};
+
+
+const CustomSubmitForm = (
+  { onSubmit }
+  :{
+    onSubmit: (date: Date) => unknown,
+  }
+) => {
+  const [date, setDate] = useState<Dayjs | null>(null);
+  const [time, setTime] = useState<Dayjs | null>(null);
+  const [error, setError] = useState(false);
+  const [helperText, setHelperText] = useState("");
+
+  const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if(date === null || time === null || date > dayjs()){
+      setError(true);
+      setHelperText("日付を選択してください");
+    }else{
+      setError(false);
+      setHelperText("追加されました");
+      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")));
+      // reset
+      setDate(null);
+      setTime(null);
+    }
+  };
+
+  return (
+    <Collapser
+      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
+      sx={{ mb: 2 }}
+      collapseSx={{ mx: 2 }}
+    >
+      <form onSubmit={onSubmitForm}>
+        <FormControl error={error} variant="standard" required>
+          <LocalizationProvider
+            dateAdapter={AdapterDayjs}
+            adapterLocale="ja"
+            dateFormats={{ year: "YYYY", month: "M月" }}
+          >
+            <DatePicker
+              label="日付"
+              value={date}
+              onChange={(date) => setDate(date)}
+              slotProps={{
+                textField: { size: "small" },
+                toolbar: { toolbarFormat: "YYYY年 M月" },
+              }}
+              format="YYYY-MM-DD"
+              sx={{ display: "inline-block", mb: 1 }}
+              disableFuture
+            />
+            <TimePicker
+              label="時間"
+              value={time}
+              onChange={(time) => setTime(time)}
+              slotProps={{ textField: { size: "small" } }}
+              views={["hours", "minutes", "seconds"]}
+              sx={{ mb: 1 }}
+            />
+          </LocalizationProvider>
+          <FormHelperText>{helperText}</FormHelperText>
+          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+        </FormControl>
+      </form>
+    </Collapser>
   );
 };
 
@@ -101,10 +166,12 @@ const StationGroupInfo = () => {
 
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
 
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
+
   const groupStationQuery = useStationGroupInfo(stationGroupCode, (data: StationGroup) => {
     setLoading(false);
   });
@@ -151,9 +218,25 @@ const StationGroupInfo = () => {
     setDeleteLoading(true);
   };
 
+  const handleSubmitCustomDate = (date: Date) => {
+    sendMutation.mutate({
+      stationGroupCode: stationGroupCode,
+      date: date,
+    })
+  };
+
+  const handleDialogClose = (value: StationHistoryData | undefined) => {
+    setDialogOpen(false);
+    if(value) handleDeleteHistory(value);
+  };
+
+  const handleClickDeleteButton = (value: StationHistoryData) => {
+    setDialogOpen(true);
+    setDeleteHistoryItem(value);
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
-    setOpen(false);
   }, [stationGroupCode]);
 
 
@@ -165,7 +248,7 @@ const StationGroupInfo = () => {
     );
   }
 
-  if(groupStations.isLoading || groupStationQuery.isLoading || stationGroupAllHistoryQuery.isLoading){
+  if(!stationList || !groupStationData){
     return (
       <Container>
         Loading...
@@ -174,89 +257,107 @@ const StationGroupInfo = () => {
     );
   }
 
-  const position = new LatLng(groupStationData!.latitude, groupStationData!.longitude);
+  const position = new LatLng(groupStationData.latitude, groupStationData.longitude);
 
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ textAlign: "center", mb: 2 }}>
-          <Typography variant="h3" sx={{ lineHeight: 1 }}>{groupStationData?.stationName}</Typography>
-          <Typography variant="h6" sx={{ fontSize: 16 }}>{groupStationData?.kana}</Typography>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{groupStationData.stationName}</RespStationName>
+          <RespStationName variant="h6" sx={{ fontSize: 16 }}>{groupStationData.kana}</RespStationName>
         </Box>
-          <Button
-            component={Link}
-            to={"/pref/" + groupStationData?.prefCode}
-            color="inherit"
-            sx={{ textTransform: "none", padding: 0 }}
-          >
-            <Typography variant="h6">{groupStationData?.prefName}</Typography>
-          </Button>
-        </Box>
-        <Typography variant="h6" sx={{ display: "inline-block" }}>
-          立ち寄り: <AroundTime date={groupStationData?.date} invalidMsg="なし" />
-        </Typography>
-        <IconButton
-          aria-label="expand row"
-          onClick={() => setOpen(!open)}
+        <Button
+          component={Link}
+          to={"/pref/" + groupStationData.prefCode}
+          color="inherit"
+          sx={{ padding: 0 }}
         >
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-        </IconButton>
+          <Typography variant="h6">{groupStationData.prefName}</Typography>
+        </Button>
+      </Box>
 
-        <Collapse in={open} timeout="auto" unmountOnExit>
-          <Box sx={{ margin: 1 }}>
-            <Typography variant="h6" component="div">History</Typography>
-            <Table size="small" aria-label="dates">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>State</TableCell>
-                  <TableCell>Railway</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {stationGroupAllHistory?.map(history => (
-                  <TableRow key={`${history.date}|${history.state}`}>
-                    <TableCell>{getDateString(history.date)}</TableCell>
-                    <TableCell>{stateName[history.state]}</TableCell>
-                    <TableCell
-                      sx={{
-                        textDecoration: "underline",
-                        textDecorationColor: "#" + history?.railwayColor,
-                        textDecorationThickness: 2,
-                      }}
-                    >
-                      {history.railwayName ?? ""}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        aria-label="delete"
-                        size="small"
-                        onClick={() => handleDeleteHistory(history)}
-                        disabled={deleteLoading}
-                      >
-                        <DeleteIcon fontSize="inherit" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-        </Collapse>
+      <Typography variant="h6" sx={{ display: "inline-block" }}>
+        立ち寄り: <AroundTime date={groupStationData.date} invalidMsg="なし" />
+      </Typography>
 
-        <AccessButton
-          text="立ち寄り"
-          loading={loading}
-          timeLimit={60*3}
-          accessedTime={groupStationData?.date}
-          onClick={handleSubmit}
-          sx={{ mb: 2, display: "block" }}
-        />
+      <AccessButton
+        text="立ち寄り"
+        loading={loading}
+        timeLimit={60*3}
+        accessedTime={groupStationData.date}
+        onClick={handleSubmit}
+        sx={{ mb: 2, display: "block" }}
+      />
+
       <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">路線一覧</Typography>
+        <Divider sx={{ mb: 1 }} light />
+
         {stationList?.map(item => (
           <StationItem key={item.stationCode} info={item} />
         ))}
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h5">詳細</Typography>
+        <Divider sx={{ mb: 1 }} />
+
+        {!stationGroupAllHistory && (<Typography variant="h6" sx={{ display: "inline" }}>履歴 <CircularProgress size={20} /></Typography>)}
+        {stationGroupAllHistory && (
+          <Collapser
+            buttonText={<Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationGroupAllHistory.length}件)</Typography>}
+          >
+            <Box sx={{ margin: 1 }}>
+              <Typography variant="h6" component="div">History</Typography>
+              <Table size="small" aria-label="dates">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>State</TableCell>
+                    <TableCell>Railway</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {stationGroupAllHistory.map(history => (
+                    <TableRow key={`${history.date}|${history.state}`}>
+                      <TableCell>{getDateString(history.date)}</TableCell>
+                      <TableCell>{stateName[history.state]}</TableCell>
+                      <TableCell
+                        sx={{
+                          textDecoration: "underline",
+                          textDecorationColor: "#" + history?.railwayColor,
+                          textDecorationThickness: 2,
+                        }}
+                      >
+                        {history.railwayName ?? ""}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          aria-label="delete"
+                          size="small"
+                          onClick={() => handleClickDeleteButton(history)}
+                          disabled={deleteLoading}
+                        >
+                          <DeleteIcon fontSize="inherit" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+            <ConfirmDialog
+              open={dialogOpen}
+              selectedValue={deleteHistoryItem}
+              onClose={handleDialogClose}
+              title="データを削除しますか"
+              descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
+            />
+          </Collapser>
+        )}
+
+        <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
 
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
@@ -270,7 +371,7 @@ const StationGroupInfo = () => {
           </Popup>
           <Tooltip direction="bottom" opacity={1} permanent>{groupStationData?.stationName}</Tooltip>
         </Marker>
-        {nearStations && nearStations.filter((v,i) => i).map(item => (
+        {nearStations && nearStations.filter((_,i) => i).map(item => (
           <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
@@ -281,7 +382,6 @@ const StationGroupInfo = () => {
         ))}
         <ChangeMapCenter position={position} />
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };

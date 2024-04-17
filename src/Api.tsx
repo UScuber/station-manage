@@ -30,8 +30,18 @@ axios.interceptors.response.use(res => {
 
 const ngrok_header = { headers: { "ngrok-skip-browser-warning": "a" } };
 
-const convert_date = (date: Date): string => {
-  return new Date(date).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+const convert_date = (date: Date) => {
+  return new Date(date).toLocaleString(
+    "ja-JP",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }
+  ).replaceAll("/", "-");
 };
 
 export enum RecordState {
@@ -353,12 +363,14 @@ export type StationHistory = {
   state: number,
 };
 
+export type StationHistoryDetail = Station & StationHistory;
+
 // 乗降/通過の履歴を区間取得
-export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string): UseQueryResult<StationHistory[]> => {
-  return useQuery<StationHistory[]>({
+export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string): UseQueryResult<StationHistoryDetail[]> => {
+  return useQuery<StationHistoryDetail[]>({
     queryKey: ["StationHistoryList", offset, length, name, type],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistory[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`, ngrok_header);
+      const { data } = await axios.get<StationHistoryDetail[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`, ngrok_header);
       return data;
     },
   });
@@ -376,8 +388,6 @@ export const useStationHistoryCount = (name?: string, type?: string): UseQueryRe
   });
 };
 
-
-export type StationHistoryDetail = Station & StationHistory;
 
 // 駅情報を付与した履歴を取得
 export const useStationHistoryListAndInfo = (): UseQueryResult<StationHistoryDetail[]> => {
@@ -541,6 +551,7 @@ export const useDeleteStationHistoryMutation = (
       queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["GroupStations", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });

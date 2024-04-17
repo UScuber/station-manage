@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  Box,
   CircularProgress,
   Container,
   InputAdornment,
   Paper,
+  SelectChangeEvent,
   Table,
   TableBody,
   TableCell,
@@ -14,10 +13,10 @@ import {
   TableRow,
   TextField,
   Typography,
-  styled,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { useCompanyList, useCompanyProgress } from "./Api";
+import { Company, useCompanyList, useCompanyProgress } from "./Api";
+import { BinaryPagination, CircleProgress, CustomLink } from "./components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -29,59 +28,42 @@ const nameSimilarity = (name: string, input: string) => {
   return 3;
 };
 
-const CustomLink = styled(Link)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  textDecoration: "none",
-  textTransform: "none",
-}));
-
-const CompanyProgress = ({ code }: { code: number }) => {
-  const companyProgressQuery = useCompanyProgress(code);
+const Row = ({ info }: { info: Company }) => {
+  const companyProgressQuery = useCompanyProgress(info.companyCode);
   const companyProgress = companyProgressQuery.data;
 
   if(!companyProgress){
     return (
-      <></>
+      <TableRow>
+        <TableCell>
+          <CustomLink to={"/company/" + info.companyCode}>
+            <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+          </CustomLink>
+        </TableCell>
+        <TableCell />
+      </TableRow>
     );
   }
 
   return (
-    <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-      <CircularProgress
-        variant="determinate"
-        sx={{
-          color: (theme) =>
-            theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-        }}
-        size={25}
-        thickness={6}
-        value={100}
-      />
-      <CircularProgress
-        variant="determinate"
-        size={25}
-        thickness={6}
-        value={companyProgress.getOrPassStationNum / companyProgress.stationNum * 100}
-        sx={{ position: "absolute", left: 0 }}
-      />
-      <Typography
-        variant="h6"
-        color="text.secondary"
-        sx={{
-          fontSize: 12,
-          ml: 1,
-          width: 48,
-          height: 20,
-          display: "inline-block",
-        }}
-      >
-        {`${companyProgress.getOrPassStationNum}/${companyProgress.stationNum}`}
-      </Typography>
-    </Box>
+    <TableRow sx={{
+      bgcolor: (companyProgress.getOrPassStationNum === companyProgress.stationNum ? "access.main" : "none")
+    }}>
+      <TableCell>
+        <CustomLink to={"/company/" + info.companyCode}>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+        </CustomLink>
+      </TableCell>
+      <TableCell>
+        <CircleProgress size={25} progress={companyProgress} />
+      </TableCell>
+    </TableRow>
   );
 };
 
 const CompanyList = () => {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
   const companyListQuery = useCompanyList();
@@ -91,11 +73,13 @@ const CompanyList = () => {
     setInputName(event.target.value);
   };
 
-  const filteredCompanies =
-    companyList
-      ?.map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
-      .filter(comp => comp.ord < 4)
-      .sort((a, b) => a.ord - b.ord);
+  const handleChangePage = (newPage: number) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
+    setRowsPerPage(+event.target.value);
+    setPage(1);
+  };
 
   if(companyListQuery.isError){
     return (
@@ -105,7 +89,7 @@ const CompanyList = () => {
     );
   }
 
-  if(companyListQuery.isLoading){
+  if(!companyList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -113,6 +97,25 @@ const CompanyList = () => {
       </Container>
     );
   }
+
+  const filteredCompanies =
+    companyList
+      .map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
+      .filter(comp => comp.ord < 4)
+      .sort((a, b) => a.ord - b.ord);
+  const dividedCompanies = filteredCompanies.slice((page-1)*rowsPerPage, page*rowsPerPage);
+
+  const CustomPagination = (): JSX.Element => (
+    <BinaryPagination
+      page={page}
+      count={filteredCompanies.length}
+      rowsPerPage={rowsPerPage}
+      rowsPerPageOptions={[10,25,50,100,200]}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
+      sx={{ my: 1 }}
+    />
+  );
 
   return (
     <Container>
@@ -131,27 +134,25 @@ const CompanyList = () => {
           ),
         }}
       />
+      <CustomPagination />
+
       <TableContainer component={Paper}>
         <Table aria-label="company table">
           <TableHead>
             <TableRow>
               <TableCell>Company</TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredCompanies?.map(item => (
-              <TableRow key={item.companyCode}>
-                <TableCell>
-                  <CustomLink to={"/company/" + item.companyCode}>
-                    <Typography variant="h6" sx={{ fontSize: 14 }}>{item.companyName}</Typography>
-                  </CustomLink>
-                </TableCell>
-                <TableCell><CompanyProgress code={item.companyCode} /></TableCell>
-              </TableRow>
+            {dividedCompanies.map(item => (
+              <Row info={item} key={item.companyCode} />
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <CustomPagination />
     </Container>
   );
 };

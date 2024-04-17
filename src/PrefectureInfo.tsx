@@ -5,13 +5,14 @@ import {
   Button,
   CircularProgress,
   Container,
-  Toolbar,
+  LinearProgress,
   Typography,
 } from "@mui/material";
-import { Railway, usePrefName, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";
+import { Railway, usePrefName, usePrefProgress, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
+import { CustomLink } from "./components";
 
 
 const FitMapZoom = (
@@ -40,7 +41,11 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       to={"/railway/" + info.railwayCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
+      sx={{
+        display: "block",
+        mb: 0.5,
+        bgcolor: (railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+      }}
     >
       <Box sx={{ mb: 1 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -104,6 +109,9 @@ const PrefectureInfo = () => {
   const stationsQuery = useStationsInfoByPrefCode(prefCode);
   const stationList = stationsQuery.data;
 
+  const prefProgressQuery = usePrefProgress(prefCode);
+  const prefProgress = prefProgressQuery.data;
+
   const prefQuery = usePrefName(prefCode);
   const pref = prefQuery.data;
 
@@ -115,7 +123,7 @@ const PrefectureInfo = () => {
     );
   }
 
-  if(railwaysQuery.isLoading || stationsQuery.isLoading || prefQuery.isLoading){
+  if(!railwayList || !stationList || !pref){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -124,14 +132,14 @@ const PrefectureInfo = () => {
     );
   }
 
-  const centerPosition = stationList?.reduce((totPos, item) => ({
+  const centerPosition = stationList.reduce((totPos, item) => ({
     lat: totPos.lat + item.latitude / stationList.length,
     lng: totPos.lng + item.longitude / stationList.length,
   }), { lat: 0, lng: 0 });
 
   const stationsPositionMap = (() => {
     let codeMap: { [key: number]: { lat: number, lng: number } } = {};
-    stationList?.forEach(item => {
+    stationList.forEach(item => {
       codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
     });
     return codeMap;
@@ -141,9 +149,30 @@ const PrefectureInfo = () => {
     <Container>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h3">{pref?.prefName}</Typography>
+        <CustomLink to={"/pref"}>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>都道府県一覧</Typography>
+        </CustomLink>
       </Box>
+      {prefProgress && (
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              fontSize: 14,
+              textAlign: "right",
+            }}
+          >
+            {`${prefProgress.getOrPassStationNum}/${prefProgress.stationNum}`}
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={prefProgress.getOrPassStationNum / prefProgress.stationNum * 100}
+          />
+        </Box>
+      )}
       <Box>
-        {railwayList?.map(item => (
+        {railwayList.map(item => (
           <RailwayItem info={item} key={item.railwayCode} />
         ))}
       </Box>
@@ -153,7 +182,7 @@ const PrefectureInfo = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
@@ -169,7 +198,7 @@ const PrefectureInfo = () => {
             ))}
           </FeatureGroup>
         ))}
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <CircleMarker
             center={[item.latitude, item.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
@@ -185,7 +214,6 @@ const PrefectureInfo = () => {
         ))}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };

@@ -5,13 +5,13 @@ import {
   Button,
   CircularProgress,
   Container,
-  Toolbar,
   Typography,
 } from "@mui/material";
 import { Railway, useCompanyInfo, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
+import { CircleProgress, CustomLink } from "./components";
 
 
 const FitMapZoom = (
@@ -40,7 +40,11 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       to={"/railway/" + info.railwayCode}
       variant="outlined"
       color="inherit"
-      sx={{ display: "block", mb: 0.5, textTransform: "none" }}
+      sx={{
+        display: "block",
+        mb: 0.5,
+        bgcolor: (railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+      }}
     >
       <Box sx={{ mb: 1 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -56,40 +60,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {railwayProgress && (
-            <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
-              <CircularProgress
-                variant="determinate"
-                sx={{
-                  color: (theme) =>
-                    theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
-                }}
-                size={25}
-                thickness={6}
-                value={100}
-              />
-              <CircularProgress
-                variant="determinate"
-                size={25}
-                thickness={6}
-                value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
-                sx={{ position: "absolute", left: 0 }}
-              />
-              <Typography
-                variant="h6"
-                color="text.secondary"
-                sx={{
-                  fontSize: 12,
-                  ml: 1,
-                  width: 48,
-                  height: 20,
-                  display: "inline-block",
-                }}
-              >
-                {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
-              </Typography>
-            </Box>
-          )}
+          {railwayProgress && (<CircleProgress size={25} progress={railwayProgress} />)}
         </Box>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
@@ -117,7 +88,7 @@ const CompanyInfo = () => {
     );
   }
 
-  if(companyQuery.isLoading || railwaysQuery.isLoading || stationsQuery.isLoading){
+  if(!info || !railwayList || !stationList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -126,7 +97,7 @@ const CompanyInfo = () => {
     );
   }
 
-  const centerPosition = stationList?.reduce((totPos, item) => ({
+  const centerPosition = stationList.reduce((totPos, item) => ({
     lat: totPos.lat + item.latitude / stationList.length,
     lng: totPos.lng + item.longitude / stationList.length,
   }), { lat: 0, lng: 0 });
@@ -142,11 +113,14 @@ const CompanyInfo = () => {
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h3">{info?.companyName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.formalName}</Typography>
+        <Typography variant="h3">{info.companyName}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 16, mb: 0.5 }}>{info.formalName}</Typography>
+        <CustomLink to="/company">
+          <Typography variant="h6" sx={{ fontSize: 14 }}>会社一覧</Typography>
+        </CustomLink>
       </Box>
       <Box>
-        {railwayList?.map(item => (
+        {railwayList.map(item => (
           <RailwayItem info={item} key={item.railwayCode} />
         ))}
       </Box>
@@ -156,7 +130,7 @@ const CompanyInfo = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
@@ -172,7 +146,7 @@ const CompanyInfo = () => {
             ))}
           </FeatureGroup>
         ))}
-        {stationList?.map(item => (
+        {stationList.map(item => (
           <CircleMarker
             center={[item.latitude, item.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
@@ -188,7 +162,6 @@ const CompanyInfo = () => {
         ))}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };

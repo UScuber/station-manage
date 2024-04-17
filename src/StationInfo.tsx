@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { RecordState, Station, StationHistoryData, useDeleteStationHistoryMutation, useSearchKNearestStationGroups, useSendStationStateMutation, useStationAllHistory, useStationInfo } from "./Api";
+import {
+  RecordState,
+  Station,
+  StationHistoryData,
+  useDeleteStationHistoryMutation,
+  useSearchKNearestStationGroups,
+  useSendStationStateMutation,
+  useStationAllHistory,
+  useStationInfo,
+} from "./Api";
 import {
   Box,
   Button,
@@ -9,28 +18,31 @@ import {
   Typography,
   ListItemText,
   Stack,
-  Toolbar,
   Divider,
   IconButton,
-  Collapse,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
+  styled,
+  FormControlLabel,
+  RadioGroup,
+  Radio,
+  FormControl,
+  FormHelperText,
 } from "@mui/material";
-import {
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
-import AccessButton from "./components/AccessButton";
-import AroundTime from "./components/AroundTime";
+import { Delete as DeleteIcon } from "@mui/icons-material";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
+import "dayjs/locale/ja";
+import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -51,16 +63,25 @@ const ChangeMapCenter = ({ position }: { position: LatLng }) => {
 };
 
 
-const NextStation = (
-  { code }
-  :{
-    code: number,
-  }
-): JSX.Element => {
+const NextStationName = styled(Typography)(({ theme }) => ({
+  fontSize: 20,
+  [theme.breakpoints.down("md")]: {
+    fontSize: 18,
+  },
+}));
+const NextStationKana = styled(Typography)(({ theme }) => ({
+  fontSize: 11,
+  lineHeight: 1,
+  [theme.breakpoints.down("md")]: {
+    fontSize: 10,
+  },
+}));
+
+const NextStation = ({ code }: { code: number }): JSX.Element => {
   const station = useStationInfo(code);
   const info = station.data;
 
-  if(station.isLoading){
+  if(!info){
     return (
       <Box>
         <CircularProgress />
@@ -74,23 +95,108 @@ const NextStation = (
         component={Link}
         to={"/station/" + code}
         color="inherit"
-        sx={{ display: "block", textTransform: "none", padding: 0 }}
+        sx={{ display: "block", padding: 0 }}
       >
-        <Typography variant="h6">{info?.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{info?.kana}</Typography>
+        <NextStationName variant="h6">{info.stationName}</NextStationName>
+        <NextStationKana variant="h6">{info.kana}</NextStationKana>
       </Button>
     </Stack>
   );
 };
 
 
+const CustomSubmitForm = (
+  { onSubmit }
+  :{
+    onSubmit: (date: Date, state: RecordState) => unknown,
+  }
+) => {
+  const [date, setDate] = useState<Dayjs | null>(null);
+  const [time, setTime] = useState<Dayjs | null>(null);
+  const [radioState, setRadioState] = useState<RecordState | null>(null);
+  const [error, setError] = useState(false);
+  const [helperText, setHelperText] = useState("");
+
+  const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if(date === null || time === null || date > dayjs()){
+      setError(true);
+      setHelperText("日付を選択してください");
+    }else if(radioState === null){
+      setError(true);
+      setHelperText("選択してください");
+      return;
+    }else{
+      setError(false);
+      setHelperText("追加されました");
+      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")), radioState);
+      // reset
+      setDate(null);
+      setTime(null);
+      setRadioState(null);
+    }
+  };
+
+  return (
+    <Collapser
+      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
+      sx={{ mb: 2 }}
+      collapseSx={{ mx: 2 }}
+    >
+      <form onSubmit={onSubmitForm}>
+        <FormControl error={error} variant="standard" required>
+          <LocalizationProvider
+            dateAdapter={AdapterDayjs}
+            adapterLocale="ja"
+            dateFormats={{ year: "YYYY", month: "M月" }}
+          >
+            <DatePicker
+              label="日付"
+              value={date}
+              onChange={(date) => setDate(date)}
+              slotProps={{
+                textField: { size: "small" },
+                toolbar: { toolbarFormat: "YYYY年 M月" },
+              }}
+              format="YYYY-MM-DD"
+              sx={{ display: "inline-block", mb: 1 }}
+              disableFuture
+            />
+            <TimePicker
+              label="時間"
+              value={time}
+              onChange={(time) => setTime(time)}
+              slotProps={{ textField: { size: "small" } }}
+              views={["hours", "minutes", "seconds"]}
+              sx={{ mb: 1 }}
+            />
+          </LocalizationProvider>
+          <RadioGroup
+            name="state"
+            value={radioState}
+            onChange={(e) => setRadioState(+e.target.value)}
+            row
+          >
+            <FormControlLabel value={RecordState.Get} control={<Radio size="small" />} label="乗降" />
+            <FormControlLabel value={RecordState.Pass} control={<Radio size="small" />} label="通過" />
+          </RadioGroup>
+          <FormHelperText>{helperText}</FormHelperText>
+          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+        </FormControl>
+      </form>
+    </Collapser>
+  );
+};
+
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
 
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
-  const [open, setOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
 
   const station = useStationInfo(stationCode, (data: Station) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
@@ -143,6 +249,27 @@ const StationInfo = () => {
     setDeleteLoading(true);
   };
 
+  const handleSubmitCustomDate = (date: Date, state: RecordState) => {
+    if(!info) return;
+
+    mutation.mutate({
+      stationCode: stationCode,
+      stationGroupCode: info.stationGroupCode,
+      state: Number(state),
+      date: date,
+    })
+  };
+
+  const handleDialogClose = (value: StationHistoryData | undefined) => {
+    setDialogOpen(false);
+    if(value) handleDeleteHistory(value);
+  };
+
+  const handleClickDeleteButton = (value: StationHistoryData) => {
+    setDialogOpen(true);
+    setDeleteHistoryItem(value);
+  };
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if(!info) return;
     if(info.left.length >= 1 && !e.altKey && e.key === "ArrowLeft" && !leftKeyRef.current){
@@ -182,7 +309,7 @@ const StationInfo = () => {
     );
   }
 
-  if(station.isLoading || stationHistoryQuery.isLoading){
+  if(!info){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -191,23 +318,24 @@ const StationInfo = () => {
     );
   }
 
-  const position = new LatLng(info!.latitude, info!.longitude);
+  const lastAccessTime = ((info.getDate ?? 0) > (info.passDate ?? 0)) ? info.getDate : info.passDate;
+  const position = new LatLng(info.latitude, info.longitude);
 
   return (
     <Container>
       <Box maxWidth="sm" sx={{ margin: "auto" }}>
         <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h3" sx={{ lineHeight: 1 }}>{info?.stationName}</Typography>
-          <Typography variant="h6" sx={{ fontSize: 16 }}>{info?.kana}</Typography>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{info.stationName}</RespStationName>
+          <RespStationName variant="h6">{info.kana}</RespStationName>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
           <Box sx={{ textAlign: "left" }}>
-            {info?.left.map(code => (
+            {info.left.map(code => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
           <Box sx={{ textAlign: "right" }}>
-            {info?.right.map(code => (
+            {info.right.map(code => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
@@ -216,27 +344,27 @@ const StationInfo = () => {
       <Box>
         <Button
           component={Link}
-          to={"/pref/" + info?.prefCode}
+          to={"/pref/" + info.prefCode}
           color="inherit"
-          sx={{ textTransform: "none", padding: 0 }}
+          sx={{ padding: 0 }}
         >
-          <Typography variant="h6">{info?.prefName}</Typography>
+          <Typography variant="h6">{info.prefName}</Typography>
         </Button>
 
         <Box>
           <Button
             component={Link}
-            to={"/company/" + info?.companyCode}
+            to={"/company/" + info.companyCode}
             color="inherit"
-            sx={{ textTransform: "none", padding: 0 }}
+            sx={{ padding: 0 }}
           >
-            <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info?.railwayCompany}</Typography>
+            <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
           </Button>
           <Button
             component={Link}
-            to={"/railway/" + info?.railwayCode}
+            to={"/railway/" + info.railwayCode}
             color="inherit"
-            sx={{ textTransform: "none", padding: 0 }}
+            sx={{ padding: 0 }}
           >
             <Typography
               variant="h6"
@@ -244,19 +372,25 @@ const StationInfo = () => {
                 mx: 1,
                 display: "inline-block",
                 textDecoration: "underline",
-                textDecorationColor: "#" + info?.railwayColor,
+                textDecorationColor: "#" + info.railwayColor,
                 textDecorationThickness: 3,
               }}
             >
-              {info?.railwayName}
+              {info.railwayName}
             </Typography>
           </Button>
         </Box>
 
         <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
         <Box sx={{ mx: 2 }}>
-          <Typography variant="h6">乗降: <AroundTime date={info?.getDate} invalidMsg="なし" /></Typography>
-          <Typography variant="h6">通過: <AroundTime date={info?.passDate} invalidMsg="なし" /></Typography>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6">乗降:&nbsp;</Typography>
+            <AroundTime date={info.getDate} invalidMsg="なし" />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6">通過:&nbsp;</Typography>
+            <AroundTime date={info.passDate} invalidMsg="なし" />
+          </Box>
         </Box>
       </Box>
 
@@ -266,20 +400,20 @@ const StationInfo = () => {
             text="乗降"
             loading={getLoading}
             timeLimit={60*3}
-            accessedTime={info?.getDate}
+            accessedTime={lastAccessTime}
             onClick={() => handleSubmit(RecordState.Get)}
           />
           <AccessButton
             text="通過"
             loading={passLoading}
             timeLimit={60*3}
-            accessedTime={info?.passDate}
+            accessedTime={lastAccessTime}
             onClick={() => handleSubmit(RecordState.Pass)}
           />
         </Stack>
         <Button
           component={Link}
-          to={"/stationGroup/" + info?.stationGroupCode}
+          to={"/stationGroup/" + info.stationGroupCode}
           variant="outlined"
         >
           <ListItemText primary="駅グループ" />
@@ -288,47 +422,53 @@ const StationInfo = () => {
 
       <Box sx={{ mb: 2 }}>
         <Typography variant="h5">詳細</Typography>
-        <Divider sx={{ mb: 1 }} light />
+        <Divider sx={{ mb: 1 }} />
 
-        <Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory?.length}件)</Typography>
-        <IconButton
-          aria-label="expand row"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-        </IconButton>
-
-        <Collapse in={open} timeout="auto" unmountOnExit>
-          <Box sx={{ margin: 1 }}>
-            <Table size="small" aria-label="dates">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>State</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {stationHistory?.map(history => (
-                  <TableRow key={`${history.date}|${history.state}`}>
-                    <TableCell>{getDateString(history.date)}</TableCell>
-                    <TableCell>{stateName[history.state]}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        aria-label="delete"
-                        size="small"
-                        onClick={() => handleDeleteHistory(history)}
-                        disabled={deleteLoading}
-                      >
-                        <DeleteIcon fontSize="inherit" />
-                      </IconButton>
-                    </TableCell>
+        {!stationHistory && (<Typography variant="h6" sx={{ display: "inline" }}>履歴 <CircularProgress size={20} /></Typography>)}
+        {stationHistory && (
+          <Collapser
+            buttonText={<Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory.length}件)</Typography>}
+          >
+            <Box sx={{ margin: 1 }}>
+              <Table size="small" aria-label="dates">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>State</TableCell>
+                    <TableCell />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-        </Collapse>
+                </TableHead>
+                <TableBody>
+                  {stationHistory.map(history => (
+                    <TableRow key={`${history.date}|${history.state}`}>
+                      <TableCell>{getDateString(history.date)}</TableCell>
+                      <TableCell>{stateName[history.state]}</TableCell>
+                      <TableCell>
+                        <IconButton
+                          aria-label="delete"
+                          size="small"
+                          onClick={() => handleClickDeleteButton(history)}
+                          disabled={deleteLoading}
+                        >
+                          <DeleteIcon fontSize="inherit" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+            <ConfirmDialog
+              open={dialogOpen}
+              selectedValue={deleteHistoryItem}
+              onClose={handleDialogClose}
+              title="データを削除しますか"
+              descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
+            />
+          </Collapser>
+        )}
+
+        <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
 
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
@@ -338,11 +478,11 @@ const StationInfo = () => {
         />
         <Marker position={position}>
           <Popup>
-            <Box sx={{ textAlign: "center" }}>{info?.stationName}</Box>
+            <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
           </Popup>
-          <Tooltip direction="bottom" opacity={1} permanent>{info?.stationName}</Tooltip>
+          <Tooltip direction="bottom" opacity={1} permanent>{info.stationName}</Tooltip>
         </Marker>
-        {nearStations && nearStations.filter((v,i) => i).map(item => (
+        {nearStations && nearStations.filter((_,i) => i).map(item => (
           <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
@@ -353,7 +493,6 @@ const StationInfo = () => {
         ))}
         <ChangeMapCenter position={position} />
       </MapContainer>
-      <Toolbar />
     </Container>
   );
 };
