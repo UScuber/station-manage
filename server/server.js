@@ -725,6 +725,39 @@ app.get("/api/pref", accessLog, (req, res, next) => {
   res.json(data);
 });
 
+app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
+  const code = +req.params.railwayCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
+  let data;
+  try{
+    const pathNum = db.prepare(`
+      SELECT COUNT(DISTINCT pathId) AS num
+      FROM RailPaths
+      WHERE railwayCode = ?
+    `).get(code).num;
+    console.log(pathNum);
+    const stmt = db.prepare(`
+      SELECT latitude, longitude FROM RailPaths
+      WHERE railwayCode = ? AND pathId = ? AND ord <= 80
+      ORDER BY ord
+    `);
+    data = {
+      railwayCode: code,
+      paths: [...Array(pathNum).keys()].map(pathId =>
+        stmt.all(code, pathId).map(pos => [pos.latitude, pos.longitude])
+      ),
+    };
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
 ///// History
 
 // 全体の乗降/通過の履歴を区間取得

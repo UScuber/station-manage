@@ -356,6 +356,24 @@ export const usePrefList = (): UseQueryResult<Prefecture[]> => {
 };
 
 
+export type PathData = {
+  railwayCode: number,
+  paths: [number, number][][],
+};
+
+export const useRailPath = (railwayCode: number | undefined): UseQueryResult<PathData> => {
+  return useQuery<PathData>({
+    queryKey: ["RailPath", railwayCode],
+    queryFn: async() => {
+      const { data } = await axios.get<PathData>("/api/railpaths/" + railwayCode, ngrok_header);
+      return data;
+    },
+    enabled: railwayCode !== undefined,
+    staleTime: Infinity,
+  });
+};
+
+
 export type StationHistory = {
   stationCode: number,
   stationGroupCode: number,
