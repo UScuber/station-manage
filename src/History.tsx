@@ -127,7 +127,7 @@ const History = () => {
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
     const text = event.target.value;
-    clearInterval(timeoutId);
+    clearInterval(timeoutId as unknown as number);
     setTimeoutId(
       setTimeout(() => {
         setSearchName(text);
