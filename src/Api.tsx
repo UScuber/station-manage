@@ -1,7 +1,7 @@
 import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
-axios.defaults.baseURL = process.env.REACT_APP_API_BASEURL;
+axios.defaults.baseURL = import.meta.env.VITE_API_BASEURL;
 
 // 日付をDate型に変換する
 axios.interceptors.response.use(res => {
