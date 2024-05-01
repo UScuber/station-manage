@@ -7,11 +7,13 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { Station, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
+import { Station, useRailPath, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
 import { AroundTime, CustomLink } from "./components";
-import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
+import { GeoJsonObject } from "geojson";
+import ReactDomServer from "react-dom/server";
 
 
 const FitMapZoom = (
@@ -61,6 +63,9 @@ const RailwayInfo = () => {
 
   const railwayProgressQuery = useRailwayProgress(railwayCode);
   const railwayProgress = railwayProgressQuery.data;
+
+  const railwayPathQuery = useRailPath(railwayCode);
+  const railwayPath = railwayPathQuery.data;
 
   if(railway.isError || stationsQuery.isError){
     return (
@@ -147,35 +152,72 @@ const RailwayInfo = () => {
         ))}
       </Box>
 
-      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }}>
+
+      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }} renderer={Leaflet.canvas()}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList.map(item => (
-          item.left.map(code => (
-            <Polyline
-              pathOptions={{ color: "#" + (info.railwayColor ?? "808080") }}
-              weight={8}
-              positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]}
-              key={code}
+        {railwayPath && (
+          <>
+            <GeoJSON
+              data={{
+                type: "Feature",
+                geometry: {
+                  type: "MultiLineString",
+                  coordinates: railwayPath.paths,
+                },
+                properties: {
+                  name: info.railwayName,
+                  popupContent: info.railwayName,
+                },
+              } as unknown as GeoJsonObject}
+              style={{
+                color: "#" + info.railwayColor,
+                weight: 8,
+              }}
+              onEachFeature={(feature, layer) => {
+                if(feature.properties && feature.properties.popupContent){
+                  layer.bindPopup(`<div style="text-align: center"><span>${feature.properties.popupContent}</span></div>`);
+                }
+              }}
             />
-          ))
-        ))}
-        {stationList.map(item => (
-          <CircleMarker
-            center={[item.latitude, item.longitude]}
-            pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
-            radius={6}
-            key={item.stationCode}
-          >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/station/" + item.stationCode}>{item.stationName}</Link>
-              </Box>
-            </Popup>
-          </CircleMarker>
-        ))}
+
+            <GeoJSON
+              data={{
+                type: "FeatureCollection",
+                features: stationList.map(item => ({
+                  type: "Feature",
+                  geometry: {
+                    type: "Point",
+                    coordinates: [item.longitude, item.latitude],
+                  },
+                  properties: {
+                    name: item.stationName,
+                    stationCode: item.stationCode,
+                    stationName: item.stationName,
+                  },
+                })),
+              } as unknown as GeoJsonObject}
+              onEachFeature={(feature, layer) => {
+                layer.bindPopup(ReactDomServer.renderToString(
+                  <div style={{ textAlign: "center" }}>
+                    <a href={`/station/${feature.properties.stationCode}`}>{feature.properties.stationName}</a>
+                  </div>
+                ));
+              }}
+              pointToLayer={(feature, latlng) => {
+                return Leaflet.circleMarker(latlng, {
+                  radius: 6,
+                  color: "black",
+                  weight: 2,
+                  fillColor: "white",
+                  fillOpacity: 1,
+                });
+              }}
+            />
+          </>
+        )}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
       </MapContainer>
     </Container>
