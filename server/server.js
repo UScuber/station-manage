@@ -738,7 +738,6 @@ app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
       FROM RailPaths
       WHERE railwayCode = ?
     `).get(code).num;
-    console.log(pathNum);
     const stmt = db.prepare(`
       SELECT latitude, longitude FROM RailPaths
       WHERE railwayCode = ? AND pathId = ? AND ord <= 80
@@ -747,7 +746,7 @@ app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
     data = {
       railwayCode: code,
       paths: [...Array(pathNum).keys()].map(pathId =>
-        stmt.all(code, pathId).map(pos => [pos.latitude, pos.longitude])
+        stmt.all(code, pathId).map(pos => [pos.longitude, pos.latitude])
       ),
     };
   }catch(err){
