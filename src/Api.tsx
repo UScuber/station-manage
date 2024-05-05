@@ -357,8 +357,12 @@ export const usePrefList = (): UseQueryResult<Prefecture[]> => {
 
 
 export type PathData = {
-  railwayCode: number,
-  paths: [number, number][][],
+  type: "Feature",
+  geometry: {
+    type: "MultiLineString",
+    coordinates: [number, number][][],
+  },
+  properties: Railway,
 };
 
 export const useRailPath = (railwayCode: number | undefined): UseQueryResult<PathData> => {

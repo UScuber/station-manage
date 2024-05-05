@@ -725,6 +725,39 @@ app.get("/api/pref", accessLog, (req, res, next) => {
   res.json(data);
 });
 
+
+// 特定の路線のpathデータを取得する(geojson形式)
+const get_railway_path_geojson = (railwayCode, properties) => {
+  let data = {};
+  try{
+    const pathNum = db.prepare(`
+      SELECT COUNT(DISTINCT pathId) AS num
+      FROM RailPaths
+      WHERE railwayCode = ?
+    `).get(railwayCode).num;
+    const stmt = db.prepare(`
+      SELECT latitude, longitude FROM RailPaths
+      WHERE railwayCode = ? AND pathId = ? AND ord <= 80
+      ORDER BY ord
+    `);
+    data = {
+      type: "Feature",
+      geometry: {
+        type: "MultiLineString",
+        coordinates: [...Array(pathNum).keys()].map(pathId =>
+          stmt.all(railwayCode, pathId).map(pos => [pos.longitude, pos.latitude])
+        ),
+      },
+      properties: properties,
+    };
+  }catch(err){
+    console.error(err);
+    throw new Error("Server Error");
+  }
+  return data;
+};
+
+// 路線の線路のpathを取得
 app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
   const code = +req.params.railwayCode;
   if(isNaN(code)){
@@ -733,22 +766,17 @@ app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
   }
   let data;
   try{
-    const pathNum = db.prepare(`
-      SELECT COUNT(DISTINCT pathId) AS num
-      FROM RailPaths
-      WHERE railwayCode = ?
-    `).get(code).num;
-    const stmt = db.prepare(`
-      SELECT latitude, longitude FROM RailPaths
-      WHERE railwayCode = ? AND pathId = ? AND ord <= 80
-      ORDER BY ord
-    `);
-    data = {
-      railwayCode: code,
-      paths: [...Array(pathNum).keys()].map(pathId =>
-        stmt.all(code, pathId).map(pos => [pos.longitude, pos.latitude])
-      ),
-    };
+    const railwayInfo = db.prepare(`
+      SELECT
+        Railways.*,
+        Companies.companyName,
+        Companies.formalName AS companyFormalName
+      FROM Railways
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+          AND Railways.railwayCode = ?
+    `).get(code);
+    data = get_railway_path_geojson(code, railwayInfo);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));

@@ -161,25 +161,17 @@ const RailwayInfo = () => {
         {railwayPath && (
           <>
             <GeoJSON
-              data={{
-                type: "Feature",
-                geometry: {
-                  type: "MultiLineString",
-                  coordinates: railwayPath.paths,
-                },
-                properties: {
-                  name: info.railwayName,
-                  popupContent: info.railwayName,
-                },
-              } as unknown as GeoJsonObject}
-              style={{
-                color: "#" + info.railwayColor,
+              data={railwayPath as unknown as GeoJsonObject}
+              style={(feature) => ({
+                color: "#" + feature?.properties.railwayColor,
                 weight: 8,
-              }}
+              })}
               onEachFeature={(feature, layer) => {
-                if(feature.properties && feature.properties.popupContent){
-                  layer.bindPopup(`<div style="text-align: center"><span>${feature.properties.popupContent}</span></div>`);
-                }
+                layer.bindPopup(ReactDomServer.renderToString(
+                  <div style={{ textAlign: "center" }}>
+                    <span>{feature.properties.railwayName}</span>
+                  </div>
+                ));
               }}
             />
 
@@ -193,7 +185,6 @@ const RailwayInfo = () => {
                     coordinates: [item.longitude, item.latitude],
                   },
                   properties: {
-                    name: item.stationName,
                     stationCode: item.stationCode,
                     stationName: item.stationName,
                   },
