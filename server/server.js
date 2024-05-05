@@ -785,6 +785,51 @@ app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
   res.json(data);
 });
 
+// 会社に属する全路線の線路のpathを取得
+app.get("/api/pathslist/:companyCode", accessLog, (req, res, next) => {
+  const code = +req.params.companyCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
+  let data;
+  try{
+    let railwayList;
+    if(code === 0){
+      railwayList = db.prepare(`
+        SELECT
+          Railways.*,
+          Companies.companyName,
+          Companies.formalName AS companyFormalName
+        FROM Railways
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+            AND Railways.companyCode <= 6
+      `).all();
+    }else{
+      railwayList = db.prepare(`
+        SELECT
+          Railways.*,
+          Companies.companyName,
+          Companies.formalName AS companyFormalName
+        FROM Railways
+        INNER JOIN Companies
+          ON Railways.companyCode = Companies.companyCode
+            AND Railways.companyCode = ?
+      `).all(code);
+    }
+
+    data = railwayList.map(elem =>
+      get_railway_path_geojson(elem.railwayCode, elem));
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
+
 ///// History
 
 // 全体の乗降/通過の履歴を区間取得
