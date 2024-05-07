@@ -737,7 +737,7 @@ const get_railway_path_geojson = (railwayCode, properties) => {
     `).get(railwayCode).num;
     const stmt = db.prepare(`
       SELECT latitude, longitude FROM RailPaths
-      WHERE railwayCode = ? AND pathId = ? AND ord <= 80
+      WHERE railwayCode = ? AND pathId = ?
       ORDER BY ord
     `);
     data = {
