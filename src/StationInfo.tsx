@@ -5,10 +5,12 @@ import {
   Station,
   StationHistoryData,
   useDeleteStationHistoryMutation,
+  useRailPath,
   useSearchKNearestStationGroups,
   useSendStationStateMutation,
   useStationAllHistory,
   useStationInfo,
+  useStationsInfoByRailwayCode,
 } from "./Api";
 import {
   Box,
@@ -33,11 +35,13 @@ import {
   FormHelperText,
 } from "@mui/material";
 import { Delete as DeleteIcon } from "@mui/icons-material";
-import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { GeoJSON, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { GeoJsonObject } from "geojson";
+import ReactDomServer from "react-dom/server";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
@@ -217,6 +221,11 @@ const StationInfo = () => {
     setDeleteLoading(false);
   });
   const stationHistory = stationHistoryQuery.data;
+
+  const stationsListQuery = useStationsInfoByRailwayCode(info?.railwayCode);
+  const stationList = stationsListQuery.data;
+  const railwayPathQuery = useRailPath(info?.railwayCode);
+  const railwayPath = railwayPathQuery.data;
 
   const mutation = useSendStationStateMutation();
   const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
@@ -476,6 +485,57 @@ const StationInfo = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {stationList && railwayPath && (
+          <>
+            <GeoJSON
+              data={railwayPath as unknown as GeoJsonObject}
+              style={(feature) => ({
+                color: "#" + feature?.properties.railwayColor,
+                weight: 8,
+              })}
+              onEachFeature={(feature, layer) => {
+                layer.bindPopup(ReactDomServer.renderToString(
+                  <div style={{ textAlign: "center" }}>
+                    <span>{feature.properties.railwayName}</span>
+                  </div>
+                ));
+              }}
+            />
+
+            <GeoJSON
+              data={{
+                type: "FeatureCollection",
+                features: stationList.map(item => ({
+                  type: "Feature",
+                  geometry: {
+                    type: "Point",
+                    coordinates: [item.longitude, item.latitude],
+                  },
+                  properties: {
+                    stationCode: item.stationCode,
+                    stationName: item.stationName,
+                  },
+                })),
+              } as unknown as GeoJsonObject}
+              onEachFeature={(feature, layer) => {
+                layer.bindPopup(ReactDomServer.renderToString(
+                  <div style={{ textAlign: "center" }}>
+                    <a href={`/station/${feature.properties.stationCode}`}>{feature.properties.stationName}</a>
+                  </div>
+                ));
+              }}
+              pointToLayer={(feature, latlng) => {
+                return Leaflet.circleMarker(latlng, {
+                  radius: 6,
+                  color: "black",
+                  weight: 2,
+                  fillColor: "white",
+                  fillOpacity: 1,
+                });
+              }}
+            />
+          </>
+        )}
         <Marker position={position}>
           <Popup>
             <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
@@ -489,6 +549,7 @@ const StationInfo = () => {
                 <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
               </Box>
             </Popup>
+            <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>
           </Marker>
         ))}
         <ChangeMapCenter position={position} />
