@@ -33,6 +33,7 @@ import {
   Radio,
   FormControl,
   FormHelperText,
+  Checkbox,
 } from "@mui/material";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import { GeoJSON, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
@@ -201,6 +202,7 @@ const StationInfo = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
+  const [disableTooltip, setDisableTooltip] = useState(false);
 
   const station = useStationInfo(stationCode, (data: Station) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
@@ -480,6 +482,21 @@ const StationInfo = () => {
         <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
 
+      <Box sx={{ textAlign: "right" }}>
+        <Button
+          color="inherit"
+          onClick={() => setDisableTooltip(!disableTooltip)}
+          sx={{ padding: 0, color: "gray", display: "inline-block" }}
+        >
+          <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
+          <Checkbox
+          size="small"
+          checked={disableTooltip}
+          sx={{ padding: 0 }}
+        />
+        </Button>
+      </Box>
+
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -549,7 +566,7 @@ const StationInfo = () => {
                 <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
               </Box>
             </Popup>
-            <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>
+            {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
           </Marker>
         ))}
         <ChangeMapCenter position={position} />

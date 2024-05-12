@@ -16,6 +16,7 @@ import {
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Container,
   Divider,
@@ -168,6 +169,7 @@ const StationGroupInfo = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
+  const [disableTooltip, setDisableTooltip] = useState(false);
 
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
@@ -360,6 +362,21 @@ const StationGroupInfo = () => {
         <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
 
+      <Box sx={{ textAlign: "right" }}>
+        <Button
+          color="inherit"
+          onClick={() => setDisableTooltip(!disableTooltip)}
+          sx={{ padding: 0, display: "inline-block" }}
+        >
+          <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
+          <Checkbox
+          size="small"
+          checked={disableTooltip}
+          sx={{ padding: 0 }}
+        />
+        </Button>
+      </Box>
+
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -378,6 +395,7 @@ const StationGroupInfo = () => {
                 <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
               </Box>
             </Popup>
+            {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
           </Marker>
         ))}
         <ChangeMapCenter position={position} />
