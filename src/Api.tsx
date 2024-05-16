@@ -356,6 +356,43 @@ export const usePrefList = (): UseQueryResult<Prefecture[]> => {
 };
 
 
+export type PathData = {
+  type: "Feature",
+  geometry: {
+    type: "MultiLineString",
+    coordinates: [number, number][][],
+  },
+  properties: Railway,
+};
+
+// 路線の線路のpathを取得
+export const useRailPath = (railwayCode: number | undefined): UseQueryResult<PathData> => {
+  return useQuery<PathData>({
+    queryKey: ["RailPath", railwayCode],
+    queryFn: async() => {
+      const { data } = await axios.get<PathData>("/api/railpaths/" + railwayCode, ngrok_header);
+      return data;
+    },
+    enabled: railwayCode !== undefined,
+    staleTime: Infinity,
+  });
+};
+
+
+// 会社に属する全路線の線路のpathを取得
+export const useRailPathByCompanyCode = (companyCode: number | undefined): UseQueryResult<PathData[]> => {
+  return useQuery<PathData[]>({
+    queryKey: ["RailPathList", companyCode],
+    queryFn: async() => {
+      const { data } = await axios.get<PathData[]>("/api/pathslist/" + companyCode, ngrok_header);
+      return data;
+    },
+    enabled: companyCode !== undefined,
+    staleTime: Infinity,
+  });
+};
+
+
 export type StationHistory = {
   stationCode: number,
   stationGroupCode: number,

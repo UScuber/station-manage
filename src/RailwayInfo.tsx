@@ -7,9 +7,9 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { Station, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
-import { AroundTime, CustomLink } from "./components";
-import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import { Station, useRailPath, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
+import { AroundTime, CustomLink, StationMapGeojson } from "./components";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
 
@@ -61,6 +61,9 @@ const RailwayInfo = () => {
 
   const railwayProgressQuery = useRailwayProgress(railwayCode);
   const railwayProgress = railwayProgressQuery.data;
+
+  const railwayPathQuery = useRailPath(railwayCode);
+  const railwayPath = railwayPathQuery.data;
 
   if(railway.isError || stationsQuery.isError){
     return (
@@ -147,35 +150,15 @@ const RailwayInfo = () => {
         ))}
       </Box>
 
-      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }}>
+
+      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }} renderer={Leaflet.canvas()}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList.map(item => (
-          item.left.map(code => (
-            <Polyline
-              pathOptions={{ color: "#" + (info.railwayColor ?? "808080") }}
-              weight={8}
-              positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]}
-              key={code}
-            />
-          ))
-        ))}
-        {stationList.map(item => (
-          <CircleMarker
-            center={[item.latitude, item.longitude]}
-            pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
-            radius={6}
-            key={item.stationCode}
-          >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/station/" + item.stationCode}>{item.stationName}</Link>
-              </Box>
-            </Popup>
-          </CircleMarker>
-        ))}
+        {railwayPath && (
+          <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
+        )}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
       </MapContainer>
     </Container>

@@ -5,10 +5,12 @@ import {
   Station,
   StationHistoryData,
   useDeleteStationHistoryMutation,
+  useRailPath,
   useSearchKNearestStationGroups,
   useSendStationStateMutation,
   useStationAllHistory,
   useStationInfo,
+  useStationsInfoByRailwayCode,
 } from "./Api";
 import {
   Box,
@@ -31,6 +33,7 @@ import {
   Radio,
   FormControl,
   FormHelperText,
+  Checkbox,
 } from "@mui/material";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
@@ -42,7 +45,7 @@ import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-picker
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ja";
-import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "./components";
+import { AccessButton, AroundTime, Collapser, ConfirmDialog, StationMapGeojson, RespStationName } from "./components";
 import getDateString from "./utils/getDateString";
 
 
@@ -197,6 +200,7 @@ const StationInfo = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
+  const [disableTooltip, setDisableTooltip] = useState(false);
 
   const station = useStationInfo(stationCode, (data: Station) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
@@ -217,6 +221,11 @@ const StationInfo = () => {
     setDeleteLoading(false);
   });
   const stationHistory = stationHistoryQuery.data;
+
+  const stationsListQuery = useStationsInfoByRailwayCode(info?.railwayCode);
+  const stationList = stationsListQuery.data;
+  const railwayPathQuery = useRailPath(info?.railwayCode);
+  const railwayPath = railwayPathQuery.data;
 
   const mutation = useSendStationStateMutation();
   const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
@@ -471,11 +480,29 @@ const StationInfo = () => {
         <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
       </Box>
 
+      <Box sx={{ textAlign: "right" }}>
+        <Button
+          color="inherit"
+          onClick={() => setDisableTooltip(!disableTooltip)}
+          sx={{ padding: 0, color: "gray", display: "inline-block" }}
+        >
+          <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
+          <Checkbox
+          size="small"
+          checked={disableTooltip}
+          sx={{ padding: 0 }}
+        />
+        </Button>
+      </Box>
+
       <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {stationList && railwayPath && (
+          <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
+        )}
         <Marker position={position}>
           <Popup>
             <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
@@ -489,6 +516,7 @@ const StationInfo = () => {
                 <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
               </Box>
             </Popup>
+            {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
           </Marker>
         ))}
         <ChangeMapCenter position={position} />

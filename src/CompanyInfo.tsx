@@ -7,11 +7,11 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { Railway, useCompanyInfo, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
-import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import { Railway, useCompanyInfo, useRailPathByCompanyCode, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
-import { CircleProgress, CustomLink } from "./components";
+import { CircleProgress, CustomLink, StationMapGeojson } from "./components";
 
 
 const FitMapZoom = (
@@ -80,6 +80,9 @@ const CompanyInfo = () => {
   const stationsQuery = useStationsInfoByCompanyCode(companyCode);
   const stationList = stationsQuery.data;
 
+  const railwayPathQuery = useRailPathByCompanyCode(companyCode);
+  const railwayPath = railwayPathQuery.data;
+
   if(companyQuery.isError || railwaysQuery.isError || stationsQuery.isError){
     return (
       <Container>
@@ -130,36 +133,9 @@ const CompanyInfo = () => {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stationList.map(item => (
-          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/railway/" + item.railwayCode}>{item.railwayName}</Link>
-              </Box>
-            </Popup>
-            {item.left.map(code => (
-              <Polyline
-                key={code}
-                weight={8}
-                positions={[stationsPositionMap[item.stationCode], stationsPositionMap[code]]}
-              />
-            ))}
-          </FeatureGroup>
-        ))}
-        {stationList.map(item => (
-          <CircleMarker
-            center={[item.latitude, item.longitude]}
-            pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
-            radius={6}
-            key={item.stationCode}
-          >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/station/" + item.stationCode}>{item.stationName}</Link>
-              </Box>
-            </Popup>
-          </CircleMarker>
-        ))}
+        {railwayPath && (
+          <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
+        )}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
       </MapContainer>
     </Container>

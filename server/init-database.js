@@ -1,6 +1,7 @@
 const fs = require("fs");
 const sqlite3 = require("better-sqlite3");
 const { parse } = require("csv-parse/sync");
+const { RailPaths } = require("./railPaths");
 require("dotenv").config();
 
 if(!fs.existsSync("data")){
@@ -103,6 +104,9 @@ const station_data =
   })));
 
 
+const railPaths = new RailPaths(station_railway_data.nextStations, station_data);
+
+
 if(fs.existsSync("./station.db")) fs.rmSync("./station.db");
 
 const db = sqlite3("./station.db");
@@ -128,35 +132,35 @@ console.log("Insert into DB");
 db.transaction(() => {
   // Companies
   db.prepare(`
-  CREATE TABLE Companies(
-    companyCode INTEGER,
-    companyName VARCHAR(64),
-    formalName VARCHAR(64),
-    PRIMARY KEY (companyCode)
-  )
+    CREATE TABLE Companies(
+      companyCode INTEGER,
+      companyName VARCHAR(64),
+      formalName VARCHAR(64),
+      PRIMARY KEY (companyCode)
+    )
   `).run();
 
   // Railways
   db.prepare(`
-  CREATE TABLE Railways(
-    railwayCode INTEGER,
-    railwayName VARCHAR(64) NOT NULL,
-    formalName VARCHAR(64) NOT NULL,
-    companyCode INTEGER,
-    railwayKana VARCHAR(64),
-    railwayColor VARCHAR(6),
-    PRIMARY KEY (railwayCode)
-    FOREIGN KEY (companyCode) REFERENCES Companies(companyCode)
-  )
+    CREATE TABLE Railways(
+      railwayCode INTEGER,
+      railwayName VARCHAR(64) NOT NULL,
+      formalName VARCHAR(64) NOT NULL,
+      companyCode INTEGER,
+      railwayKana VARCHAR(64),
+      railwayColor VARCHAR(6),
+      PRIMARY KEY (railwayCode)
+      FOREIGN KEY (companyCode) REFERENCES Companies(companyCode)
+    )
   `).run();
 
   // Prefectures
   db.prepare(`
-  CREATE TABLE Prefectures(
-    code INTEGER,
-    name VARCHAR(4),
-    PRIMARY KEY (code)
-  )
+    CREATE TABLE Prefectures(
+      code INTEGER,
+      name VARCHAR(4),
+      PRIMARY KEY (code)
+    )
   `).run();
   prefecture.forEach(data => {
     db.prepare("INSERT INTO Prefectures VALUES(?,?)").run(
@@ -166,67 +170,80 @@ db.transaction(() => {
 
   // StationGroups
   db.prepare(`
-  CREATE TABLE StationGroups(
-    stationGroupCode INTEGER,
-    stationName VARCHAR(80) NOT NULL,
-    latitude DOUBLE PRECISION NOT NULL,
-    longitude DOUBLE PRECISION NOT NULL,
-    prefCode INTEGER,
-    kana VARCHAR(80),
-    date DATE,
-    PRIMARY KEY (stationGroupCode)
-    FOREIGN KEY (prefCode) REFERENCES Prefectures(code)
-  )
+    CREATE TABLE StationGroups(
+      stationGroupCode INTEGER,
+      stationName VARCHAR(80) NOT NULL,
+      latitude DOUBLE PRECISION NOT NULL,
+      longitude DOUBLE PRECISION NOT NULL,
+      prefCode INTEGER,
+      kana VARCHAR(80),
+      date DATE,
+      PRIMARY KEY (stationGroupCode)
+      FOREIGN KEY (prefCode) REFERENCES Prefectures(code)
+    )
   `).run();
 
   // Stations
   db.prepare(`
-  CREATE TABLE Stations(
-    stationCode INTEGER,
-    stationGroupCode INTEGER,
-    railwayCode INTEGER,
-    latitude DOUBLE PRECISION NOT NULL,
-    longitude DOUBLE PRECISION NOT NULL,
-    getDate DATE,
-    passDate DATE,
-    PRIMARY KEY (stationCode),
-    FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode),
-    FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
-  )
+    CREATE TABLE Stations(
+      stationCode INTEGER,
+      stationGroupCode INTEGER,
+      railwayCode INTEGER,
+      latitude DOUBLE PRECISION NOT NULL,
+      longitude DOUBLE PRECISION NOT NULL,
+      getDate DATE,
+      passDate DATE,
+      PRIMARY KEY (stationCode),
+      FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode),
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
+    )
   `).run();
 
   // StationHistory
   db.prepare(`
-  CREATE TABLE StationHistory(
-    stationCode INTEGER,
-    date DATE,
-    state INTEGER,
-    PRIMARY KEY (stationCode, date, state),
-    FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
-  )
+    CREATE TABLE StationHistory(
+      stationCode INTEGER,
+      date DATE,
+      state INTEGER,
+      PRIMARY KEY (stationCode, date, state),
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+    )
   `).run();
 
   // StationGroupHistory
   db.prepare(`
-  CREATE TABLE StationGroupHistory(
-    stationGroupCode INTEGER,
-    date DATE,
-    PRIMARY KEY (stationGroupCode, date),
-    FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
-  )
+    CREATE TABLE StationGroupHistory(
+      stationGroupCode INTEGER,
+      date DATE,
+      PRIMARY KEY (stationGroupCode, date),
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
+    )
   `).run();
 
   // NextStations
   db.prepare(`
-  CREATE TABLE NextStations(
-    stationCode INTEGER,
-    nextStationCode INTEGER,
-    direction INTEGER,
-    PRIMARY KEY (stationCode, nextStationCode, direction)
-    FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
-    FOREIGN KEY (nextStationCode) REFERENCES Stations(stationCode)
-  )
-`).run();
+    CREATE TABLE NextStations(
+      stationCode INTEGER,
+      nextStationCode INTEGER,
+      direction INTEGER,
+      PRIMARY KEY (stationCode, nextStationCode, direction)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+      FOREIGN KEY (nextStationCode) REFERENCES Stations(stationCode)
+    )
+  `).run();
+
+  // RailPahts
+  db.prepare(`
+    CREATE TABLE RailPaths(
+      railwayCode INTEGER,
+      pathId INTEGER,
+      ord INTEGER,
+      latitude DOUBLE PRECISION NOT NULL,
+      longitude DOUBLE PRECIION NOT NULL,
+      PRIMARY KEY (railwayCode, pathId, ord)
+      FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode)
+    )
+  `).run();
 })();
 
 
@@ -295,6 +312,19 @@ db.transaction(() => {
     });
   });
 
+  // RailPaths
+  const stmt = db.prepare("INSERT INTO RailPaths VALUES(?,?,?,?,?)");
+  railPaths.getRailwayList().map(railwayCode => {
+    railPaths.getPaths(railwayCode).map((path, pathId) => {
+      path.map((cord, ord) => stmt.run(
+        railwayCode,
+        pathId, 
+        ord, 
+        cord[0],
+        cord[1]
+      ));
+    });
+  });
 })();
 
 db.close();
