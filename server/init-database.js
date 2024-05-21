@@ -244,6 +244,16 @@ db.transaction(() => {
       FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode)
     )
   `).run();
+
+  // Users
+  db.prepare(`
+    CREATE TABLE Users(
+      userId CHAR(32),
+      userName VARCHAR(64),
+      hashedPass VARCHAR(64),
+      sessionId CHAR(32),
+    )
+  `).run();
 })();
 
 
