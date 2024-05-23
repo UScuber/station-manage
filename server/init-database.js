@@ -249,9 +249,11 @@ db.transaction(() => {
   db.prepare(`
     CREATE TABLE Users(
       userId CHAR(32),
-      userName VARCHAR(64),
-      hashedPass VARCHAR(64),
-      sessionId CHAR(32),
+      userName VARCHAR(64) NOT NULL,
+      userEmail VARCHAR(64) NOT NULL UNIQUE,
+      hash VARCHAR(64) NOT NULL,
+      sessionId CHAR(64) NOT NULL,
+      PRIMARY KEY (userId)
     )
   `).run();
 })();
