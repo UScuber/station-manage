@@ -66,13 +66,13 @@ class Users {
     return true;
   }
 
-  logout(userId){
+  logout(sessionId){
     const new_sessionId = this.genSessionId();
     try{
       this.db.prepare(`
         UPDATE Users SET sessionId = ?
-        WHERE userId = ?
-      `).run(new_sessionId, userId);
+        WHERE sessionId = ?
+      `).run(new_sessionId, sessionId);
     }catch(err){
       console.error(err);
     }

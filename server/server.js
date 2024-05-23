@@ -2,6 +2,7 @@ const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("better-sqlite3");
+const { Users } = require("./user");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -830,7 +831,122 @@ app.get("/api/pathslist/:companyCode", accessLog, (req, res, next) => {
 });
 
 
-///// History
+
+
+
+////////// User //////////
+
+const usersManager = new Users(db);
+
+
+// 新規登録
+app.get("/api/signin", accessLog, (req, res, next) => {
+  const userName = req.body.userName;
+  const userEmail = req.body.userEmail;
+  const password = req.body.password;
+
+  if(!userName || !userEmail || !password){
+    next(new Error("Invalid input"));
+    return;
+  }
+  try{
+    const userData = db.prepare(`
+      SELECT * FROM Users
+      WHERE userEmail = ?
+    `).get(userEmail);
+    if(userData){
+      next(new Error("Invalid input"));
+      return;
+    }
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  const sessionId = usersManager.signin(userName, userEmail, password);
+  if(!sessionId){
+    next(new Error("Server Error"));
+    return;
+  }
+  res.cookie("sessionId", sessionId, {
+    maxAge: 1000*60*60*24*30,
+    httpOnly: true,
+    secure: true,
+  });
+  res.end("OK");
+});
+
+
+// ログイン
+app.get("/api/login", accessLog, (req, res, next) => {
+  const userEmail = req.body.userEmail;
+  const password = req.body.password;
+
+  if(!userEmail || !password){
+    next(new Error("Invalid input"));
+    return;
+  }
+  try{
+    const userData = db.prepare(`
+      SELECT * FROM Users
+      WHERE userEmail = ?
+    `).get(userEmail);
+    if(userData){
+      next(new Error("Invalid input"));
+      return;
+    }
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  const sessionId = usersManager.login(userEmail, password);
+  if(!sessionId){
+    next(new Error("Server Error"));
+    return;
+  }
+  res.cookie("sessionId", sessionId, {
+    maxAge: 1000*60*60*24*20, // 20 days
+    httpOnly: true,
+    secure: true,
+  });
+  res.end("OK");
+});
+
+// check
+app.get("/api/status", accessLog, (req, res, next) => {
+  const sessionId = req.cookies.sessionId;
+  if(!sessionId){
+    next(new Error("Invalid input"));
+    return;
+  }
+  res.json({
+    authorized: usersManager.status(sessionId),
+  });
+});
+
+// logout
+app.get("/api/logout", accessLog, (req, res, next) => {
+  const sessionId = req.cookies.sessionId;
+  if(!sessionId){
+    next(new Error("Invalid input"));
+    return;
+  }
+  usersManager.logout(sessionId);
+  res.cookie("sessionId", "", {
+    maxAge: 0,
+    httpOnly: true,
+    secure: true,
+  });
+});
+
+
+
+
+
+
+////////// History //////////
+
 
 // 全体の乗降/通過の履歴を区間取得
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
