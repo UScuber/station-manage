@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("better-sqlite3");
 const { Users } = require("./user");
+const cookie = require("cookie-parser");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -31,6 +32,9 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200,
 }));
+
+app.use(cookie());
+
 
 const db = sqlite3(db_path);
 db.pragma("journal_mode = WAL");
@@ -873,7 +877,7 @@ app.get("/api/signin", accessLog, (req, res, next) => {
     httpOnly: true,
     secure: true,
   });
-  res.end("OK");
+  res.json({ auth: true });
 });
 
 
@@ -891,7 +895,7 @@ app.get("/api/login", accessLog, (req, res, next) => {
       SELECT * FROM Users
       WHERE userEmail = ?
     `).get(userEmail);
-    if(userData){
+    if(!userData){
       next(new Error("Invalid input"));
       return;
     }
@@ -902,7 +906,7 @@ app.get("/api/login", accessLog, (req, res, next) => {
   }
   const sessionId = usersManager.login(userEmail, password);
   if(!sessionId){
-    next(new Error("Server Error"));
+    res.json({ auth: false });
     return;
   }
   res.cookie("sessionId", sessionId, {
@@ -910,18 +914,25 @@ app.get("/api/login", accessLog, (req, res, next) => {
     httpOnly: true,
     secure: true,
   });
-  res.end("OK");
+  res.json({ auth: true });
 });
 
 // check
 app.get("/api/status", accessLog, (req, res, next) => {
   const sessionId = req.cookies.sessionId;
   if(!sessionId){
-    next(new Error("Invalid input"));
+    res.json({
+      auth: false,
+      userName: undefined,
+      userEmail: undefined,
+    })
     return;
   }
+  const userData = usersManager.status(sessionId);
   res.json({
-    authorized: usersManager.status(sessionId),
+    auth: userData !== undefined,
+    userName: userData?.userName,
+    userEmail: userData?.userEmail,
   });
 });
 
@@ -938,6 +949,7 @@ app.get("/api/logout", accessLog, (req, res, next) => {
     httpOnly: true,
     secure: true,
   });
+  res.end("OK");
 });
 
 

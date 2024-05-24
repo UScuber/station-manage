@@ -51,19 +51,20 @@ class Users {
 
   // login状態を判定
   status(sessionId){
+    let userData;
     try{
-      const userData = this.db.prepare(`
+      userData = this.db.prepare(`
         SELECT * FROM Users
         WHERE sessionId = ?
       `).get(sessionId);
       if(!userData){
-        return false;
+        return undefined;
       }
     }catch(err){
       console.error(err);
-      return false;
+      return undefined;
     }
-    return true;
+    return userData;
   }
 
   logout(sessionId){

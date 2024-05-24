@@ -28,7 +28,10 @@ axios.interceptors.response.use(res => {
   return res;
 });
 
-const ngrok_header = { headers: { "ngrok-skip-browser-warning": "a" } };
+const ngrok_header = {
+  headers: { "ngrok-skip-browser-warning": "a" },
+  withCredentials: true,
+};
 
 const convert_date = (date: Date) => {
   return new Date(date).toLocaleString(
@@ -391,6 +394,101 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined): UseQu
     staleTime: Infinity,
   });
 };
+
+
+export type User = {
+  userName: string,
+  userEmail: string,
+  password?: string,
+};
+
+// 新規登録
+export const useSigninMutation = (
+  onSuccessFn?: (authorized: boolean) => unknown
+) => {
+  return useMutation({
+    mutationFn: async(req: User) => {
+      const { data } = await axios.get<Auth>("/api/signin", {
+        headers: {
+          ...ngrok_header.headers,
+          ...req,
+        }
+      });
+      return data;
+    },
+    onSuccess: (data: Auth, variables: User) => {
+      onSuccessFn && onSuccessFn(data.auth);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    }
+  });
+};
+
+
+export type Auth = {
+  auth: boolean,
+  userName: string | undefined,
+  userEmail: string | undefined,
+};
+
+// ログイン
+export const useLoginMutation = (
+  onSuccessFn?: (authorized: boolean) => unknown
+) => {
+  return useMutation({
+    mutationFn: async(req: User) => {
+      const { data } = await axios.get<Auth>("/api/login", {
+        headers: {
+          ...ngrok_header.headers,
+          ...req,
+        }
+      });
+      return data;
+    },
+    onSuccess: (data: Auth, variables: User) => {
+      onSuccessFn && onSuccessFn(data.auth);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    }
+  });
+};
+
+
+// check status
+export const useUserStatus = (
+  onSuccessFn?: (data: Auth) => unknown
+) => {
+  return useQuery<Auth>({
+    queryKey: ["UserAccess"],
+    queryFn: async() => {
+      const { data } = await axios.get<Auth>("/api/status", ngrok_header);
+      onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+  });
+};
+
+
+// logout
+export const useLogoutMutation = (
+  onSuccessFn?: () => unknown
+) => {
+  return useMutation({
+    mutationFn: async() => {
+      const { data } = await axios.get<string>("/api/logout", ngrok_header);
+      return data;
+    },
+    onSuccess: (data: string, variables: User) => {
+      onSuccessFn && onSuccessFn();
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    }
+  });
+};
+
 
 
 export type StationHistory = {
