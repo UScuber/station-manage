@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CssBaseline, ThemeProvider, Toolbar, createTheme, styled } from "@mui/material";
 import Header from "./Header";
+import Signin from "./pages/Signin";
 import Top from "./Top";
 import Footer from "./Footer";
 import StationList from "./StationList";
@@ -85,6 +86,7 @@ const AppChild = () => {
           <ThinToolbar />
           <Routes>
             <Route path="/" element={<Top />} />
+            <Route path="/signin" element={<Signin />} />
             <Route path="/stationList" element={<StationList />} />
             <Route path="/station/:stationCode" element={<StationInfo />} />
             <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
