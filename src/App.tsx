@@ -17,6 +17,7 @@ import CompanyInfo from "./CompanyInfo";
 import PrefectureInfo from "./PrefectureInfo";
 import PrefectureList from "./PrefectureList";
 import HistoryMap from "./HistoryMap";
+import { AuthProvider, getAuth } from "./auth/auth";
 
 
 declare module "@mui/material/styles" {
@@ -70,11 +71,13 @@ const ThinToolbar = styled(Toolbar)(({ theme }) => ({
   minHeight: 25,
 }));
 
-const App = () => {
-  const queryClient = new QueryClient();
+
+
+const AppChild = () => {
+  const auth = getAuth();
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <AuthProvider value={auth}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
@@ -99,6 +102,17 @@ const App = () => {
           <Footer />
         </BrowserRouter>
       </ThemeProvider>
+    </AuthProvider>
+  );
+};
+
+
+const App = () => {
+  const queryClient = new QueryClient();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppChild />
     </QueryClientProvider>
   );
 };
