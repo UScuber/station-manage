@@ -404,7 +404,7 @@ export type User = {
 
 // 新規登録
 export const useSigninMutation = (
-  onSuccessFn?: (authorized: boolean) => unknown
+  callbackFn?: (authorized: boolean) => unknown
 ) => {
   return useMutation({
     mutationFn: async(req: User) => {
@@ -417,9 +417,10 @@ export const useSigninMutation = (
       return data;
     },
     onSuccess: (data: Auth, variables: User) => {
-      onSuccessFn && onSuccessFn(data.auth);
+      callbackFn && callbackFn(data.auth);
     },
     onError: (err: Error) => {
+      callbackFn && callbackFn(false);
       console.error(err);
     }
   });
