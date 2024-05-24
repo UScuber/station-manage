@@ -10,7 +10,7 @@ import {
 import { UseMutationResult } from "@tanstack/react-query";
 
 
-type AuthInfo = {
+export type AuthInfo = {
   signin: (onSuccessFn?: (authorized: boolean) => unknown) => any,
   login: (onSuccessFn?: (authorized: boolean) => unknown) => UseMutationResult<Auth, Error, User, unknown>,
   logout: (onSuccessFn?: () => unknown) => UseMutationResult<string, Error, User, unknown>,
