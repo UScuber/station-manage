@@ -1,6 +1,6 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, useNavigation, useSearchParams } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CssBaseline, ThemeProvider, Toolbar, createTheme, styled } from "@mui/material";
+import { Alert, Box, CssBaseline, ThemeProvider, Toolbar, Typography, createTheme, styled } from "@mui/material";
 import Header from "./Header";
 import Signin from "./pages/Signin";
 import Top from "./Top";
@@ -19,6 +19,7 @@ import PrefectureInfo from "./PrefectureInfo";
 import PrefectureList from "./PrefectureList";
 import HistoryMap from "./HistoryMap";
 import { AuthProvider, getAuth } from "./auth/auth";
+import { memo, useEffect, useState } from "react";
 
 
 declare module "@mui/material/styles" {
@@ -68,10 +69,27 @@ theme.typography.h3 = {
   },
 };
 
-const ThinToolbar = styled(Toolbar)(({ theme }) => ({
-  minHeight: 25,
-}));
 
+const Notification = memo(() => {
+  const location = useLocation();
+  const [state, setState] = useState<{ message?: string, url: string } | null>(location.state as { message?: string, url: string });
+
+  useEffect(() => {
+    console.log(location.pathname, state);
+    if(state && state.url !== location.pathname){
+      setState({ url: state.url });
+    }else if(state){
+      window.history.pushState({}, "", "/");
+    }
+  }, [location]);
+
+  if(!state || !state.message || state.url !== location.pathname){
+    return <Box sx={{ mt: 8 }}></Box>;
+  }
+  return (
+    <Alert severity="success" sx={{ mt: 1.3, mb: 0.7 }}>{state.message}</Alert>
+  );
+});
 
 
 const AppChild = () => {
@@ -83,7 +101,7 @@ const AppChild = () => {
         <CssBaseline />
         <BrowserRouter>
           <Header />
-          <ThinToolbar />
+          <Notification />
           <Routes>
             <Route path="/" element={<Top />} />
             <Route path="/signin" element={<Signin />} />

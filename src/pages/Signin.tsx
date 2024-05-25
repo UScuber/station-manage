@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -25,16 +25,19 @@ const Signin = () => {
   const nameRef = useRef<HTMLFormElement | null>(null);
   const emailRef = useRef<HTMLFormElement | null>(null);
   const passRef = useRef<HTMLFormElement | null>(null);
+  const pass2Ref = useRef<HTMLFormElement | null>(null);
   const [nameHelperText, setNameHelperText] = useState("");
   const [emailHelperText, setEmailHelperText] = useState("");
   const [passHelperText, setPassHelperText] = useState("");
+  const [pass2HelperText, setPass2HelperText] = useState("");
 
   const navigation = useNavigate();
-  const { signin } = useAuth();
+  const { signin, isAuthenticated } = useAuth();
   const signinMutation = signin(
     (authorized) => {
       if(authorized){
-        navigation("/");
+        navigation("/", { state: { message: "サインインに成功しました", url: "/" } });
+        window.location.href = "/";
       }else{
         setHelperText("サインインに失敗しました");
       }
@@ -44,15 +47,21 @@ const Signin = () => {
 
   const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if(!emailRef.current || !nameRef.current || !passRef.current) return;
+    if(!emailRef.current || !nameRef.current || !passRef.current || !pass2Ref.current) return;
+
+    let count = 0;
 
     const name = nameRef.current.value;
     if(name === "") setNameHelperText("ユーザー名を入力してください");
-    else setNameHelperText("");
+    else{
+      setNameHelperText("");
+      count++;
+    }
 
     const email = emailRef.current.value;
     if(/^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/.test(email)){
       setEmailHelperText("");
+      count++;
     }else if(email === "") setEmailHelperText("メールアドレスを入力してください");
     else setEmailHelperText("正しいメールアドレスを入力してください");
 
@@ -60,9 +69,21 @@ const Signin = () => {
     if(pass === "") setPassHelperText("パスワードを入力してください");
     else if(pass.length < 8 || pass.length > 1024) setPassHelperText("パスワードは8文字以上1024文字以内です");
     else if(!/[a-zA-Z0-9!;:@'"\+\{\}\[\]~\|\^\-=\(\)_\?\.,<>#\$%&`\*]+/.test(pass)) setEmailHelperText("使用できるのは英大小文字、半角数字、記号のみです");
-    else setPassHelperText("");
+    else{
+      setPassHelperText("");
+      count++;
+    }
 
-    if(!nameHelperText && !emailHelperText && !passHelperText){
+    const pass2 = pass2Ref.current.value;
+    if(pass2 === "") setPass2HelperText("パスワードを入力してください");
+    else if(pass !== pass2) setPass2HelperText("パスワードが一致しません");
+    else{
+      setPass2HelperText("");
+      count++;
+    }
+
+    // submit
+    if(count === 4){
       setLoading(true);
       signinMutation.mutate({
         userName: name,
@@ -71,6 +92,12 @@ const Signin = () => {
       });
     }
   };
+
+  useEffect(() => {
+    if(isAuthenticated){
+      navigation("/");
+    }
+  }, [isAuthenticated]);
 
   return (
     <Container sx={{ textAlign: "center" }}>
@@ -113,6 +140,30 @@ const Signin = () => {
                     aria-label="toggle password visibility"
                     onClick={handleClickShowPass}
                     edge="end"
+                    tabIndex={-1}
+                  >
+                    {showPass ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
+          <TextField
+            id="password-confirm"
+            label="Password(確認)"
+            autoComplete="password"
+            type={showPass ? "text" : "password"}
+            inputRef={pass2Ref}
+            helperText={pass2HelperText || " "}
+            error={!!pass2HelperText}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleClickShowPass}
+                    edge="end"
+                    tabIndex={-1}
                   >
                     {showPass ? <VisibilityOff /> : <Visibility />}
                   </IconButton>

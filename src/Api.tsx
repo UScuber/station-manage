@@ -2,6 +2,7 @@ import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack
 import axios from "axios";
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASEURL;
+axios.defaults.withCredentials = true;
 
 // 日付をDate型に変換する
 axios.interceptors.response.use(res => {
@@ -30,7 +31,6 @@ axios.interceptors.response.use(res => {
 
 const ngrok_header = {
   headers: { "ngrok-skip-browser-warning": "a" },
-  withCredentials: true,
 };
 
 const convert_date = (date: Date) => {
@@ -408,11 +408,9 @@ export const useSigninMutation = (
 ) => {
   return useMutation({
     mutationFn: async(req: User) => {
-      const { data } = await axios.get<Auth>("/api/signin", {
-        headers: {
-          ...ngrok_header.headers,
-          ...req,
-        }
+      const { data } = await axios.post<Auth>("/api/signin", {
+        headers: ngrok_header.headers,
+        ...req,
       });
       return data;
     },

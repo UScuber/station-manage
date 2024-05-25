@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("better-sqlite3");
 const { Users } = require("./user");
-const cookie = require("cookie-parser");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -32,8 +32,8 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200,
 }));
-
-app.use(cookie());
+app.use(express.json());
+app.use(cookieParser());
 
 
 const db = sqlite3(db_path);
@@ -844,7 +844,7 @@ const usersManager = new Users(db);
 
 
 // 新規登録
-app.get("/api/signin", accessLog, (req, res, next) => {
+app.post("/api/signin", accessLog, (req, res, next) => {
   const userName = req.body.userName;
   const userEmail = req.body.userEmail;
   const password = req.body.password;
@@ -859,7 +859,7 @@ app.get("/api/signin", accessLog, (req, res, next) => {
       WHERE userEmail = ?
     `).get(userEmail);
     if(userData){
-      next(new Error("Invalid input"));
+      res.json({ auth: false });
       return;
     }
   }catch(err){
