@@ -438,10 +438,8 @@ export const useLoginMutation = (
   return useMutation({
     mutationFn: async(req: User) => {
       const { data } = await axios.get<Auth>("/api/login", {
-        headers: {
-          ...ngrok_header.headers,
-          ...req,
-        }
+        headers: ngrok_header.headers,
+        ...req,
       });
       return data;
     },

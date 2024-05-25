@@ -1,8 +1,9 @@
-import { BrowserRouter, Route, Routes, useLocation, useNavigation, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Alert, Box, CssBaseline, ThemeProvider, Toolbar, Typography, createTheme, styled } from "@mui/material";
+import { Alert, Box, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import Header from "./Header";
 import Signin from "./pages/Signin";
+import Login from "./pages/Login";
 import Top from "./Top";
 import Footer from "./Footer";
 import StationList from "./StationList";
@@ -75,7 +76,6 @@ const Notification = memo(() => {
   const [state, setState] = useState<{ message?: string, url: string } | null>(location.state as { message?: string, url: string });
 
   useEffect(() => {
-    console.log(location.pathname, state);
     if(state && state.url !== location.pathname){
       setState({ url: state.url });
     }else if(state){
@@ -105,6 +105,7 @@ const AppChild = () => {
           <Routes>
             <Route path="/" element={<Top />} />
             <Route path="/signin" element={<Signin />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/stationList" element={<StationList />} />
             <Route path="/station/:stationCode" element={<StationInfo />} />
             <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
