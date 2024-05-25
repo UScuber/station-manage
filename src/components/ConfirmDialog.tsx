@@ -1,13 +1,14 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 
 const ConfirmDialog = <T,>(
-  { open, selectedValue, onClose, title, descriptionFn }
+  { open, selectedValue, onClose, title, descriptionFn, deleteButtonText }
   :{
     open: boolean,
     selectedValue: T | undefined,
     onClose: (value: T | undefined) => void,
     title: string,
     descriptionFn: (value: T) => string,
+    deleteButtonText?: string,
   }
 ) => {
   return (
@@ -25,7 +26,7 @@ const ConfirmDialog = <T,>(
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose(undefined)} autoFocus>キャンセル</Button>
-        <Button color="error" onClick={() => onClose(selectedValue)}>削除</Button>
+        <Button color="error" onClick={() => onClose(selectedValue)}>{deleteButtonText ?? "削除"}</Button>
       </DialogActions>
     </Dialog>
   );

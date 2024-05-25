@@ -4,6 +4,7 @@ import { Alert, Box, CssBaseline, ThemeProvider, createTheme } from "@mui/materi
 import Header from "./Header";
 import Signin from "./pages/Signin";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
 import Top from "./Top";
 import Footer from "./Footer";
 import StationList from "./StationList";
@@ -106,6 +107,7 @@ const AppChild = () => {
             <Route path="/" element={<Top />} />
             <Route path="/signin" element={<Signin />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/stationList" element={<StationList />} />
             <Route path="/station/:stationCode" element={<StationInfo />} />
             <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
