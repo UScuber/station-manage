@@ -882,7 +882,7 @@ app.post("/api/signin", accessLog, (req, res, next) => {
 
 
 // ログイン
-app.get("/api/login", accessLog, (req, res, next) => {
+app.post("/api/login", accessLog, (req, res, next) => {
   const userEmail = req.body.userEmail;
   const password = req.body.password;
 
