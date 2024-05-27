@@ -844,7 +844,7 @@ const usersManager = new Users(db);
 
 
 // 新規登録
-app.post("/api/signin", accessLog, (req, res, next) => {
+app.post("/api/signup", accessLog, (req, res, next) => {
   const userName = req.body.userName;
   const userEmail = req.body.userEmail;
   const password = req.body.password;
@@ -867,7 +867,7 @@ app.post("/api/signin", accessLog, (req, res, next) => {
     next(new Error("Server Error"));
     return;
   }
-  const sessionId = usersManager.signin(userName, userEmail, password);
+  const sessionId = usersManager.signup(userName, userEmail, password);
   if(!sessionId){
     next(new Error("Server Error"));
     return;

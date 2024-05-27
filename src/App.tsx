@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Alert, Box, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import Header from "./Header";
-import Signin from "./pages/Signin";
+import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Top from "./Top";
@@ -105,7 +105,7 @@ const AppChild = () => {
           <Notification />
           <Routes>
             <Route path="/" element={<Top />} />
-            <Route path="/signin" element={<Signin />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/stationList" element={<StationList />} />

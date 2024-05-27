@@ -4,14 +4,14 @@ import {
   User,
   useLoginMutation,
   useLogoutMutation,
-  useSigninMutation,
+  useSignupMutation,
   useUserStatus,
 } from "../Api";
 import { UseMutationResult } from "@tanstack/react-query";
 
 
 export type AuthInfo = {
-  signin: (onSuccessFn?: (authorized: boolean) => unknown) => any,
+  signup: (onSuccessFn?: (authorized: boolean) => unknown) => any,
   login: (onSuccessFn?: (authorized: boolean) => unknown) => UseMutationResult<Auth, Error, User, unknown>,
   logout: (onSuccessFn?: () => unknown) => UseMutationResult<string, Error, User, unknown>,
   isLoading: boolean,
@@ -20,7 +20,7 @@ export type AuthInfo = {
 };
 
 const AuthContext = createContext<AuthInfo>({
-  signin: useSigninMutation,
+  signup: useSignupMutation,
   login: useLoginMutation,
   logout: useLogoutMutation,
   isLoading: true,
@@ -48,7 +48,7 @@ export const getAuth = (): AuthInfo => {
   );
 
   return {
-    signin: useSigninMutation,
+    signup: useSignupMutation,
     login: useLoginMutation,
     logout: useLogoutMutation,
     isLoading: loading,

@@ -16,7 +16,7 @@ import { useAuth } from "../auth/auth";
 import { useNavigate } from "react-router-dom";
 
 
-const Signin = () => {
+const Signup = () => {
   const [showPass, setShowPass] = useState(false);
   const handleClickShowPass = () => setShowPass(show => !show);
   const [helperText, setHelperText] = useState("");
@@ -32,14 +32,14 @@ const Signin = () => {
   const [pass2HelperText, setPass2HelperText] = useState("");
 
   const navigation = useNavigate();
-  const { signin, isAuthenticated } = useAuth();
-  const signinMutation = signin(
+  const { signup, isAuthenticated } = useAuth();
+  const signupMutation = signup(
     (authorized) => {
       if(authorized){
-        navigation("/", { state: { message: "サインインに成功しました", url: "/" } });
+        navigation("/", { state: { message: "サインアップに成功しました", url: "/" } });
         window.location.href = "/";
       }else{
-        setHelperText("サインインに失敗しました");
+        setHelperText("サインアップに失敗しました");
       }
       setLoading(false);
     }
@@ -85,7 +85,7 @@ const Signin = () => {
     // submit
     if(count === 4){
       setLoading(true);
-      signinMutation.mutate({
+      signupMutation.mutate({
         userName: name,
         userEmail: email,
         password: pass,
@@ -101,7 +101,7 @@ const Signin = () => {
 
   return (
     <Container sx={{ textAlign: "center" }}>
-      <Typography variant="h4">Signin</Typography>
+      <Typography variant="h4">Signup</Typography>
       <Divider sx={{ mt: 0.5, mb: 2 }} />
 
       <form onSubmit={onSubmitForm}>
@@ -180,7 +180,7 @@ const Signin = () => {
             {loading ?
               <CircularProgress color="inherit" size={30}/>
               :
-              <Typography variant="h6" sx={{ fontSize: 18 }}>Sign in</Typography>
+              <Typography variant="h6" sx={{ fontSize: 18 }}>Sign up</Typography>
             }
           </Button>
           <FormHelperText>{helperText}</FormHelperText>
@@ -190,4 +190,4 @@ const Signin = () => {
   );
 };
 
-export default Signin;
+export default Signup;

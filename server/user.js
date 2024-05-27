@@ -8,7 +8,7 @@ class Users {
   }
 
   // 新規
-  signin(userName, userEmail, password){
+  signup(userName, userEmail, password){
     const userId = this.genSessionId();
     const rounds = crypto.randomInt(6, 10);
     const hash = bcrypt.hashSync(password, rounds);

@@ -79,7 +79,7 @@ const Header = () => {
               <Button component={Link} color="inherit" to="/login">
                 <ListItemText primary="Login" />
               </Button>
-              <Button component={Link} color="inherit" to="/signin">
+              <Button component={Link} color="inherit" to="/signup">
                 <ListItemText primary="Signup" />
               </Button>
             </>)}

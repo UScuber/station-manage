@@ -403,12 +403,12 @@ export type User = {
 };
 
 // 新規登録
-export const useSigninMutation = (
+export const useSignupMutation = (
   callbackFn?: (authorized: boolean) => unknown
 ) => {
   return useMutation({
     mutationFn: async(req: User) => {
-      const { data } = await axios.post<Auth>("/api/signin", {
+      const { data } = await axios.post<Auth>("/api/signup", {
         headers: ngrok_header.headers,
         ...req,
       });
