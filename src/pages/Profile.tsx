@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { useAuth } from "../auth/auth";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "../components";
 
 const Profile = () => {
@@ -20,8 +20,7 @@ const Profile = () => {
   const navigation = useNavigate();
   const logoutMutation = logout(
     () => {
-      navigation("/", { state: { message: "ログアウトしました", url: "/" } });
-      window.location.href = "/";
+      navigation("/", { state: { message: "ログアウトしました", url: "/" }, replace: true });
     }
   );
 

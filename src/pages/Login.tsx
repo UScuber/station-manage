@@ -32,8 +32,7 @@ const Login = () => {
   const loginMutation = login(
     (authorized) => {
       if(authorized){
-        navigation("/", { state: { message: "ログインに成功しました", url: "/" } });
-        window.location.href = "/";
+        navigation("/", { state: { message: "ログインに成功しました", url: "/" }, replace: true });
       }else{
         setHelperText("ログインに失敗しました");
       }

@@ -36,8 +36,7 @@ const Signup = () => {
   const signupMutation = signup(
     (authorized) => {
       if(authorized){
-        navigation("/", { state: { message: "サインアップに成功しました", url: "/" } });
-        window.location.href = "/";
+        navigation("/", { state: { message: "サインアップに成功しました", url: "/" }, replace: true });
       }else{
         setHelperText("サインアップに失敗しました");
       }

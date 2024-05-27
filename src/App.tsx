@@ -74,18 +74,12 @@ theme.typography.h3 = {
 
 const Notification = memo(() => {
   const location = useLocation();
-  const [state, setState] = useState<{ message?: string, url: string } | null>(location.state as { message?: string, url: string });
+  const state = location.state;
 
-  useEffect(() => {
-    if(state && state.url !== location.pathname){
-      setState({ url: state.url });
-    }else if(state){
-      window.history.pushState({}, "", "/");
-    }
-  }, [location]);
-
-  if(!state || !state.message || state.url !== location.pathname){
-    return <Box sx={{ mt: 8 }}></Box>;
+  if(!state || !state.message || !state.url || state.url !== location.pathname){
+    return (
+      <Box sx={{ mt: 8 }}></Box>
+    );
   }
   return (
     <Alert severity="success" sx={{ mt: 1.3, mb: 0.7 }}>{state.message}</Alert>
