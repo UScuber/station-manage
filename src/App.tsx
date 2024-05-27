@@ -21,7 +21,7 @@ import PrefectureInfo from "./PrefectureInfo";
 import PrefectureList from "./PrefectureList";
 import HistoryMap from "./HistoryMap";
 import { AuthProvider, getAuth } from "./auth/auth";
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 
 
 declare module "@mui/material/styles" {

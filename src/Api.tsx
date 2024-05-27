@@ -406,6 +406,7 @@ export type User = {
 export const useSignupMutation = (
   callbackFn?: (authorized: boolean) => unknown
 ) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: User) => {
       const { data } = await axios.post<Auth>("/api/signup", {
@@ -416,6 +417,7 @@ export const useSignupMutation = (
     },
     onSuccess: (data: Auth, variables: User) => {
       callbackFn && callbackFn(data.auth);
+      queryClient.invalidateQueries({ queryKey: ["UserData"] });
     },
     onError: (err: Error) => {
       callbackFn && callbackFn(false);
@@ -435,6 +437,7 @@ export type Auth = {
 export const useLoginMutation = (
   onSuccessFn?: (authorized: boolean) => unknown
 ) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: User) => {
       const { data } = await axios.post<Auth>("/api/login", {
@@ -445,6 +448,7 @@ export const useLoginMutation = (
     },
     onSuccess: (data: Auth, variables: User) => {
       onSuccessFn && onSuccessFn(data.auth);
+      queryClient.invalidateQueries({ queryKey: ["UserData"] });
     },
     onError: (err: Error) => {
       console.error(err);
@@ -458,7 +462,7 @@ export const useUserStatus = (
   onSuccessFn?: (data: Auth) => unknown
 ) => {
   return useQuery<Auth>({
-    queryKey: ["UserAccess"],
+    queryKey: ["UserData"],
     queryFn: async() => {
       const { data } = await axios.get<Auth>("/api/status", ngrok_header);
       onSuccessFn && onSuccessFn(data);
@@ -472,6 +476,7 @@ export const useUserStatus = (
 export const useLogoutMutation = (
   onSuccessFn?: () => unknown
 ) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async() => {
       const { data } = await axios.get<string>("/api/logout", ngrok_header);
@@ -479,6 +484,7 @@ export const useLogoutMutation = (
     },
     onSuccess: (data: string, variables: User) => {
       onSuccessFn && onSuccessFn();
+      queryClient.invalidateQueries({ queryKey: ["UserData"] });
     },
     onError: (err: Error) => {
       console.error(err);
