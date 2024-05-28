@@ -62,8 +62,6 @@ export type Station = {
   railwayCompany: string,
   latitude: number,
   longitude: number,
-  // getDate: Date | undefined,
-  // passDate: Date | undefined,
   prefCode: number,
   prefName: string,
   kana: string,
@@ -85,6 +83,7 @@ export const useStationInfo = (
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -98,6 +97,7 @@ export const useStationsInfoByGroupCode = (code: number | undefined): UseQueryRe
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -108,7 +108,6 @@ export type StationGroup = {
   stationName: string,
   latitude: number,
   longitude: number,
-  // date: Date | undefined,
   prefCode: number,
   prefName: string,
   kana: string,
@@ -128,6 +127,7 @@ export const useStationGroupInfo = (
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -182,6 +182,7 @@ export const useStationsInfoByRailwayCode = (
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -242,6 +243,7 @@ export const useStationsInfoByCompanyCode = (code: number | undefined): UseQuery
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -269,6 +271,7 @@ export const useStationsInfoByPrefCode = (code: number | undefined): UseQueryRes
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -422,7 +425,7 @@ export const useSignupMutation = (
     onError: (err: Error) => {
       callbackFn && callbackFn(false);
       console.error(err);
-    }
+    },
   });
 };
 
@@ -452,7 +455,7 @@ export const useLoginMutation = (
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
   });
 };
 
@@ -488,7 +491,7 @@ export const useLogoutMutation = (
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
   });
 };
 
@@ -741,7 +744,7 @@ export const useDeleteStationHistoryMutation = (
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
   });
 };
 
@@ -763,6 +766,6 @@ export const useDeleteStationGroupHistoryMutation = (
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
   });
 };
