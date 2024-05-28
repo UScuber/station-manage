@@ -3,8 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   RecordState,
   Station,
+  StationDate,
   StationHistoryData,
   useDeleteStationHistoryMutation,
+  useLatestStationHistory,
   useRailPath,
   useSearchKNearestStationGroups,
   useSendStationStateMutation,
@@ -202,14 +204,16 @@ const StationInfo = () => {
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
   const [disableTooltip, setDisableTooltip] = useState(false);
 
-  const station = useStationInfo(stationCode, (data: Station) => {
+  const station = useStationInfo(stationCode);
+  const info = station.data;
+  const latestDateQuery = useLatestStationHistory(stationCode, (data: StationDate) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
       setGetLoading(false);
     }else{
       setPassLoading(false);
     }
   });
-  const info = station.data;
+  const latestDate = latestDateQuery.data;
 
   const nearStationsQuery = useSearchKNearestStationGroups(
     info ? { lat: info.latitude, lng: info.longitude } : undefined,
@@ -327,7 +331,7 @@ const StationInfo = () => {
     );
   }
 
-  const lastAccessTime = ((info.getDate ?? 0) > (info.passDate ?? 0)) ? info.getDate : info.passDate;
+  const lastAccessTime = (latestDate && (latestDate.getDate ?? 0) > (latestDate.passDate ?? 0)) ? latestDate.getDate : latestDate?.passDate;
   const position = new LatLng(info.latitude, info.longitude);
 
   return (
@@ -394,11 +398,11 @@ const StationInfo = () => {
         <Box sx={{ mx: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography variant="h6">乗降:&nbsp;</Typography>
-            <AroundTime date={info.getDate} invalidMsg="なし" />
+            <AroundTime date={latestDate?.getDate} invalidMsg="なし" />
           </Box>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography variant="h6">通過:&nbsp;</Typography>
-            <AroundTime date={info.passDate} invalidMsg="なし" />
+            <AroundTime date={latestDate?.passDate} invalidMsg="なし" />
           </Box>
         </Box>
       </Box>

@@ -3,10 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import {
   RecordState,
   Station,
-  StationGroup,
+  StationGroupDate,
   StationHistoryData,
   useDeleteStationGroupHistoryMutation,
   useDeleteStationHistoryMutation,
+  useLatestStationGroupHistory,
+  useLatestStationHistory,
   useSearchKNearestStationGroups,
   useSendStationGroupStateMutation,
   useStationGroupAllHistory,
@@ -63,6 +65,9 @@ const ChangeMapCenter = ({ position }: { position: LatLng }) => {
 
 
 const StationItem = ({ info }: { info: Station }): JSX.Element => {
+  const latestDateQuery = useLatestStationHistory(info.stationCode);
+  const latestDate = latestDateQuery.data;
+
   return (
     <Button
       component={Link}
@@ -85,8 +90,8 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
         {info.railwayName}
       </Typography>
 
-      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={info.getDate} invalidMsg="なし" /></Typography>
-      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={info.passDate} invalidMsg="なし" /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={latestDate?.getDate} invalidMsg="なし" /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={latestDate?.passDate} invalidMsg="なし" /></Typography>
     </Button>
   );
 };
@@ -174,10 +179,12 @@ const StationGroupInfo = () => {
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
 
-  const groupStationQuery = useStationGroupInfo(stationGroupCode, (data: StationGroup) => {
+  const groupStationQuery = useStationGroupInfo(stationGroupCode);
+  const groupStationData = groupStationQuery.data;
+  const latestDateQuery = useLatestStationGroupHistory(stationGroupCode, (data: StationGroupDate) => {
     setLoading(false);
   });
-  const groupStationData = groupStationQuery.data;
+  const latestDate = latestDateQuery.data;
 
   const stationGroupAllHistoryQuery = useStationGroupAllHistory(stationGroupCode, (data: StationHistoryData[]) => {
     setDeleteLoading(false);
@@ -279,21 +286,21 @@ const StationGroupInfo = () => {
       </Box>
 
       <Typography variant="h6" sx={{ display: "inline-block" }}>
-        立ち寄り: <AroundTime date={groupStationData.date} invalidMsg="なし" />
+        立ち寄り: <AroundTime date={latestDate?.date} invalidMsg="なし" />
       </Typography>
 
       <AccessButton
         text="立ち寄り"
         loading={loading}
         timeLimit={60*3}
-        accessedTime={groupStationData.date}
+        accessedTime={latestDate?.date}
         onClick={handleSubmit}
         sx={{ mb: 2, display: "block" }}
       />
 
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6">路線一覧</Typography>
-        <Divider sx={{ mb: 1 }} light />
+        <Divider sx={{ mb: 1 }} />
 
         {stationList?.map(item => (
           <StationItem key={item.stationCode} info={item} />

@@ -49,6 +49,26 @@ class Users {
     return new_sessionId;
   }
 
+  // user情報をcookieから
+  getUserData(req){
+    const sessionId = req.cookies.sessionId;
+    if(!sessionId){
+      return {
+        auth: false,
+        userId: undefined,
+        userName: undefined,
+        userEmail: undefined,
+      };
+    }
+    const userData = this.status(sessionId);
+    return {
+      auth: userData !== undefined,
+      userId: userData?.userId,
+      userName: userData?.userName,
+      userEmail: userData?.userEmail,
+    };
+  }
+
   // login状態を判定
   status(sessionId){
     let userData;

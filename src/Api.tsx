@@ -62,8 +62,8 @@ export type Station = {
   railwayCompany: string,
   latitude: number,
   longitude: number,
-  getDate: Date | undefined,
-  passDate: Date | undefined,
+  // getDate: Date | undefined,
+  // passDate: Date | undefined,
   prefCode: number,
   prefName: string,
   kana: string,
@@ -108,7 +108,7 @@ export type StationGroup = {
   stationName: string,
   latitude: number,
   longitude: number,
-  date: Date | undefined,
+  // date: Date | undefined,
   prefCode: number,
   prefName: string,
   kana: string,
@@ -494,6 +494,48 @@ export const useLogoutMutation = (
 
 
 
+export type StationDate = {
+  getDate: Date | undefined,
+  passDate: Date | undefined,
+};
+
+// 駅の最新のアクセス日時を取得
+export const useLatestStationHistory = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationDate) => unknown
+): UseQueryResult<StationDate> => {
+  return useQuery<StationDate>({
+    queryKey: ["LatestStationHistory", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationDate>("/api/latestStationHistory/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+export type StationGroupDate = {
+  date: Date | undefined,
+};
+
+// 駅グループの最新のアクセス日時を取得
+export const useLatestStationGroupHistory = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationGroupDate) => unknown
+): UseQueryResult<StationGroupDate> => {
+  return useQuery<StationGroupDate>({
+    queryKey: ["LatestStationGroupHistory", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationGroupDate>("/api/latestStationGroupHistory/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
 export type StationHistory = {
   stationCode: number,
   stationGroupCode: number,
@@ -635,7 +677,7 @@ export const useSendStationStateMutation = () => {
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
@@ -665,7 +707,7 @@ export const useSendStationGroupStateMutation = () => {
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
     },
     onError: (err: Error) => {
@@ -686,7 +728,7 @@ export const useDeleteStationHistoryMutation = (
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
@@ -715,7 +757,7 @@ export const useDeleteStationGroupHistoryMutation = (
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
       onSuccessFn && onSuccessFn(data, variables);
     },
