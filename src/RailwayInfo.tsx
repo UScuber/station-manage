@@ -7,7 +7,7 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { Station, useRailPath, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
+import { Station, useLatestStationHistory, useRailPath, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
 import { AroundTime, CustomLink, StationMapGeojson } from "./components";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -27,6 +27,9 @@ const FitMapZoom = (
 };
 
 const StationItem = ({ info }: { info: Station }): JSX.Element => {
+  const latestDateQuery = useLatestStationHistory(info.stationCode);
+  const latestDate = latestDateQuery.data;
+
   return (
     <Button
       component={Link}
@@ -36,7 +39,7 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (info.getDate || info.passDate) ? "access.main" : "none",
+        bgcolor: (latestDate?.getDate || latestDate?.passDate) ? "access.main" : "none",
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -44,8 +47,8 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
         <Typography variant="h6" sx={{ fontSize: 10, lineHeight: 1 }}>{info.kana}</Typography>
       </Box>
 
-      <Typography variant="h6" sx={{ fontSize: 14 }}>乗降:<AroundTime date={info.getDate} invalidMsg="なし" fontSize={14} /></Typography>
-      <Typography variant="h6" sx={{ fontSize: 14 }}>通過:<AroundTime date={info.passDate} invalidMsg="なし" fontSize={14} /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 14 }}>乗降:<AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={14} /></Typography>
+      <Typography variant="h6" sx={{ fontSize: 14 }}>通過:<AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={14} /></Typography>
     </Button>
   );
 };

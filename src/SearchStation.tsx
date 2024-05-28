@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Coordinate, useSearchKNearestStationGroups, useStationsInfoByGroupCode } from "./Api";
+import { Coordinate, Station, useLatestStationHistory, useSearchKNearestStationGroups, useStationsInfoByGroupCode } from "./Api";
 import {
   Box,
   Button,
@@ -11,6 +11,45 @@ import {
 } from "@mui/material";
 import { AroundTime } from "./components";
 
+
+const StationComponent = ({ info }: { info: Station }): JSX.Element => {
+  const latestDateQuery = useLatestStationHistory(info.stationCode);
+  const latestDate = latestDateQuery.data;
+
+  return (
+    <Button
+      component={Link}
+      to={"/station/" + info.stationCode}
+      variant="outlined"
+      color="inherit"
+      key={info.stationCode}
+      sx={{ display: "block", mb: 1, ml: 1 }}
+    >
+      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
+      <Typography
+        variant="h6"
+        sx={{
+          mx: 1,
+          display: "inline-block",
+          textDecoration: "underline",
+          textDecorationColor: "#" + info.railwayColor,
+          textDecorationThickness: 3,
+        }}
+      >
+        {info.railwayName}
+      </Typography>
+
+      <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+        <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
+        <AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={16} />
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+        <Typography variant="h6" sx={{ fontSize: 16 }}>通過:&nbsp;</Typography>
+        <AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={16} />
+      </Box>
+    </Button>
+  );
+};
 
 const StationGroupInfo = (
   { code, distance }
@@ -54,37 +93,7 @@ const StationGroupInfo = (
         <Typography variant="h6" sx={{ fontSize: 18 }}>{distance.toFixed(3)}[km]</Typography>
       )}
       {infos.map(info => (
-        <Button
-          component={Link}
-          to={"/station/" + info.stationCode}
-          variant="outlined"
-          color="inherit"
-          key={info.stationCode}
-          sx={{ display: "block", mb: 1, ml: 1 }}
-        >
-          <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
-          <Typography
-            variant="h6"
-            sx={{
-              mx: 1,
-              display: "inline-block",
-              textDecoration: "underline",
-              textDecorationColor: "#" + info.railwayColor,
-              textDecorationThickness: 3,
-            }}
-          >
-            {info.railwayName}
-          </Typography>
-
-          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
-            <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
-            <AroundTime date={info.getDate} invalidMsg="なし" fontSize={16} />
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
-            <Typography variant="h6" sx={{ fontSize: 16 }}>通過:&nbsp;</Typography>
-            <AroundTime date={info.passDate} invalidMsg="なし" fontSize={16} />
-          </Box>
-        </Button>
+        <StationComponent info={info} key={info.stationCode} />
       ))}
     </Box>
   );
