@@ -177,7 +177,6 @@ db.transaction(() => {
       longitude DOUBLE PRECISION NOT NULL,
       prefCode INTEGER,
       kana VARCHAR(80),
-      date DATE,
       PRIMARY KEY (stationGroupCode)
       FOREIGN KEY (prefCode) REFERENCES Prefectures(code)
     )
@@ -191,31 +190,8 @@ db.transaction(() => {
       railwayCode INTEGER,
       latitude DOUBLE PRECISION NOT NULL,
       longitude DOUBLE PRECISION NOT NULL,
-      getDate DATE,
-      passDate DATE,
       PRIMARY KEY (stationCode),
       FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode),
-      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
-    )
-  `).run();
-
-  // StationHistory
-  db.prepare(`
-    CREATE TABLE StationHistory(
-      stationCode INTEGER,
-      date DATE,
-      state INTEGER,
-      PRIMARY KEY (stationCode, date, state),
-      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
-    )
-  `).run();
-
-  // StationGroupHistory
-  db.prepare(`
-    CREATE TABLE StationGroupHistory(
-      stationGroupCode INTEGER,
-      date DATE,
-      PRIMARY KEY (stationGroupCode, date),
       FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
     )
   `).run();
@@ -248,12 +224,62 @@ db.transaction(() => {
   // Users
   db.prepare(`
     CREATE TABLE Users(
-      userId CHAR(32),
+      userId CHAR(64),
       userName VARCHAR(64) NOT NULL,
       userEmail VARCHAR(64) NOT NULL UNIQUE,
       hash VARCHAR(64) NOT NULL,
       sessionId CHAR(64) NOT NULL,
       PRIMARY KEY (userId)
+    )
+  `).run();
+
+  // StationHistory
+  db.prepare(`
+    CREATE TABLE StationHistory(
+      stationCode INTEGER,
+      date DATE,
+      state INTEGER,
+      userId CHAR(64),
+      PRIMARY KEY (stationCode, date, state, userId),
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+      FOREIGN KEY (userId) REFERENCES Users(userId)
+    )
+  `).run();
+
+  // StationGroupHistory
+  db.prepare(`
+    CREATE TABLE StationGroupHistory(
+      stationGroupCode INTEGER,
+      date DATE,
+      userId CHAR(64),
+      PRIMARY KEY (stationGroupCode, date, userId),
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
+      FOREIGN KEY (userId) REFERENCES Users(userId)
+    )
+  `).run();
+
+  // LatestStationHistory
+  db.prepare(`
+    CREATE TABLE LatestStationHistory(
+      stationCode INTEGER,
+      date DATE,
+      state INTEGER,
+      userId CHAR(64),
+      PRIMARY KEY (stationCode, state, userId),
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+      FOREIGN KEY (userId) REFERENCES Users(userId)
+    )
+  `).run();
+
+  // LatestStationGroupHistory
+  db.prepare(`
+    CREATE TABLE LatestStationGroupHistory(
+      stationGroupCode INTEGER,
+      date DATE,
+      userId CHAR(64),
+      PRIMARY KEY (stationGroupCode, userId),
+      FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
+      FOREIGN KEY (userId) REFERENCES Users(userId)
     )
   `).run();
 })();
@@ -284,7 +310,7 @@ db.transaction(() => {
 
   // StationGroups
   stationGroup_data.forEach(data => {
-    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,?,?,NULL)").run(
+    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,?,?)").run(
       data.stationGroupCode,
       data.stationName,
       data.lat.toFixed(6),
@@ -296,7 +322,7 @@ db.transaction(() => {
 
   // Stations
   station_data.forEach(data => {
-    db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?,NULL,NULL)").run(
+    db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?)").run(
       data.stationCode,
       data.stationGroupCode,
       data.railwayCode,
