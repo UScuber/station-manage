@@ -6,7 +6,7 @@ import {
   useLogoutMutation,
   useSignupMutation,
   useUserStatus,
-} from "../Api";
+} from "../api/Api";
 import { UseMutationResult } from "@tanstack/react-query";
 
 

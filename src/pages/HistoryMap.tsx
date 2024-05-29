@@ -5,10 +5,10 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { StationHistoryDetail, useStationHistoryListAndInfo } from "./Api";
+import { StationHistoryDetail, useStationHistoryListAndInfo } from "../api/Api";
 import "leaflet/dist/leaflet.css";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer } from "react-leaflet";
-import { CustomLink } from "./components";
+import { CustomLink } from "../components";
 
 
 type PathData = {

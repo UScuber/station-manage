@@ -13,7 +13,7 @@ import {
   useStationAllHistory,
   useStationInfo,
   useStationsInfoByRailwayCode,
-} from "./Api";
+} from "../api/Api";
 import {
   Box,
   Button,
@@ -47,8 +47,8 @@ import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-picker
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ja";
-import { AccessButton, AroundTime, Collapser, ConfirmDialog, StationMapGeojson, RespStationName } from "./components";
-import getDateString from "./utils/getDateString";
+import { AccessButton, AroundTime, Collapser, ConfirmDialog, StationMapGeojson, RespStationName } from "../components";
+import getDateString from "../utils/getDateString";
 
 
 const DefaultIcon = Leaflet.icon({

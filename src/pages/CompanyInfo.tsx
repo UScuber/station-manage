@@ -7,11 +7,11 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { Railway, useCompanyInfo, useRailPathByCompanyCode, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
+import { Railway, useCompanyInfo, useRailPathByCompanyCode, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "../api/Api";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
-import { CircleProgress, CustomLink, StationMapGeojson } from "./components";
+import { CircleProgress, CustomLink, StationMapGeojson } from "../components";
 
 
 const FitMapZoom = (

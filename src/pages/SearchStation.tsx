@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Coordinate, Station, useLatestStationHistory, useSearchKNearestStationGroups, useStationsInfoByGroupCode } from "./Api";
+import { Coordinate, Station, useLatestStationHistory, useSearchKNearestStationGroups, useStationsInfoByGroupCode } from "../api/Api";
 import {
   Box,
   Button,
@@ -9,7 +9,7 @@ import {
   Divider,
   Typography,
 } from "@mui/material";
-import { AroundTime } from "./components";
+import { AroundTime } from "../components";
 
 
 const StationComponent = ({ info }: { info: Station }): JSX.Element => {

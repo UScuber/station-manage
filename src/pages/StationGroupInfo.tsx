@@ -14,7 +14,7 @@ import {
   useStationGroupAllHistory,
   useStationGroupInfo,
   useStationsInfoByGroupCode,
-} from "./Api";
+} from "../api/Api";
 import {
   Box,
   Button,
@@ -41,8 +41,8 @@ import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import dayjs, { Dayjs } from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
-import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "./components";
-import getDateString from "./utils/getDateString";
+import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "../components";
+import getDateString from "../utils/getDateString";
 
 
 const stateName = ["乗降", "通過", "立ち寄り"];

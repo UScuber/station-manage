@@ -15,8 +15,8 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Company, useCompanyList, useCompanyProgress } from "./Api";
-import { BinaryPagination, CircleProgress, CustomLink } from "./components";
+import { Company, useCompanyList, useCompanyProgress } from "../api/Api";
+import { BinaryPagination, CircleProgress, CustomLink } from "../components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {

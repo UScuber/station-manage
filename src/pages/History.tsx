@@ -15,9 +15,9 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "./Api";
-import { BinaryPagination, CustomLink, RespStationName } from "./components";
-import getDateString from "./utils/getDateString";
+import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "../api/Api";
+import { BinaryPagination, CustomLink, RespStationName } from "../components";
+import getDateString from "../utils/getDateString";
 
 
 const stateNames = ["乗降", "通過"];

@@ -10,8 +10,8 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Prefecture, usePrefList, usePrefProgress } from "./Api";
-import { CircleProgress, CustomLink } from "./components";
+import { Prefecture, usePrefList, usePrefProgress } from "../api/Api";
+import { CircleProgress, CustomLink } from "../components";
 
 const Row = ({ info }: { info: Prefecture }) => {
   const prefProgressQuery = usePrefProgress(info.prefCode);

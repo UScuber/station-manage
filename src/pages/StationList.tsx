@@ -18,9 +18,9 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
-import { StationGroup, useLatestStationGroupHistory, useSearchStationGroupCount, useSearchStationGroupList } from "./Api";
-import { AroundTime, BinaryPagination, CustomLink } from "./components";
-import getDateString from "./utils/getDateString";
+import { StationGroup, useLatestStationGroupHistory, useSearchStationGroupCount, useSearchStationGroupList } from "../api/Api";
+import { AroundTime, BinaryPagination, CustomLink } from "../components";
+import getDateString from "../utils/getDateString";
 
 
 const Row = ({ info }: { info: StationGroup }): JSX.Element => {

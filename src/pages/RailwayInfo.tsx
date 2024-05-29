@@ -7,8 +7,8 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { Station, useLatestStationHistory, useRailPath, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "./Api";
-import { AroundTime, CustomLink, StationMapGeojson } from "./components";
+import { Station, useLatestStationHistory, useRailPath, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "../api/Api";
+import { AroundTime, CustomLink, StationMapGeojson } from "../components";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
