@@ -12,6 +12,7 @@ import { AroundTime, CustomLink, StationMapGeojson } from "../components";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
+import { useAuth } from "../auth/auth";
 
 
 const FitMapZoom = (
@@ -26,8 +27,8 @@ const FitMapZoom = (
   return null;
 };
 
-const StationItem = ({ info }: { info: Station }): JSX.Element => {
-  const latestDateQuery = useLatestStationHistory(info.stationCode);
+const StationItem = ({ info, isAuthenticated }: { info: Station, isAuthenticated: boolean }): JSX.Element => {
+  const latestDateQuery = useLatestStationHistory(isAuthenticated ? info.stationCode : undefined);
   const latestDate = latestDateQuery.data;
 
   return (
@@ -47,14 +48,17 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
         <Typography variant="h6" sx={{ fontSize: 10, lineHeight: 1 }}>{info.kana}</Typography>
       </Box>
 
-      <Typography variant="h6" sx={{ fontSize: 14 }}>乗降:<AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={14} /></Typography>
-      <Typography variant="h6" sx={{ fontSize: 14 }}>通過:<AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={14} /></Typography>
+      {isAuthenticated && (<>
+        <Typography variant="h6" sx={{ fontSize: 14 }}>乗降:<AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={14} /></Typography>
+        <Typography variant="h6" sx={{ fontSize: 14 }}>通過:<AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={14} /></Typography>
+      </>)}
     </Button>
   );
 };
 
 const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
+  const { isAuthenticated } = useAuth();
 
   const railway = useRailwayInfo(railwayCode);
   const info = railway.data;
@@ -62,7 +66,7 @@ const RailwayInfo = () => {
   const stationsQuery = useStationsInfoByRailwayCode(railwayCode);
   const stationList = stationsQuery.data;
 
-  const railwayProgressQuery = useRailwayProgress(railwayCode);
+  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? railwayCode : undefined);
   const railwayProgress = railwayProgressQuery.data;
 
   const railwayPathQuery = useRailPath(railwayCode);
@@ -128,7 +132,7 @@ const RailwayInfo = () => {
         </CustomLink>
       </Box>
 
-      {railwayProgress && (
+      {isAuthenticated && railwayProgress && (
         <Box sx={{ mb: 2 }}>
           <Typography
             variant="h6"
@@ -149,7 +153,7 @@ const RailwayInfo = () => {
 
       <Box>
         {stationList.map(item => (
-          <StationItem key={item.stationCode} info={item} />
+          <StationItem key={item.stationCode} info={item} isAuthenticated={isAuthenticated} />
         ))}
       </Box>
 

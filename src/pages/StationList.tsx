@@ -21,17 +21,18 @@ import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardA
 import { StationGroup, useLatestStationGroupHistory, useSearchStationGroupCount, useSearchStationGroupList } from "../api/Api";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import getDateString from "../utils/getDateString";
+import { useAuth } from "../auth/auth";
 
 
-const Row = ({ info }: { info: StationGroup }): JSX.Element => {
+const Row = ({ info, isAuthenticated }: { info: StationGroup, isAuthenticated: boolean }): JSX.Element => {
   const [open, setOpen] = useState(false);
 
-  const latestDateQuery = useLatestStationGroupHistory(info.stationGroupCode);
+  const latestDateQuery = useLatestStationGroupHistory(isAuthenticated ? info.stationGroupCode : undefined);
   const latestDate = latestDateQuery.data;
 
   return (
     <>
-      <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+      <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
         <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0 }}>
           <CustomLink
             to={"/stationGroup/" + info.stationGroupCode}
@@ -45,42 +46,46 @@ const Row = ({ info }: { info: StationGroup }): JSX.Element => {
             <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
           </CustomLink>
         </TableCell>
-        <TableCell align="center" sx={{ paddingX: 0.5 }}>
-          <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14}/>
-        </TableCell>
-        <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
-              <Typography variant="h6" gutterBottom component="div">History</Typography>
-              <Table size="small" aria-label="purchases">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {latestDate?.date && (
-                    <TableRow>
-                      <TableCell>{getDateString(latestDate.date)}</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
+        {isAuthenticated && (<>
+          <TableCell align="center" sx={{ paddingX: 0.5 }}>
+            <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14}/>
+          </TableCell>
+          <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>
+            <IconButton
+              aria-label="expand row"
+              size="small"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            </IconButton>
+          </TableCell>
+        </>)}
+        </TableRow>
+        {isAuthenticated && (
+          <TableRow>
+            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+              <Collapse in={open} timeout="auto" unmountOnExit>
+                <Box sx={{ margin: 1 }}>
+                  <Typography variant="h6" gutterBottom component="div">History</Typography>
+                  <Table size="small" aria-label="purchases">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {latestDate?.date && (
+                        <TableRow>
+                          <TableCell>{getDateString(latestDate.date)}</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </Box>
+              </Collapse>
+            </TableCell>
+          </TableRow>
+        )}
     </>
   );
 };
@@ -91,6 +96,8 @@ const StationList = () => {
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
+
+  const { isAuthenticated, isLoading } = useAuth();
 
   const stationGroupCount = useSearchStationGroupCount({ name: searchName });
 
@@ -197,13 +204,13 @@ const StationList = () => {
             <TableRow>
               <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>駅名</TableCell>
               <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>都道府県</TableCell>
-              <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>立ち寄り</TableCell>
-              <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>詳細</TableCell>
+              {isAuthenticated && <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>立ち寄り</TableCell>}
+              {isAuthenticated && <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>詳細</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
             {stationGroupsInfo.map(item => (
-              <Row key={item.stationGroupCode} info={item} />
+              <Row key={item.stationGroupCode} info={item} isAuthenticated={isAuthenticated} />
             ))}
           </TableBody>
         </Table>

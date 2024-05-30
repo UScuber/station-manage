@@ -18,10 +18,10 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useAuth } from "../auth/auth";
 import { AccountCircle } from "@mui/icons-material";
 
-const navItems: Array<{ text: string, url: string }> = [
-  { text: "List", url: "/stationList" },
-  { text: "Search", url: "/searchStation" },
-  { text: "History", url: "/history" },
+const navItems: Array<{ text: string, url: string, auth: boolean }> = [
+  { text: "List", url: "/stationList", auth: false },
+  { text: "Search", url: "/searchStation", auth: false },
+  { text: "History", url: "/history", auth: true },
 ];
 
 const drawerWidth = 240;
@@ -63,8 +63,14 @@ const Header = () => {
           </IconButton>
           <Box sx={{ display: { xs: "none", sm: "block", textAlign: "center" } }}>
             <List component="nav" sx={{ display: "flex", justifyContent: "flex-start" }}>
-              {navItems.map((item) => (
-                <ListItem key={item.text} disablePadding>
+              {navItems.map(item => (
+                <ListItem
+                  key={item.text}
+                  sx={{
+                    display: (item.auth && !isAuthenticated) ? "none" : "inline"
+                  }}
+                  disablePadding
+                >
                   <ListItemButton component={Link} to={item.url} sx={{ textAlign: "center" }}>
                     <ListItemText primary={item.text} />
                   </ListItemButton>

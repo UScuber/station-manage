@@ -17,6 +17,7 @@ import {
 import { Search as SearchIcon } from "@mui/icons-material";
 import { Company, useCompanyList, useCompanyProgress } from "../api/Api";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
+import { useAuth } from "../auth/auth";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -29,10 +30,11 @@ const nameSimilarity = (name: string, input: string) => {
 };
 
 const Row = ({ info }: { info: Company }) => {
-  const companyProgressQuery = useCompanyProgress(info.companyCode);
+  const { isAuthenticated } = useAuth();
+  const companyProgressQuery = useCompanyProgress(isAuthenticated ? info.companyCode : undefined);
   const companyProgress = companyProgressQuery.data;
 
-  if(!companyProgress){
+  if(!isAuthenticated || !companyProgress){
     return (
       <TableRow>
         <TableCell>

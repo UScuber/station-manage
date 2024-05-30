@@ -17,6 +17,7 @@ import {
 import { Search as SearchIcon } from "@mui/icons-material";
 import { Railway, useRailwayList, useRailwayProgress } from "../api/Api";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
+import { useAuth } from "../auth/auth";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -29,10 +30,11 @@ const nameSimilarity = (name: string, input: string) => {
 };
 
 const Row = ({ info }: { info: Railway }) => {
-  const railwayProgressQuery = useRailwayProgress(info.railwayCode);
+  const { isAuthenticated } = useAuth();
+  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
   const railwayProgress = railwayProgressQuery.data;
 
-  if(!railwayProgress){
+  if(!isAuthenticated || !railwayProgress){
     return (
       <TableRow>
         <TableCell>

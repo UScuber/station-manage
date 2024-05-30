@@ -49,6 +49,7 @@ import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ja";
 import { AccessButton, AroundTime, Collapser, ConfirmDialog, StationMapGeojson, RespStationName } from "../components";
 import getDateString from "../utils/getDateString";
+import { useAuth } from "../auth/auth";
 
 
 const DefaultIcon = Leaflet.icon({
@@ -196,6 +197,7 @@ const CustomSubmitForm = (
 
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
+  const { isAuthenticated } = useAuth();
 
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
@@ -206,7 +208,7 @@ const StationInfo = () => {
 
   const station = useStationInfo(stationCode);
   const info = station.data;
-  const latestDateQuery = useLatestStationHistory(stationCode, (data: StationDate) => {
+  const latestDateQuery = useLatestStationHistory(isAuthenticated ? stationCode : undefined, (data: StationDate) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
       setGetLoading(false);
     }else{
@@ -221,7 +223,7 @@ const StationInfo = () => {
   );
   const nearStations = nearStationsQuery.data;
 
-  const stationHistoryQuery = useStationAllHistory(stationCode, () => {
+  const stationHistoryQuery = useStationAllHistory(isAuthenticated ? stationCode : undefined, () => {
     setDeleteLoading(false);
   });
   const stationHistory = stationHistoryQuery.data;
@@ -394,36 +396,40 @@ const StationInfo = () => {
           </Button>
         </Box>
 
-        <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
-        <Box sx={{ mx: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="h6">乗降:&nbsp;</Typography>
-            <AroundTime date={latestDate?.getDate} invalidMsg="なし" />
+        {isAuthenticated && (<>
+          <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
+          <Box sx={{ mx: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography variant="h6">乗降:&nbsp;</Typography>
+              <AroundTime date={latestDate?.getDate} invalidMsg="なし" />
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography variant="h6">通過:&nbsp;</Typography>
+              <AroundTime date={latestDate?.passDate} invalidMsg="なし" />
+            </Box>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="h6">通過:&nbsp;</Typography>
-            <AroundTime date={latestDate?.passDate} invalidMsg="なし" />
-          </Box>
-        </Box>
+        </>)}
       </Box>
 
       <Box sx={{ mb: 2 }}>
-        <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
-          <AccessButton
-            text="乗降"
-            loading={getLoading}
-            timeLimit={60*3}
-            accessedTime={lastAccessTime}
-            onClick={() => handleSubmit(RecordState.Get)}
-          />
-          <AccessButton
-            text="通過"
-            loading={passLoading}
-            timeLimit={60*3}
-            accessedTime={lastAccessTime}
-            onClick={() => handleSubmit(RecordState.Pass)}
-          />
-        </Stack>
+        {isAuthenticated && (
+          <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
+            <AccessButton
+              text="乗降"
+              loading={getLoading}
+              timeLimit={60*3}
+              accessedTime={lastAccessTime}
+              onClick={() => handleSubmit(RecordState.Get)}
+            />
+            <AccessButton
+              text="通過"
+              loading={passLoading}
+              timeLimit={60*3}
+              accessedTime={lastAccessTime}
+              onClick={() => handleSubmit(RecordState.Pass)}
+            />
+          </Stack>
+        )}
         <Button
           component={Link}
           to={"/stationGroup/" + info.stationGroupCode}
@@ -433,56 +439,58 @@ const StationInfo = () => {
         </Button>
       </Box>
 
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h5">詳細</Typography>
-        <Divider sx={{ mb: 1 }} />
+      <Typography variant="h5">詳細</Typography>
+      <Divider sx={{ mb: 1 }} />
 
-        {!stationHistory && (<Typography variant="h6" sx={{ display: "inline" }}>履歴 <CircularProgress size={20} /></Typography>)}
-        {stationHistory && (
-          <Collapser
-            buttonText={<Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory.length}件)</Typography>}
-          >
-            <Box sx={{ margin: 1 }}>
-              <Table size="small" aria-label="dates">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>State</TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {stationHistory.map(history => (
-                    <TableRow key={`${history.date}|${history.state}`}>
-                      <TableCell>{getDateString(history.date)}</TableCell>
-                      <TableCell>{stateName[history.state]}</TableCell>
-                      <TableCell>
-                        <IconButton
-                          aria-label="delete"
-                          size="small"
-                          onClick={() => handleClickDeleteButton(history)}
-                          disabled={deleteLoading}
-                        >
-                          <DeleteIcon fontSize="inherit" />
-                        </IconButton>
-                      </TableCell>
+      {isAuthenticated && (
+        <Box sx={{ mb: 2 }}>
+          {!stationHistory && (<Typography variant="h6" sx={{ display: "inline" }}>履歴 <CircularProgress size={20} /></Typography>)}
+          {stationHistory && (
+            <Collapser
+              buttonText={<Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory.length}件)</Typography>}
+            >
+              <Box sx={{ margin: 1 }}>
+                <Table size="small" aria-label="dates">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>State</TableCell>
+                      <TableCell />
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-            <ConfirmDialog
-              open={dialogOpen}
-              selectedValue={deleteHistoryItem}
-              onClose={handleDialogClose}
-              title="データを削除しますか"
-              descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
-            />
-          </Collapser>
-        )}
+                  </TableHead>
+                  <TableBody>
+                    {stationHistory.map(history => (
+                      <TableRow key={`${history.date}|${history.state}`}>
+                        <TableCell>{getDateString(history.date)}</TableCell>
+                        <TableCell>{stateName[history.state]}</TableCell>
+                        <TableCell>
+                          <IconButton
+                            aria-label="delete"
+                            size="small"
+                            onClick={() => handleClickDeleteButton(history)}
+                            disabled={deleteLoading}
+                          >
+                            <DeleteIcon fontSize="inherit" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+              <ConfirmDialog
+                open={dialogOpen}
+                selectedValue={deleteHistoryItem}
+                onClose={handleDialogClose}
+                title="データを削除しますか"
+                descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
+              />
+            </Collapser>
+          )}
 
-        <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
-      </Box>
+          <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
+        </Box>
+        )}
 
       <Box sx={{ textAlign: "right" }}>
         <Button

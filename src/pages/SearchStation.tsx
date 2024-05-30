@@ -10,10 +10,11 @@ import {
   Typography,
 } from "@mui/material";
 import { AroundTime } from "../components";
+import { useAuth } from "../auth/auth";
 
 
-const StationComponent = ({ info }: { info: Station }): JSX.Element => {
-  const latestDateQuery = useLatestStationHistory(info.stationCode);
+const StationComponent = ({ info, isAuthenticated }: { info: Station, isAuthenticated: boolean }): JSX.Element => {
+  const latestDateQuery = useLatestStationHistory(isAuthenticated ? info.stationCode : undefined);
   const latestDate = latestDateQuery.data;
 
   return (
@@ -38,15 +39,17 @@ const StationComponent = ({ info }: { info: Station }): JSX.Element => {
       >
         {info.railwayName}
       </Typography>
-
-      <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
-        <AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={16} />
-      </Box>
-      <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>通過:&nbsp;</Typography>
-        <AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={16} />
-      </Box>
+      
+      {isAuthenticated && (<>
+        <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+          <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
+          <AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={16} />
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+          <Typography variant="h6" sx={{ fontSize: 16 }}>通過:&nbsp;</Typography>
+          <AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={16} />
+        </Box>
+      </>)}
     </Button>
   );
 };
@@ -58,6 +61,7 @@ const StationGroupInfo = (
     distance: number | undefined,
   }
 ): JSX.Element => {
+  const { isAuthenticated } = useAuth();
   const stations = useStationsInfoByGroupCode(code);
   const infos = stations.data;
 
@@ -93,7 +97,7 @@ const StationGroupInfo = (
         <Typography variant="h6" sx={{ fontSize: 18 }}>{distance.toFixed(3)}[km]</Typography>
       )}
       {infos.map(info => (
-        <StationComponent info={info} key={info.stationCode} />
+        <StationComponent info={info} key={info.stationCode} isAuthenticated={isAuthenticated} />
       ))}
     </Box>
   );
@@ -166,7 +170,7 @@ const SearchStation = () => {
       )}
 
       <Typography variant="h6">List</Typography>
-      <Divider sx={{ mb: 1 }} light />
+      <Divider sx={{ mb: 1 }} />
       {groupStations.map(item => (
         <StationGroupInfo
           key={item.stationGroupCode}
