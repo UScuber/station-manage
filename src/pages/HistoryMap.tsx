@@ -9,6 +9,8 @@ import { StationHistoryDetail, useStationHistoryListAndInfo } from "../api/Api";
 import "leaflet/dist/leaflet.css";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer } from "react-leaflet";
 import { CustomLink } from "../components";
+import { useAuth } from "../auth/auth";
+import NotFound from "./NotFound";
 
 
 type PathData = {
@@ -54,8 +56,16 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
 
 
 const HistoryMap = () => {
+  const { isAuthenticated } = useAuth();
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
+
+
+  if(!isAuthenticated){
+    return (
+      <NotFound />
+    );
+  }
 
   if(historyListQuery.isError){
     return (
