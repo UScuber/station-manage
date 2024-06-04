@@ -7,7 +7,7 @@ const ConfirmDialog = <T,>(
     selectedValue: T | undefined,
     onClose: (value: T | undefined) => void,
     title: string,
-    descriptionFn: (value: T) => string,
+    descriptionFn: (value: T) => string | JSX.Element,
     deleteButtonText?: string,
   }
 ) => {
