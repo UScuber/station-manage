@@ -1,27 +1,11 @@
-const fs = require("fs");
-const sqlite3 = require("better-sqlite3");
-
-// if(process.argv.length <= 2){
-//   console.error("Argument Error: node export-sql.js [json-file-name]");
-//   process.exit(1);
-// }
-// const file_path = process.argv[2];
-
-// if(!fs.existsSync("./station.db")){
-//   console.error(`Error: ./station.db does not exist`);
-//   process.exit(1);
-// }
-
-// const db = sqlite3("./station.db");
-
 const export_sql = (db, userId) => {
   let station_history = [], station_group_history = [];
 
   const create_station_history = (station) => {
     const res = db.prepare(`
       SELECT date, state FROM StationHistory
-      WHERE stationCode = ?
-    `).all(station.stationCode);
+      WHERE stationCode = ? AND userId = ?
+    `).all(station.stationCode, userId);
     if(!res){
       console.error("Error");
       process.exit(1);
@@ -44,6 +28,7 @@ const export_sql = (db, userId) => {
       FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
+          AND userId = ?
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
       INNER JOIN Railways
@@ -51,7 +36,7 @@ const export_sql = (db, userId) => {
       INNER JOIN Companies
         ON Railways.companyCode = Companies.companyCode
       GROUP BY StationHistory.stationCode
-    `).all();
+    `).all(userId);
     if(!res){
       console.error("Error");
       process.exit(1);
@@ -85,8 +70,9 @@ const export_sql = (db, userId) => {
       SELECT StationGroups.* FROM StationGroupHistory
       INNER JOIN StationGroups
         ON StationGroupHistory.stationGroupCode = StationGroups.stationGroupCode
+          AND userId = ?
       GROUP BY StationGroupHistory.stationGroupCode
-    `).all();
+    `).all(userId);
     if(!res){
       console.error("Error");
       process.exit(1);
@@ -102,7 +88,7 @@ const export_sql = (db, userId) => {
     station_history: station_history,
     station_group_history: station_group_history,
   };
-  fs.writeFileSync(file_path, JSON.stringify(result_json, null, "  "));
+  return result_json;
 };
 
 exports.export_sql = export_sql;

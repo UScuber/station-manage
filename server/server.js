@@ -5,6 +5,7 @@ const sqlite3 = require("better-sqlite3");
 const cookieParser = require("cookie-parser");
 const { Users } = require("./user");
 const { export_sql } = require("./export-sql");
+const { import_sql } = require("./import-sql");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -1640,6 +1641,19 @@ app.get("/api/exportHistory", accessLog, (req, res, next) => {
 
   const data = export_sql(db, userId);
   res.json(data);
+});
+
+// 履歴のインポート
+app.post("/api/importHistory", accessLog, (req, res, next) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  const data = req.body;
+  import_sql(data);
+  res.end("OK");
 });
 
 
