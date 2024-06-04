@@ -2,8 +2,9 @@ const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("better-sqlite3");
-const { Users } = require("./user");
 const cookieParser = require("cookie-parser");
+const { Users } = require("./user");
+const { export_sql } = require("./export-sql");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -1625,6 +1626,20 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
     return;
   }
   res.end("OK");
+});
+
+
+
+// 履歴のエクスポート
+app.get("/api/exportHistory", accessLog, (req, res, next) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  const data = export_sql(db, userId);
+  res.json(data);
 });
 
 
