@@ -771,14 +771,64 @@ export const useDeleteStationGroupHistoryMutation = (
 };
 
 
+// ファイル入出力用のJSONの型
+export type ExportHistoryJSON = {
+  station_history: {
+    history: {
+      date: Date,
+      state: number,
+    }[],
+    info: {
+      railwayCode: number,
+      latitude: number,
+      longitude: number,
+      stationName: string,
+      railwayName: string,
+      companyName: string,
+    }[],
+  }[],
+  station_group_history: {
+    history: {
+      date: Date,
+    }[],
+    info: {
+      stationName: string,
+      latitude: number,
+      longitude: number,
+    }[],
+  }[],
+};
+
 // 履歴のエクスポート
 export const useExportHistoryMutation = (
   onSuccessFn?: (data: string) => unknown
 ) => {
   return useMutation({
     mutationFn: async() => {
-      const { data } = await axios.post<JSON>("/api/exportHistory", ngrok_header);
-      return JSON.stringify(data, null, "  ");
+      const { data } = await axios.post<ExportHistoryJSON>("/api/exportHistory", ngrok_header);
+      return JSON.stringify(data);
+    },
+    onSuccess: (data: string) => {
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 履歴のインポート
+export const useImportHistoryMutation = (
+  onSuccessFn?: (data: string) => unknown
+) => {
+  return useMutation({
+    mutationFn: async(req: ExportHistoryJSON) => {
+      const { data } = await axios.post<string>("/api/importHistory", {
+        headers: ngrok_header.headers,
+        ...req,
+      });
+      return data;
     },
     onSuccess: (data: string) => {
       onSuccessFn && onSuccessFn(data);

@@ -1,4 +1,4 @@
-const import_sql = (input_json, userId) => {
+const import_sql = (db, input_json, userId) => {
 
   // [latitude, longitude]
   const distance = (p1, p2) => {
@@ -12,6 +12,8 @@ const import_sql = (input_json, userId) => {
   // 現在の履歴の削除
   db.prepare("DELETE FROM StationHistory").run();
   db.prepare("DELETE FROM StationGroupHistory").run();
+  db.prepare("DELETE FROM LatestStationHistory").run();
+  db.prepare("DELETE FROM LatestStationGroupHistory").run();
 
   let unknown_history = { station_history: [], station_group_history: [] };
 
@@ -46,21 +48,35 @@ const import_sql = (input_json, userId) => {
   })();
 
   // stations最終アクセスの更新
-  // db.transaction(() => {
-  //   db.prepare(`
-  //     UPDATE Stations SET
-  //       getDate = (
-  //         SELECT MAX(date) FROM StationHistory
-  //         WHERE StationHistory.stationCode = Stations.stationCode
-  //           AND state = 0
-  //       ),
-  //       passDate = (
-  //         SELECT MAX(date) FROM StationHistory
-  //         WHERE StationHistory.stationCode = Stations.stationCode
-  //           AND state = 1
-  //       )
-  //   `).run();
-  // })();
+  db.transaction(() => {
+    const stations = db.prepare(`
+      SELECT stationCode FROM Stations
+    `).all();
+    const get_num_stmt = db.prepare(`
+      SELECT COUNT(*) as num FROM StationHistory
+      WHERE stationCode = ? AND state = ? AND userId = ?
+    `);
+    const get_max_date = db.prepare(`
+      SELECT MAX(date) as max FROM StationHistory
+      WHERE stationCode = ? AND state = ? AND userId = ?
+    `);
+    const insert_stmt = db.prepare(`
+      INSERT INTO LatestStationHistory VALUES(?, datetime(?), ?, ?)
+    `);
+
+    stations.forEach(({ stationCode }) => {
+      const get_num = get_num_stmt.get(stationCode, 0, userId).num;
+      if(get_num){
+        const date = get_max_date.get(stationCode, 0, userId).max;
+        insert_stmt.run(stationCode, date, 0, userId);
+      }
+      const pass_num = get_num_stmt.get(stationCode, 1, userId).num;
+      if(pass_num){
+        const date = get_max_date.get(stationCode, 1, userId).max;
+        insert_stmt.run(stationCode, date, 1, userId);
+      }
+    });
+  })();
 
 
   db.transaction(() => {
@@ -102,6 +118,31 @@ const import_sql = (input_json, userId) => {
   //       )
   //   `).run();
   // })();
+  db.transaction(() => {
+    const stationGroups = db.prepare(`
+      SELECT stationGroupCode FROM StationGroups
+    `).all();
+    const get_num_stmt = db.prepare(`
+      SELECT COUNT(*) as num FROM StationGroupHistory
+      WHERE stationGroupCode = ? AND userId = ?
+    `);
+    const get_max_date = db.prepare(`
+      SELECT MAX(date) as max FROM StationGroupHistory
+      WHERE stationGroupCode = ? AND userId = ?
+    `);
+    const insert_stmt = db.prepare(`
+      INSERT INTO LatestStationGroupHistory VALUES(?, ?, ?)
+    `);
+
+    stationGroups.forEach(({ stationGroupCode }) => {
+      const num = get_num_stmt.get(stationGroupCode, userId).num;
+      if(num){
+        const date = get_max_date.get(stationGroupCode, userId).max;
+        insert_stmt.run(stationGroupCode, date, userId);
+      }
+    });
+  })();
+
 
   unknown_history.station_history = unknown_history.station_history.sort((a, b) => new Date(a.history[0].date) < new Date(b.history[0].date) ? -1 : 1);
   unknown_history.station_group_history = unknown_history.station_group_history.sort((a, b) => new Date(a.history[0].date) < new Date(b.history[0].date) ? -1 : 1);

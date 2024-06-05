@@ -1652,7 +1652,7 @@ app.post("/api/importHistory", accessLog, (req, res, next) => {
   }
 
   const data = req.body;
-  import_sql(data);
+  import_sql(db, data, userId);
   res.end("OK");
 });
 

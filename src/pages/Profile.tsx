@@ -13,7 +13,7 @@ import { useAuth } from "../auth/auth";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "../components";
-import { useExportHistoryMutation } from "../api/Api";
+import { ExportHistoryJSON, useExportHistoryMutation, useImportHistoryMutation } from "../api/Api";
 
 
 
@@ -35,7 +35,10 @@ const UploadButton = () => {
   const [selectedFilename, setSelectedFilename] = useState("");
   const [fileContent, setFileContent] = useState("");
 
+  const importMutation = useImportHistoryMutation();
   const uploadFile = () => {
+    const json = JSON.parse(fileContent) as ExportHistoryJSON;
+    importMutation.mutate(json);
   };
 
   const handleClose = (value: number | undefined) => {
