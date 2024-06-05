@@ -1632,7 +1632,7 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
 
 
 // 履歴のエクスポート
-app.get("/api/exportHistory", accessLog, (req, res, next) => {
+app.post("/api/exportHistory", accessLog, (req, res, next) => {
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
     next(new Error("Unauthorized"));

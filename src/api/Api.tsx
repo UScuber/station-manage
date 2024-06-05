@@ -769,3 +769,22 @@ export const useDeleteStationGroupHistoryMutation = (
     },
   });
 };
+
+
+// 履歴のエクスポート
+export const useExportHistoryMutation = (
+  onSuccessFn?: (data: string) => unknown
+) => {
+  return useMutation({
+    mutationFn: async() => {
+      const { data } = await axios.post<JSON>("/api/exportHistory", ngrok_header);
+      return JSON.stringify(data, null, "  ");
+    },
+    onSuccess: (data: string) => {
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};

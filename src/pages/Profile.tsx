@@ -13,6 +13,7 @@ import { useAuth } from "../auth/auth";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "../components";
+import { useExportHistoryMutation } from "../api/Api";
 
 
 
@@ -111,16 +112,21 @@ const UploadButton = () => {
 const DownloadButton = () => {
   const [open, setOpen] = useState(false);
 
-  const handleDownloadHistory = () => {
-
-  };
+  const exportMutation = useExportHistoryMutation(data => {
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "station-history.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 
   const DownloadForm = () => {
     return (
       <Box sx={{ textAlign: "center" }}>
         <Button
           variant="contained"
-          onClick={handleDownloadHistory}
+          onClick={() => exportMutation.mutate()}
         >
           ダウンロード
         </Button>
