@@ -10,10 +10,10 @@ const import_sql = (db, input_json, userId) => {
 
 
   // 現在の履歴の削除
-  db.prepare("DELETE FROM StationHistory").run();
-  db.prepare("DELETE FROM StationGroupHistory").run();
-  db.prepare("DELETE FROM LatestStationHistory").run();
-  db.prepare("DELETE FROM LatestStationGroupHistory").run();
+  db.prepare("DELETE FROM StationHistory WHERE userId = ?").run(userId);
+  db.prepare("DELETE FROM StationGroupHistory WHERE userId = ?").run(userId);
+  db.prepare("DELETE FROM LatestStationHistory WHERE userId = ?").run(userId);
+  db.prepare("DELETE FROM LatestStationGroupHistory WHERE userId = ?").run(userId);
 
   let unknown_history = { station_history: [], station_group_history: [] };
 
@@ -109,15 +109,6 @@ const import_sql = (db, input_json, userId) => {
   })();
 
   // stationgroups最終アクセスの更新
-  // db.transaction(() => {
-  //   db.prepare(`
-  //     UPDATE StationGroups SET
-  //       date = (
-  //         SELECT MAX(date) FROM StationGroupHistory
-  //         WHERE StationGroupHistory.stationGroupCode = StationGroups.stationGroupCode
-  //       )
-  //   `).run();
-  // })();
   db.transaction(() => {
     const stationGroups = db.prepare(`
       SELECT stationGroupCode FROM StationGroups
@@ -149,4 +140,46 @@ const import_sql = (db, input_json, userId) => {
   return unknown_history;
 };
 
+
+const check_json_format = (json) => {
+  if(!("station_history" in json)) return false;
+  if(!("station_group_history" in json)) return false;
+  if(!Array.isArray(json.station_history)) return false;
+  if(!Array.isArray(json.station_group_history)) return false;
+
+  // station history
+  for(let i = 0; i < json.station_history.length; i++){
+    const history = json.station_history[i];
+    if(!("history" in history)) return false;
+    if(!("info" in history)) return false;
+    if(!Array.isArray(history.history)) return false;
+    for(let j = 0; j < history.history.length; j++){
+      if(!("date" in history.history[j])) return false;
+      if(!("state" in history.history[j])) return false;
+    }
+    if(!("railwayCode" in history.info)) return false;
+    if(!("latitude" in history.info)) return false;
+    if(!("longitude" in history.info)) return false;
+    if(!("railwayName" in history.info)) return false;
+    if(!("companyName" in history.info)) return false;
+  }
+
+  // station group history
+  for(let i = 0; i < json.station_group_history.length; i++){
+    const history = json.station_group_history[i];
+    if(!("history" in history)) return false;
+    if(!("info" in history)) return false;
+    if(!Array.isArray(history.history)) return false;
+    for(let j = 0; j < history.history.length; j++){
+      if(!("date" in history.history[j])) return false;
+    }
+    if(!("stationName" in history.info)) return false;
+    if(!("latitude" in history.info)) return false;
+    if(!("longitude" in history.info)) return false;
+  }
+  return true;
+};
+
+
 exports.import_sql = import_sql;
+exports.check_json_format = check_json_format;

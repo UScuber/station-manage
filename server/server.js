@@ -5,7 +5,7 @@ const sqlite3 = require("better-sqlite3");
 const cookieParser = require("cookie-parser");
 const { Users } = require("./user");
 const { export_sql } = require("./export-sql");
-const { import_sql } = require("./import-sql");
+const { import_sql, check_json_format } = require("./import-sql");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -1652,6 +1652,10 @@ app.post("/api/importHistory", accessLog, (req, res, next) => {
   }
 
   const data = req.body;
+  if(!check_json_format(data)){
+    next(new Error("Invalid input"));
+    return;
+  }
   import_sql(db, data, userId);
   res.end("OK");
 });
