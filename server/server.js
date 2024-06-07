@@ -34,8 +34,9 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200,
 }));
-app.use(express.json());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true, limit: "300mb" }));
+app.use(express.json({ extended: true, limit: "300mb" }));
 
 
 const db = sqlite3(db_path);
@@ -874,7 +875,7 @@ app.post("/api/signup", accessLog, (req, res, next) => {
     return;
   }
   res.cookie("sessionId", sessionId, {
-    maxAge: 1000*60*60*24*30,
+    maxAge: usersManager.expirationTime,
     httpOnly: true,
     secure: true,
   });
@@ -911,7 +912,7 @@ app.post("/api/login", accessLog, (req, res, next) => {
     return;
   }
   res.cookie("sessionId", sessionId, {
-    maxAge: 1000*60*60*24*20, // 20 days
+    maxAge: usersManager.expirationTime,
     httpOnly: true,
     secure: true,
   });
@@ -921,6 +922,13 @@ app.post("/api/login", accessLog, (req, res, next) => {
 // check
 app.get("/api/status", accessLog, (req, res, next) => {
   const userData = usersManager.getUserData(req);
+  if(userData.auth){
+    res.cookie("sessionId", req.cookies.sessionId, {
+      maxAge: usersManager.expirationTime,
+      httpOnly: true,
+      secure: true,
+    });
+  }
   res.json(userData);
 });
 

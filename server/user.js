@@ -17,6 +17,7 @@ class Users {
   constructor(db){
     this.db = db;
     this.expirationTime = 1000*60*60*24 * 20; // [ms] (20 days)
+    this.sessionCheckInterval = 1000*60*15; // [ms] (15 min.)
   }
 
   // 新規
@@ -54,7 +55,7 @@ class Users {
       }
       this.db.prepare(`
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
-      `).run(userId, new_sessionId, new Date());
+      `).run(userData.userId, new_sessionId, date_string(new Date()));
     }catch(err){
       console.error(err);
       return undefined;
@@ -96,7 +97,6 @@ class Users {
         INNER JOIN Sessions
           ON Users.userId = Sessions.userId
             AND Sessions.sessionId = ?
-        WHERE userId = ?
       `).get(sessionId);
       if(!userData){
         return undefined;
@@ -130,7 +130,7 @@ class Users {
         DELETE FROM Sessions
         WHERE updatedDate < datetime(?)
       `).run(date_string(new Date().getTime() - this.expirationTime));
-    }, 1000*60*15);
+    }, this.sessionCheckInterval);
   }
 
   genSessionId(){
