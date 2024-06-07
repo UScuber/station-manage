@@ -736,7 +736,6 @@ export const useDeleteStationHistoryMutation = (
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
-      queryClient.invalidateQueries({ queryKey: ["GroupStations", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
       queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
       queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
@@ -822,6 +821,7 @@ export const useExportHistoryMutation = (
 export const useImportHistoryMutation = (
   onSuccessFn?: (data: string) => unknown
 ) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: ExportHistoryJSON) => {
       const { data } = await axios.post<string>("/api/importHistory", {
@@ -831,6 +831,16 @@ export const useImportHistoryMutation = (
       return data;
     },
     onSuccess: (data: string) => {
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory"] });
       onSuccessFn && onSuccessFn(data);
     },
     onError: (err: Error) => {

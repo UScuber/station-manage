@@ -3,6 +3,7 @@ import {
   Button,
   CircularProgress,
   Container,
+  DialogContentText,
   Divider,
   FormHelperText,
   ListItemText,
@@ -36,6 +37,7 @@ const UploadButton = () => {
   const [fileContent, setFileContent] = useState("");
 
   const importMutation = useImportHistoryMutation();
+
   const uploadFile = () => {
     const json = JSON.parse(fileContent) as ExportHistoryJSON;
     importMutation.mutate(json);
@@ -43,10 +45,12 @@ const UploadButton = () => {
 
   const handleClose = (value: number | undefined) => {
     setOpen(false);
-    if(!value) return; // 送信ボタンが押されなかった場合
     // OK
+    if(value) uploadFile();
+
+    setSelectedFilename("");
+    setFileContent("");
     setErrorMessage("");
-    uploadFile();
   };
 
   const UploadForm = () => {
@@ -70,6 +74,7 @@ const UploadButton = () => {
 
     return (
       <Box>
+        <FormHelperText sx={{ m: 0 }} error>今までの履歴は消されます</FormHelperText>
         <Button
           component="label"
           variant="contained"
@@ -79,12 +84,12 @@ const UploadButton = () => {
           ファイルを選択
           <VisuallyHiddenInput type="file" accept=".json" onChange={handleFileChange} />
         </Button>
-        <Typography
+        <DialogContentText
           variant="h6"
-          sx={{ fontSize: 16, ml: 2,  display: "inline" }}
+          sx={{ fontSize: 14, ml: 1,  display: "inline" }}
         >
           {selectedFilename}
-        </Typography>
+        </DialogContentText>
         <FormHelperText error>{errorMessage}</FormHelperText>
       </Box>
     );
@@ -203,9 +208,9 @@ const Profile = () => {
 
       <Box sx={{ my: 4 }} />
 
-      <Typography variant="h6" sx={{ fontSize: 16 }}>乗降履歴をダウンロードする(json形式)</Typography>
+      <Typography variant="h6" sx={{ fontSize: 16 }}>乗降履歴をダウンロードする(json)</Typography>
       <DownloadButton />
-      <Typography variant="h6" sx={{ fontSize: 16 }}>乗降履歴をアップロードする(json形式)</Typography>
+      <Typography variant="h6" sx={{ fontSize: 16, mt: 2}}>乗降履歴をアップロードする(json)</Typography>
       <UploadButton />
 
       <Divider sx={{ mt: 3, mb: 2 }} />
