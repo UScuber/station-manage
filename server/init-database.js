@@ -228,8 +228,18 @@ db.transaction(() => {
       userName VARCHAR(64) NOT NULL,
       userEmail VARCHAR(64) NOT NULL UNIQUE,
       hash VARCHAR(64) NOT NULL,
-      sessionId CHAR(64) NOT NULL,
       PRIMARY KEY (userId)
+    )
+  `).run();
+
+  // Sessions
+  db.prepare(`
+    CREATE TABLE Sessions(
+      userId CHAR(64),
+      sessionId CHAR(64),
+      updatedDate DATE NOT NULL,
+      PRIMARY KEY (userId, sessionId),
+      FOREIGN KEY (userId) REFERENCES Users(userId)
     )
   `).run();
 

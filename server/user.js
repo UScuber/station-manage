@@ -1,10 +1,22 @@
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 
+const date_string = (date) => {
+  const date_options = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+  return new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-");
+};
 
 class Users {
   constructor(db){
     this.db = db;
+    this.expirationTime = 1000*60*60*24 * 20; // [ms] (20 days)
   }
 
   // 新規
@@ -16,8 +28,11 @@ class Users {
 
     try{
       this.db.prepare(`
-        INSERT INTO Users VALUES(?,?,?,?,?)
-      `).run(userId, userName, userEmail, hash, sessionId);
+        INSERT INTO Users VALUES(?, ?, ?, ?)
+      `).run(userId, userName, userEmail, hash);
+      this.db.prepare(`
+        INSERT INTO Sessions VALUES(?, ?, datetime(?))
+      `).run(userId, sessionId, date_string(new Date()));
     }catch(err){
       console.error(err);
       return undefined;
@@ -38,9 +53,8 @@ class Users {
         return undefined; // unauthorized
       }
       this.db.prepare(`
-        UPDATE Users SET sessionId = ?
-        WHERE userEmail = ?
-      `).run(new_sessionId, userEmail);
+        INSERT INTO Sessions VALUES(?, ?, datetime(?))
+      `).run(userId, new_sessionId, new Date());
     }catch(err){
       console.error(err);
       return undefined;
@@ -74,12 +88,23 @@ class Users {
     let userData;
     try{
       userData = this.db.prepare(`
-        SELECT * FROM Users
-        WHERE sessionId = ?
+        SELECT
+          Users.userId,
+          Users.userName,
+          Users.userEmail
+        FROM Users
+        INNER JOIN Sessions
+          ON Users.userId = Sessions.userId
+            AND Sessions.sessionId = ?
+        WHERE userId = ?
       `).get(sessionId);
       if(!userData){
         return undefined;
       }
+      this.db.prepare(`
+        UPDATE Sessions SET updatedDate = datetime(?)
+        WHERE userId = ? AND sessionId = ?
+      `).run(date_string(new Date()), userData.userId, sessionId);
     }catch(err){
       console.error(err);
       return undefined;
@@ -88,15 +113,24 @@ class Users {
   }
 
   logout(sessionId){
-    const new_sessionId = this.genSessionId();
     try{
       this.db.prepare(`
-        UPDATE Users SET sessionId = ?
+        DELETE FROM Sessions
         WHERE sessionId = ?
-      `).run(new_sessionId, sessionId);
+      `).run(sessionId);
     }catch(err){
       console.error(err);
     }
+  }
+
+  // 一定期間が経過したsessionを消す
+  look(){
+    setInterval(() => {
+      this.db.prepare(`
+        DELETE FROM Sessions
+        WHERE updatedDate < datetime(?)
+      `).run(date_string(new Date().getTime() - this.expirationTime));
+    }, 1000*60*15);
   }
 
   genSessionId(){

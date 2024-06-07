@@ -841,6 +841,8 @@ app.get("/api/pathslist/:companyCode", accessLog, (req, res, next) => {
 
 const usersManager = new Users(db);
 
+usersManager.look();
+
 
 // 新規登録
 app.post("/api/signup", accessLog, (req, res, next) => {
@@ -927,6 +929,11 @@ app.get("/api/logout", accessLog, (req, res, next) => {
   const sessionId = req.cookies.sessionId;
   if(!sessionId){
     next(new Error("Invalid input"));
+    return;
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
     return;
   }
   usersManager.logout(sessionId);
