@@ -15,16 +15,19 @@ import {
   ListItemText,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useAuth } from "../auth/auth";
+import { AccountCircle } from "@mui/icons-material";
 
-const navItems: Array<{ text: string, url: string }> = [
-  { text: "List", url: "/stationList" },
-  { text: "Search", url: "/searchStation" },
-  { text: "History", url: "/history" },
+const navItems: Array<{ text: string, url: string, auth: boolean }> = [
+  { text: "List", url: "/stationList", auth: false },
+  { text: "Search", url: "/searchStation", auth: false },
+  { text: "History", url: "/history", auth: true },
 ];
 
 const drawerWidth = 240;
 
 const Header = () => {
+  const { isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () => {
@@ -60,14 +63,44 @@ const Header = () => {
           </IconButton>
           <Box sx={{ display: { xs: "none", sm: "block", textAlign: "center" } }}>
             <List component="nav" sx={{ display: "flex", justifyContent: "flex-start" }}>
-              {navItems.map((item) => (
-                <ListItem key={item.text} disablePadding>
+              {navItems.map(item => (
+                <ListItem
+                  key={item.text}
+                  sx={{
+                    display: (item.auth && !isAuthenticated) ? "none" : "inline"
+                  }}
+                  disablePadding
+                >
                   <ListItemButton component={Link} to={item.url} sx={{ textAlign: "center" }}>
                     <ListItemText primary={item.text} />
                   </ListItemButton>
                 </ListItem>
               ))}
             </List>
+          </Box>
+
+          <Box sx={{ display: { xs: "none", sm: "block" }, flexGrow: 1 }} />
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>
+            {!isAuthenticated && (<>
+              <Button component={Link} color="inherit" to="/login">
+                <ListItemText primary="Login" />
+              </Button>
+              <Button component={Link} color="inherit" to="/signup">
+                <ListItemText primary="Signup" />
+              </Button>
+            </>)}
+            {isAuthenticated && (
+              <IconButton
+                size="large"
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                component={Link}
+                to="/profile"
+                color="inherit"
+              >
+                <AccountCircle />
+              </IconButton>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
@@ -106,6 +139,29 @@ const Header = () => {
                 </ListItem>
               ))}
             </List>
+
+            <Divider sx={{ mx: "auto", width: "80%" }} />
+            {!isAuthenticated && (
+              <List>
+                <ListItem disablePadding>
+                  <ListItemButton component={Link} to="/login" sx={{ textAlign: "center" }}>
+                    <ListItemText primary="Login" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton component={Link} to="/signup" sx={{ textAlign: "center" }}>
+                    <ListItemText primary="Signup" />
+                  </ListItemButton>
+                </ListItem>
+              </List>
+            )}
+            {isAuthenticated && (
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/profile" sx={{ textAlign: "center" }}>
+                  <ListItemText primary="Profile" />
+                </ListItemButton>
+              </ListItem>
+            )}
           </Box>
         </Drawer>
       </nav>

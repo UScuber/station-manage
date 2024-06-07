@@ -7,11 +7,12 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { Railway, useCompanyInfo, useRailPathByCompanyCode, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "./Api";
+import { Railway, useCompanyInfo, useRailPathByCompanyCode, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "../api/Api";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
-import { CircleProgress, CustomLink, StationMapGeojson } from "./components";
+import { CircleProgress, CustomLink, StationMapGeojson } from "../components";
+import { useAuth } from "../auth/auth";
 
 
 const FitMapZoom = (
@@ -31,7 +32,8 @@ const FitMapZoom = (
 };
 
 const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
-  const railwayProgressQuery = useRailwayProgress(info.railwayCode);
+  const { isAuthenticated } = useAuth();
+  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
   const railwayProgress = railwayProgressQuery.data;
 
   return (
@@ -43,7 +45,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+        bgcolor: (isAuthenticated && railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -60,7 +62,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {railwayProgress && (<CircleProgress size={25} progress={railwayProgress} />)}
+          {isAuthenticated && railwayProgress && (<CircleProgress size={25} progress={railwayProgress} />)}
         </Box>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
@@ -107,7 +109,7 @@ const CompanyInfo = () => {
 
   const stationsPositionMap = (() => {
     let codeMap: { [key: number]: { lat: number, lng: number } } = {};
-    stationList?.forEach(item => {
+    stationList.forEach(item => {
       codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
     });
     return codeMap;

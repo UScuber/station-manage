@@ -2,6 +2,10 @@ const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("better-sqlite3");
+const cookieParser = require("cookie-parser");
+const { Users } = require("./user");
+const { export_sql } = require("./export-sql");
+const { import_sql, check_json_format } = require("./import-sql");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -30,6 +34,10 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200,
 }));
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true, limit: "300mb" }));
+app.use(express.json({ extended: true, limit: "300mb" }));
+
 
 const db = sqlite3(db_path);
 db.pragma("journal_mode = WAL");
@@ -145,8 +153,6 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
     data = db.prepare(`
       SELECT
         StationGroups.*,
-        MAX(getDate) AS maxGetDate,
-        MAX(passDate) AS maxPassDate,
         Prefectures.name AS prefName
       FROM Stations
       INNER JOIN StationGroups
@@ -182,7 +188,6 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
         Stations.*,
         StationGroups.stationName,
         StationGroups.kana,
-        StationGroups.date,
         Railways.railwayName,
         Railways.railwayColor,
         Companies.companyCode,
@@ -830,7 +835,192 @@ app.get("/api/pathslist/:companyCode", accessLog, (req, res, next) => {
 });
 
 
-///// History
+
+
+
+////////// User //////////
+
+const usersManager = new Users(db);
+
+usersManager.look();
+
+
+// 新規登録
+app.post("/api/signup", accessLog, (req, res, next) => {
+  const userName = req.body.userName;
+  const userEmail = req.body.userEmail;
+  const password = req.body.password;
+
+  if(!userName || !userEmail || !password){
+    next(new Error("Invalid input"));
+    return;
+  }
+  try{
+    const userData = db.prepare(`
+      SELECT * FROM Users
+      WHERE userEmail = ?
+    `).get(userEmail);
+    if(userData){
+      res.json({ auth: false });
+      return;
+    }
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  const sessionId = usersManager.signup(userName, userEmail, password);
+  if(!sessionId){
+    next(new Error("Server Error"));
+    return;
+  }
+  res.cookie("sessionId", sessionId, {
+    maxAge: usersManager.expirationTime,
+    httpOnly: true,
+    secure: true,
+  });
+  res.json({ auth: true });
+});
+
+
+// ログイン
+app.post("/api/login", accessLog, (req, res, next) => {
+  const userEmail = req.body.userEmail;
+  const password = req.body.password;
+
+  if(!userEmail || !password){
+    next(new Error("Invalid input"));
+    return;
+  }
+  try{
+    const userData = db.prepare(`
+      SELECT * FROM Users
+      WHERE userEmail = ?
+    `).get(userEmail);
+    if(!userData){
+      next(new Error("Invalid input"));
+      return;
+    }
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  const sessionId = usersManager.login(userEmail, password);
+  if(!sessionId){
+    res.json({ auth: false });
+    return;
+  }
+  res.cookie("sessionId", sessionId, {
+    maxAge: usersManager.expirationTime,
+    httpOnly: true,
+    secure: true,
+  });
+  res.json({ auth: true });
+});
+
+// check
+app.get("/api/status", accessLog, (req, res, next) => {
+  const userData = usersManager.getUserData(req);
+  if(userData.auth){
+    res.cookie("sessionId", req.cookies.sessionId, {
+      maxAge: usersManager.expirationTime,
+      httpOnly: true,
+      secure: true,
+    });
+  }
+  res.json(userData);
+});
+
+// logout
+app.get("/api/logout", accessLog, (req, res, next) => {
+  const sessionId = req.cookies.sessionId;
+  if(!sessionId){
+    next(new Error("Invalid input"));
+    return;
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+  usersManager.logout(sessionId);
+  res.cookie("sessionId", "", {
+    maxAge: 0,
+    httpOnly: true,
+    secure: true,
+  });
+  res.end("OK");
+});
+
+
+
+
+
+
+////////// History //////////
+
+
+// 駅の最新のアクセス日時を取得
+app.get("/api/latestStationHistory/:stationCode", accessLog, (req, res, next) => {
+  const code = +req.params.stationCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  let data;
+  try{
+    const stmt = db.prepare(`
+      SELECT date FROM LatestStationHistory
+      WHERE stationCode = ? AND state = ? AND userId = ?
+    `);
+    data = {
+      getDate: stmt.get(code, 0, userId)?.date ?? null,
+      passDate: stmt.get(code, 1, userId)?.date ?? null,
+    };
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
+// 駅グループの最新のアクセス日時を取得
+app.get("/api/latestStationGroupHistory/:stationGroupCode", accessLog, (req, res, next) => {
+  const code = +req.params.stationGroupCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  let data;
+  try{
+    const stmt = db.prepare(`
+      SELECT date FROM LatestStationGroupHistory
+      WHERE stationGroupCode = ? AND userId = ?
+    `);
+    data = {
+      date: stmt.get(code, userId)?.date ?? null,
+    };
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
 
 // 全体の乗降/通過の履歴を区間取得
 app.get("/api/stationHistory", accessLog, (req, res, next) => {
@@ -842,6 +1032,12 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
     next(new Error("Invalid input"));
     return;
   }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   let data;
   try{
     if(type === "station" && name !== ""){
@@ -862,6 +1058,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+            AND StationHistory.userId = ?
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
             AND StationGroups.stationName = ?
@@ -874,7 +1071,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(name, len, off);
+      `).all(userId, name, len, off);
     }else if(type === "railway" && name !== ""){
       data = db.prepare(`
         SELECT
@@ -893,6 +1090,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+            AND StationHistory.userId = ?
         INNER JOIN Railways
           ON Stations.railwayCode = Railways.railwayCode
             AND Railways.railwayName = ?
@@ -905,7 +1103,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(name, len, off);
+      `).all(userId, name, len, off);
     }else if(type === "company" && name !== ""){
       data = db.prepare(`
         SELECT
@@ -924,6 +1122,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+            AND StationHistory.userId = ?
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
         INNER JOIN Railways
@@ -936,7 +1135,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(name, len, off);
+      `).all(userId, name, len, off);
     }else{
       data = db.prepare(`
         SELECT
@@ -954,6 +1153,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+            AND StationHistory.userId = ?
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
         INNER JOIN Railways
@@ -965,7 +1165,7 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
         ORDER BY date DESC
         LIMIT ?
         OFFSET ?
-      `).all(len, off);
+      `).all(userId, len, off);
     }
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
@@ -981,6 +1181,12 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
 app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
   const name = req.query.name ?? "";
   const type = req.query.type;
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   let data;
   try{
     if(type === "station" && name !== ""){
@@ -988,34 +1194,38 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
         SELECT COUNT(*) AS count FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+            AND StationHistory.userId = ?
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
             AND StationGroups.stationName = ?
-      `).get(name);
+      `).get(userId, name);
     }else if(type === "railway" && name !== ""){
       data = db.prepare(`
         SELECT COUNT(*) AS count FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+            AND StationHistory.userId = ?
         INNER JOIN Railways
           ON Stations.railwayCode = Railways.railwayCode
             AND Railways.railwayName = ?
-      `).get(name);
+      `).get(userId, name);
     }else if(type === "company" && name !== ""){
       data = db.prepare(`
         SELECT COUNT(*) AS count FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
+            AND StationHistory.userId = ?
         INNER JOIN Railways
           ON Stations.railwayCode = Railways.railwayCode
         INNER JOIN Companies
           ON Railways.companyCode = Companies.companyCode
             AND Companies.companyName = ?
-      `).get(name);
+      `).get(userId, name);
     }else{
       data = db.prepare(`
         SELECT COUNT(*) AS count FROM StationHistory
-      `).get();
+        WHERE StationHistory.userId = ?
+      `).get(userId);
     }
   }catch(err){
     console.error(err);
@@ -1027,6 +1237,12 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
 
 // 全体の乗降/通過の履歴と駅情報を取得
 app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   // const off = req.query.off;
   // const len = req.query.len;
   // if(off === undefined || len === undefined){
@@ -1051,6 +1267,7 @@ app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
       FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
+          AND StationHistory.userId = ?
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
       INNER JOIN Railways
@@ -1060,7 +1277,7 @@ app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
       ORDER BY date DESC
-    `).all();
+    `).all(userId);
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
@@ -1078,13 +1295,19 @@ app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
     next(new Error("Invalid input"));
     return;
   }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   let data;
   try{
     data = db.prepare(`
       SELECT * FROM StationHistory
-      WHERE stationCode = ?
+      WHERE stationCode = ? AND userId = ?
       ORDER BY date DESC
-    `).all(code);
+    `).all(code, userId);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1100,17 +1323,23 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next
     next(new Error("Invalid input"));
     return;
   }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
   let data;
   try{
     data = db.prepare(`
         SELECT
-          StationGroupHistory.*,
+        StationGroupHistory.stationGroupCode,
+          StationGroupHistory.date,
           2 AS state,
           '' AS railwayName,
           '' AS railwayColor,
           NULL AS stationCode
         FROM StationGroupHistory
-        WHERE stationGroupCode = ?
+        WHERE stationGroupCode = ? AND userId = ?
       UNION ALL
         SELECT
           Stations.stationGroupCode,
@@ -1123,10 +1352,11 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
             AND Stations.stationGroupCode = ?
+            AND StationHistory.userId = ?
         INNER JOIN Railways
           ON Stations.railwayCode = Railways.railwayCode
       ORDER BY date DESC
-    `).all(code, code);
+    `).all(code, userId, code, userId);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1142,6 +1372,12 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
     next(new Error("Invalid input"));
     return;
   }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   let stationNum, getOrPassStationNum;
   try{
     stationNum = db.prepare(`
@@ -1154,7 +1390,8 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
           AND Stations.railwayCode = ?
-    `).get(code);
+          AND StationHistory.userId = ?
+    `).get(code, userId);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1170,6 +1407,12 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res, next) => {
     next(new Error("Invalid input"));
     return;
   }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   let stationNum, getOrPassStationNum;
   try{
     stationNum = db.prepare(`
@@ -1183,10 +1426,11 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res, next) => {
       SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
+          AND StationHistory.userId = ?
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
           AND Railways.companyCode = ?
-    `).get(code);
+    `).get(userId, code);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1202,6 +1446,12 @@ app.get("/api/prefProgress/:prefCode", accessLog, (req, res, next) => {
     next(new Error("Invalid input"));
     return;
   }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   let stationNum, getOrPassStationNum;
   try{
     stationNum = db.prepare(`
@@ -1215,10 +1465,11 @@ app.get("/api/prefProgress/:prefCode", accessLog, (req, res, next) => {
       SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
+          AND StationHistory.userId = ?
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
           AND StationGroups.prefCode = ?
-    `).get(code);
+    `).get(userId, code);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1240,15 +1491,32 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
     next(new RangeError("Invalid input"));
     return;
   }
-  const value_name = ["getDate", "passDate"][state];
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   try{
     db.prepare(
-      "INSERT INTO StationHistory VALUES(?, datetime(?), ?)"
-    ).run(code, date, state);
+      "INSERT INTO StationHistory VALUES(?, datetime(?), ?, ?)"
+    ).run(code, date, state, userId);
 
-    db.prepare(
-      `UPDATE Stations SET ${value_name} = MAX(IFNULL(${value_name}, 0), datetime(?)) WHERE stationCode = ?`
-    ).run(date, code);
+    const cnt = db.prepare(`
+      SELECT COUNT(*) AS cnt FROM LatestStationHistory
+      WHERE stationCode = ? AND state = ? AND userId = ?
+    `).get(code, state, userId).cnt;
+
+    if(cnt){
+      db.prepare(`
+        UPDATE LatestStationHistory SET date = MAX(IFNULL(date, 0), datetime(?))
+        WHERE stationCode = ? AND state = ? AND userId = ?
+      `).run(date, code, state, userId);
+    }else{
+      db.prepare(`
+        INSERT INTO LatestStationHistory VALUES(?, datetime(?), ?, ?)
+      `).run(code, date, state, userId);
+    }
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1265,13 +1533,32 @@ app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
     next(new Error("Invalid input"));
     return;
   }
-  try{
-    db.prepare("INSERT INTO StationGroupHistory VALUES(?, datetime(?))")
-      .run(code, date);
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
 
-    db.prepare(
-      `UPDATE StationGroups SET date = MAX(IFNULL(date, 0), datetime(?)) WHERE stationGroupCode = ?`
-    ).run(date, code);
+  try{
+    db.prepare(`
+      INSERT INTO StationGroupHistory VALUES(?, datetime(?), ?)
+    `).run(code, date, userId);
+
+    const cnt = db.prepare(`
+      SELECT COUNT(*) AS cnt FROM LatestStationGroupHistory
+      WHERE stationGroupCode = ? AND userId = ?
+    `).get(code, userId).cnt;
+
+    if(cnt){
+      db.prepare(`
+        UPDATE LatestStationGroupHistory SET date = MAX(IFNULL(date, 0), datetime(?))
+        WHERE stationGroupCode = ? AND userId = ?
+      `).run(date, code, userId);
+    }else{
+      db.prepare(`
+        INSERT INTO LatestStationGroupHistory VALUES(?, datetime(?), ?)
+      `).run(code, date, userId);
+    }
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1293,20 +1580,26 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
     next(new RangeError("Invalid input"));
     return;
   }
-  const value_name = ["getDate", "passDate"][state];
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   try{
     db.prepare(`
       DELETE FROM StationHistory
-      WHERE stationCode = ? AND date = datetime(?) AND state = ?
-    `).run(code, date, state);
+      WHERE stationCode = ? AND date = datetime(?) AND state = ? AND userId = ?
+    `).run(code, date, state, userId);
 
+    // 要素が何もなければNULLが入る
     db.prepare(`
-      UPDATE Stations SET ${value_name} = (
+      UPDATE LatestStationHistory SET date = (
         SELECT MAX(date) FROM StationHistory
-        WHERE stationCode = ? AND state = ?
+        WHERE stationCode = ? AND state = ? AND userId = ?
       )
-      WHERE stationCode = ? AND ${value_name} = datetime(?)
-    `).run(code, state, code, date);
+      WHERE stationCode = ? AND state = ? AND userId = ?
+    `).run(code, state, userId, code, state, userId);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
@@ -1323,24 +1616,62 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
     next(new Error("Invalid input"));
     return;
   }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
   try{
     db.prepare(`
       DELETE FROM StationGroupHistory
-      WHERE stationGroupCode = ? AND date = datetime(?)
-    `).run(code, date);
+      WHERE stationGroupCode = ? AND date = datetime(?) AND userId = ?
+    `).run(code, date, userId);
 
+    // 要素が何もなければNULLが入る
     db.prepare(`
-      UPDATE StationGroups SET date = (
+      UPDATE LatestStationGroupHistory SET date = (
         SELECT MAX(date) FROM StationGroupHistory
-        WHERE stationGroupCode = ?
+        WHERE stationGroupCode = ? AND userId = ?
       )
-      WHERE stationGroupCode = ?
-    `).run(code, code);
+      WHERE stationGroupCode = ? AND userId = ?
+    `).run(code, userId, code, userId);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
     return;
   }
+  res.end("OK");
+});
+
+
+
+// 履歴のエクスポート
+app.post("/api/exportHistory", accessLog, (req, res, next) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  const data = export_sql(db, userId);
+  res.json(data);
+});
+
+// 履歴のインポート
+app.post("/api/importHistory", accessLog, (req, res, next) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  const data = req.body;
+  if(!check_json_format(data)){
+    next(new Error("Invalid input"));
+    return;
+  }
+  import_sql(db, data, userId);
   res.end("OK");
 });
 

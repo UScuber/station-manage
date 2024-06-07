@@ -15,8 +15,9 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Company, useCompanyList, useCompanyProgress } from "./Api";
-import { BinaryPagination, CircleProgress, CustomLink } from "./components";
+import { Railway, useRailwayList, useRailwayProgress } from "../api/Api";
+import { BinaryPagination, CircleProgress, CustomLink } from "../components";
+import { useAuth } from "../auth/auth";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -28,16 +29,25 @@ const nameSimilarity = (name: string, input: string) => {
   return 3;
 };
 
-const Row = ({ info }: { info: Company }) => {
-  const companyProgressQuery = useCompanyProgress(info.companyCode);
-  const companyProgress = companyProgressQuery.data;
+const Row = ({ info }: { info: Railway }) => {
+  const { isAuthenticated } = useAuth();
+  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
+  const railwayProgress = railwayProgressQuery.data;
 
-  if(!companyProgress){
+  if(!isAuthenticated || !railwayProgress){
     return (
       <TableRow>
         <TableCell>
-          <CustomLink to={"/company/" + info.companyCode}>
-            <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+          <CustomLink to={"/railway/" + info.railwayCode}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: 14,
+                textDecoration: "underline",
+                textDecorationColor: "#" + info.railwayColor,
+                textDecorationThickness: 2,
+              }}
+            >{info.railwayName}</Typography>
           </CustomLink>
         </TableCell>
         <TableCell />
@@ -47,27 +57,35 @@ const Row = ({ info }: { info: Company }) => {
 
   return (
     <TableRow sx={{
-      bgcolor: (companyProgress.getOrPassStationNum === companyProgress.stationNum ? "access.main" : "none")
+      bgcolor: (railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none")
     }}>
       <TableCell>
-        <CustomLink to={"/company/" + info.companyCode}>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+        <CustomLink to={"/railway/" + info.railwayCode}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: 14,
+              textDecoration: "underline",
+              textDecorationColor: "#" + info.railwayColor,
+              textDecorationThickness: 2,
+            }}
+          >{info.railwayName}</Typography>
         </CustomLink>
       </TableCell>
       <TableCell>
-        <CircleProgress size={25} progress={companyProgress} />
+        <CircleProgress size={25} progress={railwayProgress} />
       </TableCell>
     </TableRow>
   );
 };
 
-const CompanyList = () => {
+const RailwayList = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
-  const companyListQuery = useCompanyList();
-  const companyList = companyListQuery.data;
+  const railwayListQuery = useRailwayList();
+  const railwayList = railwayListQuery.data;
 
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
@@ -81,7 +99,7 @@ const CompanyList = () => {
     setPage(1);
   };
 
-  if(companyListQuery.isError){
+  if(railwayListQuery.isError){
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -89,7 +107,7 @@ const CompanyList = () => {
     );
   }
 
-  if(!companyList){
+  if(!railwayList){
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -98,17 +116,17 @@ const CompanyList = () => {
     );
   }
 
-  const filteredCompanies =
-    companyList
-      .map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
-      .filter(comp => comp.ord < 4)
+  const filteredRailways =
+    railwayList
+      .map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
+      .filter(rail => rail.ord < 4)
       .sort((a, b) => a.ord - b.ord);
-  const dividedCompanies = filteredCompanies.slice((page-1)*rowsPerPage, page*rowsPerPage);
+  const dividedRailways = filteredRailways.slice((page-1)*rowsPerPage, page*rowsPerPage);
 
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
       page={page}
-      count={filteredCompanies.length}
+      count={filteredRailways.length}
       rowsPerPage={rowsPerPage}
       rowsPerPageOptions={[10,25,50,100,200]}
       onPageChange={handleChangePage}
@@ -120,8 +138,8 @@ const CompanyList = () => {
   return (
     <Container>
       <TextField
-        id="company name"
-        label="company name"
+        id="railway name"
+        label="railway name"
         variant="standard"
         value={inputName}
         sx={{ maxWidth: "50%" }}
@@ -137,16 +155,16 @@ const CompanyList = () => {
       <CustomPagination />
 
       <TableContainer component={Paper}>
-        <Table aria-label="company table">
+        <Table aria-label="railway table">
           <TableHead>
             <TableRow>
-              <TableCell>Company</TableCell>
+              <TableCell>Railway</TableCell>
               <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
-            {dividedCompanies.map(item => (
-              <Row info={item} key={item.companyCode} />
+            {dividedRailways.map(item => (
+              <Row info={item} key={item.railwayCode} />
             ))}
           </TableBody>
         </Table>
@@ -157,4 +175,4 @@ const CompanyList = () => {
   );
 };
 
-export default CompanyList;
+export default RailwayList;

@@ -15,9 +15,11 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "./Api";
-import { BinaryPagination, CustomLink, RespStationName } from "./components";
-import getDateString from "./utils/getDateString";
+import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "../api/Api";
+import { BinaryPagination, CustomLink, RespStationName } from "../components";
+import getDateString from "../utils/getDateString";
+import { useAuth } from "../auth/auth";
+import NotFound from "./NotFound";
 
 
 const stateNames = ["乗降", "通過"];
@@ -104,6 +106,7 @@ const HistoryContent = (
 
 
 const History = () => {
+  const { isAuthenticated } = useAuth();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
@@ -154,6 +157,12 @@ const History = () => {
     );
   };
 
+
+  if(!isAuthenticated){
+    return (
+      <NotFound />
+    );
+  }
 
   if(historyList.isError || historyListCount.isError){
     return (

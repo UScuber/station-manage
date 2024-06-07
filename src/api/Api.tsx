@@ -2,6 +2,7 @@ import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack
 import axios from "axios";
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASEURL;
+axios.defaults.withCredentials = true;
 
 // 日付をDate型に変換する
 axios.interceptors.response.use(res => {
@@ -28,7 +29,9 @@ axios.interceptors.response.use(res => {
   return res;
 });
 
-const ngrok_header = { headers: { "ngrok-skip-browser-warning": "a" } };
+const ngrok_header = {
+  headers: { "ngrok-skip-browser-warning": "a" },
+};
 
 const convert_date = (date: Date) => {
   return new Date(date).toLocaleString(
@@ -59,8 +62,6 @@ export type Station = {
   railwayCompany: string,
   latitude: number,
   longitude: number,
-  getDate: Date | undefined,
-  passDate: Date | undefined,
   prefCode: number,
   prefName: string,
   kana: string,
@@ -82,6 +83,7 @@ export const useStationInfo = (
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -95,6 +97,7 @@ export const useStationsInfoByGroupCode = (code: number | undefined): UseQueryRe
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -105,7 +108,6 @@ export type StationGroup = {
   stationName: string,
   latitude: number,
   longitude: number,
-  date: Date | undefined,
   prefCode: number,
   prefName: string,
   kana: string,
@@ -125,6 +127,7 @@ export const useStationGroupInfo = (
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -179,6 +182,7 @@ export const useStationsInfoByRailwayCode = (
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -239,6 +243,7 @@ export const useStationsInfoByCompanyCode = (code: number | undefined): UseQuery
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -266,6 +271,7 @@ export const useStationsInfoByPrefCode = (code: number | undefined): UseQueryRes
       return data;
     },
     enabled: code !== undefined,
+    staleTime: Infinity,
   });
 };
 
@@ -389,6 +395,146 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined): UseQu
     },
     enabled: companyCode !== undefined,
     staleTime: Infinity,
+  });
+};
+
+
+export type User = {
+  userName: string,
+  userEmail: string,
+  password?: string,
+};
+
+// 新規登録
+export const useSignupMutation = (
+  callbackFn?: (authorized: boolean) => unknown
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: User) => {
+      const { data } = await axios.post<Auth>("/api/signup", {
+        headers: ngrok_header.headers,
+        ...req,
+      });
+      return data;
+    },
+    onSuccess: (data: Auth, variables: User) => {
+      callbackFn && callbackFn(data.auth);
+      queryClient.invalidateQueries({ queryKey: ["UserData"] });
+    },
+    onError: (err: Error) => {
+      callbackFn && callbackFn(false);
+      console.error(err);
+    },
+  });
+};
+
+
+export type Auth = {
+  auth: boolean,
+  userName: string | undefined,
+  userEmail: string | undefined,
+};
+
+// ログイン
+export const useLoginMutation = (
+  onSuccessFn?: (authorized: boolean) => unknown
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: User) => {
+      const { data } = await axios.post<Auth>("/api/login", {
+        headers: ngrok_header.headers,
+        ...req,
+      });
+      return data;
+    },
+    onSuccess: (data: Auth, variables: User) => {
+      onSuccessFn && onSuccessFn(data.auth);
+      queryClient.invalidateQueries({ queryKey: ["UserData"] });
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// check status
+export const useUserStatus = (
+  onSuccessFn?: (data: Auth) => unknown
+) => {
+  return useQuery<Auth>({
+    queryKey: ["UserData"],
+    queryFn: async() => {
+      const { data } = await axios.get<Auth>("/api/status", ngrok_header);
+      onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+  });
+};
+
+
+// logout
+export const useLogoutMutation = (
+  onSuccessFn?: () => unknown
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async() => {
+      const { data } = await axios.get<string>("/api/logout", ngrok_header);
+      return data;
+    },
+    onSuccess: (data: string, variables: User) => {
+      onSuccessFn && onSuccessFn();
+      queryClient.invalidateQueries({ queryKey: ["UserData"] });
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+
+export type StationDate = {
+  getDate: Date | undefined,
+  passDate: Date | undefined,
+};
+
+// 駅の最新のアクセス日時を取得
+export const useLatestStationHistory = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationDate) => unknown
+): UseQueryResult<StationDate> => {
+  return useQuery<StationDate>({
+    queryKey: ["LatestStationHistory", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationDate>("/api/latestStationHistory/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+export type StationGroupDate = {
+  date: Date | undefined,
+};
+
+// 駅グループの最新のアクセス日時を取得
+export const useLatestStationGroupHistory = (
+  code: number | undefined,
+  onSuccessFn?: (data: StationGroupDate) => unknown
+): UseQueryResult<StationGroupDate> => {
+  return useQuery<StationGroupDate>({
+    queryKey: ["LatestStationGroupHistory", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationGroupDate>("/api/latestStationGroupHistory/" + code, ngrok_header);
+      onSuccessFn && onSuccessFn(data);
+      return data;
+    },
+    enabled: code !== undefined,
   });
 };
 
@@ -534,7 +680,7 @@ export const useSendStationStateMutation = () => {
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
@@ -564,7 +710,7 @@ export const useSendStationGroupStateMutation = () => {
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
     },
     onError: (err: Error) => {
@@ -585,12 +731,11 @@ export const useDeleteStationHistoryMutation = (
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["Station", variables.stationCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistory", variables.stationCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
-      queryClient.invalidateQueries({ queryKey: ["GroupStations", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
       queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
       queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
@@ -598,7 +743,7 @@ export const useDeleteStationHistoryMutation = (
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
   });
 };
 
@@ -614,12 +759,92 @@ export const useDeleteStationGroupHistoryMutation = (
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
-      queryClient.invalidateQueries({ queryKey: ["StationGroup", variables.stationGroupCode] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory", variables.stationGroupCode] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory", variables.stationGroupCode] });
       onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
+  });
+};
+
+
+// ファイル入出力用のJSONの型
+export type ExportHistoryJSON = {
+  station_history: {
+    history: {
+      date: Date,
+      state: number,
+    }[],
+    info: {
+      railwayCode: number,
+      latitude: number,
+      longitude: number,
+      stationName: string,
+      railwayName: string,
+      companyName: string,
+    }[],
+  }[],
+  station_group_history: {
+    history: {
+      date: Date,
+    }[],
+    info: {
+      stationName: string,
+      latitude: number,
+      longitude: number,
+    }[],
+  }[],
+};
+
+// 履歴のエクスポート
+export const useExportHistoryMutation = (
+  onSuccessFn?: (data: string) => unknown
+) => {
+  return useMutation({
+    mutationFn: async() => {
+      const { data } = await axios.post<ExportHistoryJSON>("/api/exportHistory", ngrok_header);
+      return JSON.stringify(data);
+    },
+    onSuccess: (data: string) => {
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 履歴のインポート
+export const useImportHistoryMutation = (
+  onSuccessFn?: (data: string) => unknown
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: ExportHistoryJSON) => {
+      const { data } = await axios.post<string>("/api/importHistory", {
+        headers: ngrok_header.headers,
+        ...req,
+      });
+      return data;
+    },
+    onSuccess: (data: string) => {
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory"] });
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
   });
 };

@@ -1,22 +1,27 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CssBaseline, ThemeProvider, Toolbar, createTheme, styled } from "@mui/material";
-import Header from "./Header";
-import Top from "./Top";
-import Footer from "./Footer";
-import StationList from "./StationList";
-import StationInfo from "./StationInfo";
-import StationGroupInfo from "./StationGroupInfo";
-import RailwayList from "./RailwayList";
-import RailwayInfo from "./RailwayInfo";
-import SearchStation from "./SearchStation";
-import History from "./History";
-import NotFound from "./NotFound";
-import CompanyList from "./CompanyList";
-import CompanyInfo from "./CompanyInfo";
-import PrefectureInfo from "./PrefectureInfo";
-import PrefectureList from "./PrefectureList";
-import HistoryMap from "./HistoryMap";
+import { Alert, Box, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import Header from "./components/Header";
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import Top from "./pages/Top";
+import Footer from "./components/Footer";
+import StationList from "./pages/StationList";
+import StationInfo from "./pages/StationInfo";
+import StationGroupInfo from "./pages/StationGroupInfo";
+import RailwayList from "./pages/RailwayList";
+import RailwayInfo from "./pages/RailwayInfo";
+import SearchStation from "./pages/SearchStation";
+import History from "./pages/History";
+import NotFound from "./pages/NotFound";
+import CompanyList from "./pages/CompanyList";
+import CompanyInfo from "./pages/CompanyInfo";
+import PrefectureInfo from "./pages/PrefectureInfo";
+import PrefectureList from "./pages/PrefectureList";
+import HistoryMap from "./pages/HistoryMap";
+import { AuthProvider, getAuth } from "./auth/auth";
+import { memo } from "react";
 
 
 declare module "@mui/material/styles" {
@@ -66,22 +71,37 @@ theme.typography.h3 = {
   },
 };
 
-const ThinToolbar = styled(Toolbar)(({ theme }) => ({
-  minHeight: 25,
-}));
 
-const App = () => {
-  const queryClient = new QueryClient();
+const Notification = memo(() => {
+  const location = useLocation();
+  const state = location.state;
+
+  if(!state || !state.message || !state.url || state.url !== location.pathname){
+    return (
+      <Box sx={{ mt: 8 }}></Box>
+    );
+  }
+  return (
+    <Alert severity="success" sx={{ mt: 1.3, mb: 0.7 }}>{state.message}</Alert>
+  );
+});
+
+
+const AppChild = () => {
+  const auth = getAuth();
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <AuthProvider value={auth}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
           <Header />
-          <ThinToolbar />
+          <Notification />
           <Routes>
             <Route path="/" element={<Top />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/stationList" element={<StationList />} />
             <Route path="/station/:stationCode" element={<StationInfo />} />
             <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
@@ -99,6 +119,17 @@ const App = () => {
           <Footer />
         </BrowserRouter>
       </ThemeProvider>
+    </AuthProvider>
+  );
+};
+
+
+const App = () => {
+  const queryClient = new QueryClient();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppChild />
     </QueryClientProvider>
   );
 };

@@ -8,11 +8,12 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { Railway, usePrefName, usePrefProgress, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "./Api";
+import { Railway, usePrefName, usePrefProgress, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "../api/Api";
 import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
-import { CustomLink } from "./components";
+import { CustomLink } from "../components";
+import { useAuth } from "../auth/auth";
 
 
 const FitMapZoom = (
@@ -32,7 +33,8 @@ const FitMapZoom = (
 };
 
 const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
-  const railwayProgressQuery = useRailwayProgress(info.railwayCode);
+  const { isAuthenticated } = useAuth();
+  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
   const railwayProgress = railwayProgressQuery.data;
 
   return (
@@ -44,7 +46,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+        bgcolor: (isAuthenticated && railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -59,7 +61,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {railwayProgress && (
+          {isAuthenticated && railwayProgress && (
               <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
                 <CircularProgress
                   variant="determinate"
@@ -102,6 +104,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
 
 const PrefectureInfo = () => {
   const prefCode = Number(useParams<"prefCode">().prefCode);
+  const { isAuthenticated } = useAuth();
 
   const railwaysQuery = useRailwaysInfoByPrefCode(prefCode);
   const railwayList = railwaysQuery.data;
@@ -109,7 +112,7 @@ const PrefectureInfo = () => {
   const stationsQuery = useStationsInfoByPrefCode(prefCode);
   const stationList = stationsQuery.data;
 
-  const prefProgressQuery = usePrefProgress(prefCode);
+  const prefProgressQuery = usePrefProgress(isAuthenticated ? prefCode : undefined);
   const prefProgress = prefProgressQuery.data;
 
   const prefQuery = usePrefName(prefCode);
@@ -153,7 +156,7 @@ const PrefectureInfo = () => {
           <Typography variant="h6" sx={{ fontSize: 14 }}>都道府県一覧</Typography>
         </CustomLink>
       </Box>
-      {prefProgress && (
+      {isAuthenticated && prefProgress && (
         <Box sx={{ mb: 2 }}>
           <Typography
             variant="h6"
