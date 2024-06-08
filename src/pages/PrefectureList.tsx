@@ -11,8 +11,9 @@ import {
   Typography,
 } from "@mui/material";
 import { Prefecture, usePrefList, usePrefProgress } from "../api/Api";
-import { CircleProgress, CustomLink } from "../components";
 import { useAuth } from "../auth/auth";
+import { CircleProgress, CustomLink } from "../components";
+
 
 const Row = ({ info }: { info: Prefecture }) => {
   const { isAuthenticated } = useAuth();

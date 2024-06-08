@@ -15,8 +15,9 @@ import {
   ListItemText,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useAuth } from "../auth/auth";
 import { AccountCircle } from "@mui/icons-material";
+import { useAuth } from "../auth/auth";
+
 
 const navItems: Array<{ text: string, url: string, auth: boolean }> = [
   { text: "List", url: "/stationList", auth: false },

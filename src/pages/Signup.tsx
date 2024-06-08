@@ -1,3 +1,5 @@
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Button,
   CircularProgress,
@@ -11,9 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/auth";
-import { useNavigate } from "react-router-dom";
 
 
 const Signup = () => {

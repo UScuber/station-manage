@@ -1,21 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  RecordState,
-  Station,
-  StationGroupDate,
-  StationHistoryData,
-  useDeleteStationGroupHistoryMutation,
-  useDeleteStationHistoryMutation,
-  useLatestStationGroupHistory,
-  useLatestStationHistory,
-  useSearchKNearestStationGroups,
-  useSendStationGroupStateMutation,
-  useStationGroupAllHistory,
-  useStationGroupInfo,
-  useStationsInfoByGroupCode,
-} from "../api/Api";
-import {
   Box,
   Button,
   Checkbox,
@@ -33,17 +18,38 @@ import {
   Typography,
 } from "@mui/material";
 import { Delete as DeleteIcon } from "@mui/icons-material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import dayjs, { Dayjs } from "dayjs";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
-import { AccessButton, AroundTime, Collapser, ConfirmDialog, RespStationName } from "../components";
-import getDateString from "../utils/getDateString";
+import {
+  RecordState,
+  Station,
+  StationGroupDate,
+  StationHistoryData,
+  useDeleteStationGroupHistoryMutation,
+  useDeleteStationHistoryMutation,
+  useLatestStationGroupHistory,
+  useLatestStationHistory,
+  useSearchKNearestStationGroups,
+  useSendStationGroupStateMutation,
+  useStationGroupAllHistory,
+  useStationGroupInfo,
+  useStationsInfoByGroupCode,
+} from "../api/Api";
 import { useAuth } from "../auth/auth";
+import {
+  AccessButton,
+  AroundTime,
+  Collapser,
+  ConfirmDialog,
+  RespStationName,
+} from "../components";
+import getDateString from "../utils/getDateString";
 
 
 const stateName = ["乗降", "通過", "立ち寄り"];

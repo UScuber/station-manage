@@ -1,6 +1,8 @@
+import { memo } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Alert, Box, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { AuthProvider, getAuth } from "./auth/auth";
 import Header from "./components/Header";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -20,8 +22,6 @@ import CompanyInfo from "./pages/CompanyInfo";
 import PrefectureInfo from "./pages/PrefectureInfo";
 import PrefectureList from "./pages/PrefectureList";
 import HistoryMap from "./pages/HistoryMap";
-import { AuthProvider, getAuth } from "./auth/auth";
-import { memo } from "react";
 
 
 declare module "@mui/material/styles" {
