@@ -519,6 +519,19 @@ export const useLatestStationHistory = (
   });
 };
 
+
+// 路線に属する駅の最新のアクセス日時を取得
+export const useLatestStationHistoryListByRailwayCode = (code: number | undefined): UseQueryResult<StationDate[]> => {
+  return useQuery<StationDate[]>({
+    queryKey: ["LatestStationHistory", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationDate[]>("/api/latestRailwayStationHistory/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
 export type StationGroupDate = {
   date: Date | undefined,
 };

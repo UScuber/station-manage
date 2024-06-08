@@ -992,6 +992,42 @@ app.get("/api/latestStationHistory/:stationCode", accessLog, (req, res, next) =>
   res.json(data);
 });
 
+// 路線に属する駅の最新のアクセス日時を取得
+app.get("/api/latestRailwayStationHistory/:railwayCode", accessLog, (req, res, next) => {
+  const code = +req.params.railwayCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  let data;
+  try{
+    const stmt = db.prepare(`
+      SELECT date FROM LatestStationHistory
+      INNER JOIN Stations
+        ON LatestStationHistory.stationCode = Stations.stationCode
+          AND Stations.railwayCode = ?
+          AND state = ? AND userId = ?
+    `);
+    const getList = stmt.all(code, 0, userId);
+    const passList= stmt.all(code, 1, userId);
+    data = getList.map((getDate, idx) => ({
+      getDate: getDate ?? null,
+      passDate: passList[idx] ?? null,
+    }));
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(data);
+});
+
 // 駅グループの最新のアクセス日時を取得
 app.get("/api/latestStationGroupHistory/:stationGroupCode", accessLog, (req, res, next) => {
   const code = +req.params.stationGroupCode;

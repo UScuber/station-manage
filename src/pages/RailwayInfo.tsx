@@ -12,7 +12,8 @@ import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
 import {
   Station,
-  useLatestStationHistory,
+  StationDate,
+  useLatestStationHistoryListByRailwayCode,
   useRailPath,
   useRailwayInfo,
   useRailwayProgress,
@@ -34,9 +35,8 @@ const FitMapZoom = (
   return null;
 };
 
-const StationItem = ({ info, isAuthenticated }: { info: Station, isAuthenticated: boolean }): JSX.Element => {
-  const latestDateQuery = useLatestStationHistory(isAuthenticated ? info.stationCode : undefined);
-  const latestDate = latestDateQuery.data;
+const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationDate | undefined }): JSX.Element => {
+  const { isAuthenticated } = useAuth();
 
   return (
     <Button
@@ -72,6 +72,8 @@ const RailwayInfo = () => {
 
   const stationsQuery = useStationsInfoByRailwayCode(railwayCode);
   const stationList = stationsQuery.data;
+  const latestHistoryListQuery = useLatestStationHistoryListByRailwayCode(isAuthenticated ? railwayCode : undefined);
+  const latestHistoryList = latestHistoryListQuery.data;
 
   const railwayProgressQuery = useRailwayProgress(isAuthenticated ? railwayCode : undefined);
   const railwayProgress = railwayProgressQuery.data;
@@ -159,8 +161,8 @@ const RailwayInfo = () => {
       )}
 
       <Box>
-        {stationList.map(item => (
-          <StationItem key={item.stationCode} info={item} isAuthenticated={isAuthenticated} />
+        {stationList.map((item, idx) => (
+          <StationItem key={item.stationCode} info={item} latestDate={latestHistoryList ? latestHistoryList[idx] : undefined} />
         ))}
       </Box>
 
