@@ -12,9 +12,10 @@ import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
 import {
   Railway,
+  StationProgress,
   useCompanyInfo,
   useRailPathByCompanyCode,
-  useRailwayProgress,
+  useRailwayProgressListByCompanyCode,
   useRailwaysInfoByCompanyCode,
   useStationsInfoByCompanyCode,
 } from "../api/Api";
@@ -38,10 +39,8 @@ const FitMapZoom = (
   return null;
 };
 
-const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
+const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgress | undefined }): JSX.Element => {
   const { isAuthenticated } = useAuth();
-  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
-  const railwayProgress = railwayProgressQuery.data;
 
   return (
     <Button
@@ -52,7 +51,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (isAuthenticated && railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+        bgcolor: (isAuthenticated && progress && progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -69,7 +68,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {isAuthenticated && railwayProgress && (<CircleProgress size={25} progress={railwayProgress} />)}
+          {isAuthenticated && progress && (<CircleProgress size={25} progress={progress} />)}
         </Box>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
@@ -79,12 +78,15 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
 
 const CompanyInfo = () => {
   const companyCode = Number(useParams<"companyCode">().companyCode);
+  const { isAuthenticated } = useAuth();
 
   const companyQuery = useCompanyInfo(companyCode);
   const info = companyQuery.data;
 
   const railwaysQuery = useRailwaysInfoByCompanyCode(companyCode);
   const railwayList = railwaysQuery.data;
+  const railwayProgressQuery = useRailwayProgressListByCompanyCode(isAuthenticated ? companyCode : undefined);
+  const railwayProgress = railwayProgressQuery.data;
 
   const stationsQuery = useStationsInfoByCompanyCode(companyCode);
   const stationList = stationsQuery.data;
@@ -132,8 +134,8 @@ const CompanyInfo = () => {
         </CustomLink>
       </Box>
       <Box>
-        {railwayList.map(item => (
-          <RailwayItem info={item} key={item.railwayCode} />
+        {railwayList.map((item, idx) => (
+          <RailwayItem info={item} progress={railwayProgress ? railwayProgress[idx] : undefined} key={item.railwayCode} />
         ))}
       </Box>
 

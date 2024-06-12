@@ -377,11 +377,13 @@ app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
       data = db.prepare(`
         SELECT * FROM Railways
         WHERE companyCode <= 6
+        ORDRE BY railwayCode
       `).all();
     }else{
       data = db.prepare(`
         SELECT * FROM Railways
         WHERE companyCode = ?
+        ORDER BY railwayCode
       `).all(code);
     }
   }catch(err){
@@ -1434,6 +1436,52 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
     return;
   }
   res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
+});
+
+// 会社の各路線の駅の個数と乗降/通過した駅の個数を取得
+app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res, next) => {
+  const code = +req.params.companyCode;
+  if(isNaN(code)){
+    next(new Error("Invalid input"));
+    return;
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    next(new Error("Unauthorized"));
+    return;
+  }
+
+  let stationNumList, getOrPassStationNumList;
+  try{
+    stationNumList = db.prepare(`
+      SELECT COUNT(*) as num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+          AND Railways.companyCode = ?
+      GROUP BY Stations.railwayCode
+      ORDER BY Stations.railwayCode
+    `).all(code);
+
+    getOrPassStationNumList = db.prepare(`
+      SELECT COUNT(LatestStationHistory.date) AS num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+          AND Railways.companyCode = ?
+      LEFT JOIN LatestStationHistory
+        ON Stations.stationCode = LatestStationHistory.stationCode
+          AND LatestStationHistory.userId = ?
+      GROUP BY Stations.railwayCode
+      ORDER BY Stations.railwayCode
+    `).all(code, userId);
+  }catch(err){
+    console.error(err);
+    next(new Error("Server Error"));
+    return;
+  }
+  res.json(stationNumList.map((elem, idx) => ({
+    stationNum: elem.num,
+    getOrPassStationNum: getOrPassStationNumList[idx].num,
+  })));
 });
 
 // 会社の駅の個数と乗降/通過した駅の個数を取得

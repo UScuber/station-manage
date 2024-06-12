@@ -659,6 +659,17 @@ export const useRailwayProgress = (code: number | undefined): UseQueryResult<Sta
 };
 
 
+export const useRailwayProgressListByCompanyCode = (code: number | undefined): UseQueryResult<StationProgress[]> => {
+  return useQuery<StationProgress[]>({
+    queryKey: ["RailwayProgressList", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList/" + code, ngrok_header);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
 // 会社の駅の個数と乗降/通過した駅の個数を取得
 export const useCompanyProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
   return useQuery<StationProgress>({
