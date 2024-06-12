@@ -109,30 +109,14 @@ const import_sql = (db, input_json, userId) => {
   })();
 
   // stationgroups最終アクセスの更新
-  db.transaction(() => {
-    const stationGroups = db.prepare(`
-      SELECT stationGroupCode FROM StationGroups
-    `).all();
-    const get_num_stmt = db.prepare(`
-      SELECT COUNT(*) as num FROM StationGroupHistory
-      WHERE stationGroupCode = ? AND userId = ?
-    `);
-    const get_max_date = db.prepare(`
-      SELECT MAX(date) as max FROM StationGroupHistory
-      WHERE stationGroupCode = ? AND userId = ?
-    `);
-    const insert_stmt = db.prepare(`
-      INSERT INTO LatestStationGroupHistory VALUES(?, ?, ?)
-    `);
-
-    stationGroups.forEach(({ stationGroupCode }) => {
-      const num = get_num_stmt.get(stationGroupCode, userId).num;
-      if(num){
-        const date = get_max_date.get(stationGroupCode, userId).max;
-        insert_stmt.run(stationGroupCode, date, userId);
-      }
-    });
-  })();
+  db.prepare(`
+    INSERT INTO LatestStationGroupHistory(stationGroupCode, date, userId)
+    SELECT stationGroupCode, MAX(date), userId
+    FROM StationGroupHistory
+    WHERE userId = ?
+    GROUP BY stationGroupCode
+    HAVING MAX(date) IS NOT NULL
+  `).run(userId);
 
 
   unknown_history.station_history = unknown_history.station_history.sort((a, b) => new Date(a.history[0].date) < new Date(b.history[0].date) ? -1 : 1);

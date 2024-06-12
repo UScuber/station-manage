@@ -1586,21 +1586,11 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
       "INSERT INTO StationHistory VALUES(?, datetime(?), ?, ?)"
     ).run(code, date, state, userId);
 
-    const cnt = db.prepare(`
-      SELECT COUNT(*) AS cnt FROM LatestStationHistory
-      WHERE stationCode = ? AND state = ? AND userId = ?
-    `).get(code, state, userId).cnt;
-
-    if(cnt){
-      db.prepare(`
-        UPDATE LatestStationHistory SET date = MAX(IFNULL(date, 0), datetime(?))
-        WHERE stationCode = ? AND state = ? AND userId = ?
-      `).run(date, code, state, userId);
-    }else{
-      db.prepare(`
-        INSERT INTO LatestStationHistory VALUES(?, datetime(?), ?, ?)
-      `).run(code, date, state, userId);
-    }
+    db.prepare(`
+      INSERT INTO LatestStationHistory VALUES(?, datetime(?), ?, ?)
+      ON CONFLICT(stationCode, state, userId)
+      DO UPDATE SET date = MAX(IFNULL(date, 0), datetime(?))
+    `).run(code, date, state, userId, date);
   }catch(err){
     console.error(err);
     next(new Error("Server Error"));
