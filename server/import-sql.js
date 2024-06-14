@@ -48,35 +48,14 @@ const import_sql = (db, input_json, userId) => {
   })();
 
   // stations最終アクセスの更新
-  db.transaction(() => {
-    const stations = db.prepare(`
-      SELECT stationCode FROM Stations
-    `).all();
-    const get_num_stmt = db.prepare(`
-      SELECT COUNT(*) as num FROM StationHistory
-      WHERE stationCode = ? AND state = ? AND userId = ?
-    `);
-    const get_max_date = db.prepare(`
-      SELECT MAX(date) as max FROM StationHistory
-      WHERE stationCode = ? AND state = ? AND userId = ?
-    `);
-    const insert_stmt = db.prepare(`
-      INSERT INTO LatestStationHistory VALUES(?, datetime(?), ?, ?)
-    `);
-
-    stations.forEach(({ stationCode }) => {
-      const get_num = get_num_stmt.get(stationCode, 0, userId).num;
-      if(get_num){
-        const date = get_max_date.get(stationCode, 0, userId).max;
-        insert_stmt.run(stationCode, date, 0, userId);
-      }
-      const pass_num = get_num_stmt.get(stationCode, 1, userId).num;
-      if(pass_num){
-        const date = get_max_date.get(stationCode, 1, userId).max;
-        insert_stmt.run(stationCode, date, 1, userId);
-      }
-    });
-  })();
+  db.prepare(`
+    INSERT INTO LatestStationHistory(stationCode, date, state, userId)
+    SELECT stationCode, MAX(date), state, userId
+    FROM StationHistory
+    WHERE userId = ?
+    GROUP BY stationCode, state
+    HAVING MAX(date) IS NOT NULL
+  `).run(userId);
 
 
   db.transaction(() => {

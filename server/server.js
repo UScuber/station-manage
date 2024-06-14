@@ -1019,8 +1019,8 @@ app.get("/api/latestRailwayStationHistory/:railwayCode", accessLog, (req, res, n
     const getList = stmt.all(code, 0, userId);
     const passList= stmt.all(code, 1, userId);
     data = getList.map((getDate, idx) => ({
-      getDate: getDate ?? null,
-      passDate: passList[idx] ?? null,
+      getDate: getDate?.date ?? null,
+      passDate: passList[idx]?.date ?? null,
     }));
   }catch(err){
     console.error(err);
