@@ -6,6 +6,12 @@ const cookieParser = require("cookie-parser");
 const { Users } = require("./user");
 const { export_sql } = require("./export-sql");
 const { import_sql, check_json_format } = require("./import-sql");
+const {
+  AuthError,
+  InputError,
+  InvalidValueError,
+  ServerError
+} = require("./custom-errors");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";
@@ -95,12 +101,12 @@ const insert_next_stations = (elem, code) => {
 };
 
 
+
 // 駅情報取得
-app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
+app.get("/api/station/:stationCode", accessLog, (req, res) => {
   const code = +req.params.stationCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -130,23 +136,21 @@ app.get("/api/station/:stationCode", accessLog, (req, res, next) => {
 
     data = insert_next_stations(data, code);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 駅グループの情報取得
-app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
+app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res) => {
   const code = +req.params.stationGroupCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -163,23 +167,21 @@ app.get("/api/stationGroup/:stationGroupCode", accessLog, (req, res, next) => {
       GROUP BY Stations.stationGroupCode
     `).get(code);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 駅グループに属する駅の駅情報を取得
-app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next) => {
+app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res) => {
   const code = +req.params.stationGroupCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -204,23 +206,21 @@ app.get("/api/stationsByGroupCode/:stationGroupCode", accessLog, (req, res, next
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data.length){
-    next(new RangeError("Invalid input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 路線情報取得
-app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
+app.get("/api/railway/:railwayCode", accessLog, (req, res) => {
   const code = +req.params.railwayCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -235,19 +235,18 @@ app.get("/api/railway/:railwayCode", accessLog, (req, res, next) => {
           AND Railways.railwayCode = ?
     `).get(code);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 路線情報全取得
-app.get("/api/railway", accessLog, (req, res, next) => {
+app.get("/api/railway", accessLog, (req, res) => {
   let data;
   try{
     data = db.prepare(`
@@ -260,19 +259,17 @@ app.get("/api/railway", accessLog, (req, res, next) => {
         ON Railways.companyCode = Companies.companyCode
     `).all();
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 路線に属する駅の駅情報を取得
-app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
+app.get("/api/railwayStations/:railwayCode", accessLog, (req, res) => {
   const code = +req.params.railwayCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -301,23 +298,21 @@ app.get("/api/railwayStations/:railwayCode", accessLog, (req, res, next) => {
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data.length){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 会社情報取得
-app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
+app.get("/api/company/:companyCode", accessLog, (req, res) => {
   const code = +req.params.companyCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -334,42 +329,39 @@ app.get("/api/company/:companyCode", accessLog, (req, res, next) => {
       `).get(code);
     }
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 会社情報全取得
-app.get("/api/company", accessLog, (req, res, next) => {
+app.get("/api/company", accessLog, (req, res) => {
   let data;
   try{
     data = db.prepare(`
       SELECT * FROM Companies
     `).all();
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 会社に属する路線の路線情報を取得
-app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
+app.get("/api/companyRailways/:companyCode", accessLog, (req, res) => {
   const code = +req.params.companyCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -387,23 +379,21 @@ app.get("/api/companyRailways/:companyCode", accessLog, (req, res, next) => {
       `).all(code);
     }
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 会社に属する路線の駅情報を全取得
-app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
+app.get("/api/companyStations/:companyCode", accessLog, (req, res) => {
   const code = +req.params.companyCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -457,23 +447,21 @@ app.get("/api/companyStations/:companyCode", accessLog, (req, res, next) => {
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 県に属する路線の路線情報を取得
-app.get("/api/prefRailways/:prefCode", accessLog, (req, res, next) => {
+app.get("/api/prefRailways/:prefCode", accessLog, (req, res) => {
   const code = +req.params.prefCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -497,23 +485,21 @@ app.get("/api/prefRailways/:prefCode", accessLog, (req, res, next) => {
       GROUP BY Railways.railwayCode
     `).all(code);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 県に属する路線の駅情報を全取得
-app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
+app.get("/api/prefStations/:prefCode", accessLog, (req, res) => {
   const code = +req.params.prefCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -553,25 +539,23 @@ app.get("/api/prefStations/:prefCode", accessLog, (req, res, next) => {
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   if(!data){
-    next(new RangeError("Invalid Input"));
+    throw new InvalidValueError("Invalid value");
   }else{
     res.json(data);
   }
 });
 
+
 // 座標から近い駅/駅グループを複数取得
-app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
+app.get("/api/searchNearestStationGroup", accessLog, (req, res) => {
   const lat = +req.query.lat;
   const lng = +req.query.lng;
   const num = req.query.num ? Math.min(parseInt(req.query.num), 20) : 20;
   if(isNaN(lat) || isNaN(lng)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -595,21 +579,19 @@ app.get("/api/searchNearestStationGroup", accessLog, (req, res, next) => {
       lat,lng,lat, num
     );
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 駅グループを名前で検索、区間指定
-app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
+app.get("/api/searchStationGroupList", accessLog, (req, res) => {
   const off = +req.query.off;
   const len = +req.query.len;
   const name = req.query.name ?? "";
   if(isNaN(off) || isNaN(len)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -657,15 +639,14 @@ app.get("/api/searchStationGroupList", accessLog, (req, res, next) => {
       len, off
     );
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 駅グループを名前で検索した際の件数
-app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
+app.get("/api/searchStationGroupCount", accessLog, (req, res) => {
   const name = req.query.name ?? "";
   let data;
   try{
@@ -684,20 +665,18 @@ app.get("/api/searchStationGroupCount", accessLog, (req, res, next) => {
       name,`${name}_%`,`_%${name}`,`_%${name}_%`
     );
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data.count);
 });
 
 
+
 // 都道府県名を取得
-app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
+app.get("/api/pref/:prefCode", accessLog, (req, res) => {
   const code = +req.params.prefCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   try{
     data = db.prepare(`
@@ -708,15 +687,14 @@ app.get("/api/pref/:prefCode", accessLog, (req, res, next) => {
       WHERE code = ?
     `).get(code);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 都道府県名を全取得
-app.get("/api/pref", accessLog, (req, res, next) => {
+app.get("/api/pref", accessLog, (req, res) => {
   try{
     data = db.prepare(`
       SELECT
@@ -725,9 +703,7 @@ app.get("/api/pref", accessLog, (req, res, next) => {
       FROM Prefectures
     `).all();
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
@@ -764,12 +740,12 @@ const get_railway_path_geojson = (railwayCode, properties) => {
   return data;
 };
 
+
 // 路線の線路のpathを取得
-app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
+app.get("/api/railpaths/:railwayCode", accessLog, (req, res) => {
   const code = +req.params.railwayCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -785,19 +761,17 @@ app.get("/api/railpaths/:railwayCode", accessLog, (req, res, next) => {
     `).get(code);
     data = get_railway_path_geojson(code, railwayInfo);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 会社に属する全路線の線路のpathを取得
-app.get("/api/pathslist/:companyCode", accessLog, (req, res, next) => {
+app.get("/api/pathslist/:companyCode", accessLog, (req, res) => {
   const code = +req.params.companyCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   let data;
   try{
@@ -829,9 +803,7 @@ app.get("/api/pathslist/:companyCode", accessLog, (req, res, next) => {
     data = railwayList.map(elem =>
       get_railway_path_geojson(elem.railwayCode, elem));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
@@ -848,14 +820,13 @@ usersManager.look();
 
 
 // 新規登録
-app.post("/api/signup", accessLog, (req, res, next) => {
+app.post("/api/signup", accessLog, (req, res) => {
   const userName = req.body.userName;
   const userEmail = req.body.userEmail;
   const password = req.body.password;
 
   if(!userName || !userEmail || !password){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   try{
     const userData = db.prepare(`
@@ -867,14 +838,11 @@ app.post("/api/signup", accessLog, (req, res, next) => {
       return;
     }
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   const sessionId = usersManager.signup(userName, userEmail, password);
   if(!sessionId){
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error");
   }
   res.cookie("sessionId", sessionId, {
     maxAge: usersManager.expirationTime,
@@ -886,13 +854,12 @@ app.post("/api/signup", accessLog, (req, res, next) => {
 
 
 // ログイン
-app.post("/api/login", accessLog, (req, res, next) => {
+app.post("/api/login", accessLog, (req, res) => {
   const userEmail = req.body.userEmail;
   const password = req.body.password;
 
   if(!userEmail || !password){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   try{
     const userData = db.prepare(`
@@ -900,13 +867,10 @@ app.post("/api/login", accessLog, (req, res, next) => {
       WHERE userEmail = ?
     `).get(userEmail);
     if(!userData){
-      next(new Error("Invalid input"));
-      return;
+      throw new InvalidValueError("Invalid input");
     }
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   const sessionId = usersManager.login(userEmail, password);
   if(!sessionId){
@@ -921,8 +885,9 @@ app.post("/api/login", accessLog, (req, res, next) => {
   res.json({ auth: true });
 });
 
+
 // check
-app.get("/api/status", accessLog, (req, res, next) => {
+app.get("/api/status", accessLog, (req, res) => {
   const userData = usersManager.getUserData(req);
   if(userData.auth){
     res.cookie("sessionId", req.cookies.sessionId, {
@@ -934,17 +899,16 @@ app.get("/api/status", accessLog, (req, res, next) => {
   res.json(userData);
 });
 
+
 // logout
-app.get("/api/logout", accessLog, (req, res, next) => {
+app.get("/api/logout", accessLog, (req, res) => {
   const sessionId = req.cookies.sessionId;
   if(!sessionId){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
   usersManager.logout(sessionId);
   res.cookie("sessionId", "", {
@@ -963,17 +927,16 @@ app.get("/api/logout", accessLog, (req, res, next) => {
 ////////// History //////////
 
 
+
 // 駅の最新のアクセス日時を取得
-app.get("/api/latestStationHistory/:stationCode", accessLog, (req, res, next) => {
+app.get("/api/latestStationHistory/:stationCode", accessLog, (req, res) => {
   const code = +req.params.stationCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let data;
@@ -987,24 +950,21 @@ app.get("/api/latestStationHistory/:stationCode", accessLog, (req, res, next) =>
       passDate: stmt.get(code, 1, userId)?.date ?? null,
     };
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 路線に属する駅の最新のアクセス日時を取得
-app.get("/api/latestRailwayStationHistory/:railwayCode", accessLog, (req, res, next) => {
+app.get("/api/latestRailwayStationHistory/:railwayCode", accessLog, (req, res) => {
   const code = +req.params.railwayCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let data;
@@ -1023,24 +983,21 @@ app.get("/api/latestRailwayStationHistory/:railwayCode", accessLog, (req, res, n
       passDate: passList[idx]?.date ?? null,
     }));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 駅グループの最新のアクセス日時を取得
-app.get("/api/latestStationGroupHistory/:stationGroupCode", accessLog, (req, res, next) => {
+app.get("/api/latestStationGroupHistory/:stationGroupCode", accessLog, (req, res) => {
   const code = +req.params.stationGroupCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let data;
@@ -1053,27 +1010,24 @@ app.get("/api/latestStationGroupHistory/:stationGroupCode", accessLog, (req, res
       date: stmt.get(code, userId)?.date ?? null,
     };
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 全体の乗降/通過の履歴を区間取得
-app.get("/api/stationHistory", accessLog, (req, res, next) => {
+app.get("/api/stationHistory", accessLog, (req, res) => {
   const off = +req.query.off;
   const len = +req.query.len;
   const name = req.query.name ?? "";
   const type = req.query.type;
   if(isNaN(off) || isNaN(len)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let data;
@@ -1208,21 +1162,19 @@ app.get("/api/stationHistory", accessLog, (req, res, next) => {
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 全体の乗降/通過の履歴の個数を取得
-app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
+app.get("/api/stationHistoryCount", accessLog, (req, res) => {
   const name = req.query.name ?? "";
   const type = req.query.type;
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let data;
@@ -1266,19 +1218,17 @@ app.get("/api/stationHistoryCount", accessLog, (req, res, next) => {
       `).get(userId);
     }
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data.count);
 });
 
+
 // 全体の乗降/通過の履歴と駅情報を取得
-app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
+app.get("/api/stationHistoryAndInfo", accessLog, (req, res) => {
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   // const off = req.query.off;
@@ -1319,24 +1269,21 @@ app.get("/api/stationHistoryAndInfo", accessLog, (req, res, next) => {
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 駅の履歴を取得
-app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
+app.get("/api/stationHistory/:stationCode", accessLog, (req, res) => {
   const code = +req.params.stationCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let data;
@@ -1347,24 +1294,21 @@ app.get("/api/stationHistory/:stationCode", accessLog, (req, res, next) => {
       ORDER BY date DESC
     `).all(code, userId);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 駅グループ全体の履歴を取得(各駅の行動も含める)
-app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next) => {
+app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res) => {
   const code = +req.params.stationGroupCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
   let data;
   try{
@@ -1396,24 +1340,21 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res, next
       ORDER BY date DESC
     `).all(code, userId, code, userId);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(data);
 });
 
+
 // 路線の駅の個数と乗降/通過した駅の個数を取得
-app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
+app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res) => {
   const code = +req.params.railwayCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let stationNum, getOrPassStationNum;
@@ -1431,24 +1372,21 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res, next) => {
           AND StationHistory.userId = ?
     `).get(code, userId);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
 });
 
+
 // 会社の各路線の駅の個数と乗降/通過した駅の個数を取得
-app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res, next) => {
+app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res) => {
   const code = +req.params.companyCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let stationNumList, getOrPassStationNumList;
@@ -1474,9 +1412,7 @@ app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res, next) => 
       ORDER BY Stations.railwayCode
     `).all(code, userId);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json(stationNumList.map((elem, idx) => ({
     stationNum: elem.num,
@@ -1484,17 +1420,16 @@ app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res, next) => 
   })));
 });
 
+
 // 会社の駅の個数と乗降/通過した駅の個数を取得
-app.get("/api/companyProgress/:companyCode", accessLog, (req, res, next) => {
+app.get("/api/companyProgress/:companyCode", accessLog, (req, res) => {
   const code = +req.params.companyCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let stationNum, getOrPassStationNum;
@@ -1516,24 +1451,21 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res, next) => {
           AND Railways.companyCode = ?
     `).get(userId, code);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
 });
+
 
 // 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
-app.get("/api/prefProgress/:prefCode", accessLog, (req, res, next) => {
+app.get("/api/prefProgress/:prefCode", accessLog, (req, res) => {
   const code = +req.params.prefCode;
   if(isNaN(code)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   let stationNum, getOrPassStationNum;
@@ -1555,30 +1487,27 @@ app.get("/api/prefProgress/:prefCode", accessLog, (req, res, next) => {
           AND StationGroups.prefCode = ?
     `).get(userId, code);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
 });
 
+
 // 乗降/通過の情報を追加
-app.get("/api/postStationDate", accessLog, (req, res, next) => {
+app.get("/api/postStationDate", accessLog, (req, res) => {
   const code = +req.query.code;
   const date = convert_date(req.query.date);
   const state = +req.query.state;
   if(isNaN(code) || date === undefined || isNaN(state)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   if(state < 0 || state >= 2){
-    next(new RangeError("Invalid input"));
+    throw new InvalidValueError("Invalid value");
     return;
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   try{
@@ -1592,25 +1521,22 @@ app.get("/api/postStationDate", accessLog, (req, res, next) => {
       DO UPDATE SET date = MAX(IFNULL(date, 0), datetime(?))
     `).run(code, date, state, userId, date);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.end("OK");
 });
 
+
 // 立ち寄りの情報を追加
-app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
+app.get("/api/postStationGroupDate", accessLog, (req, res) => {
   const code = +req.query.code;
   const date = convert_date(req.query.date);
   if(isNaN(code) || date === undefined){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   try{
@@ -1634,30 +1560,27 @@ app.get("/api/postStationGroupDate", accessLog, (req, res, next) => {
       `).run(code, date, userId);
     }
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.end("OK");
 });
 
+
 // 乗降/通過の履歴を削除
-app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
+app.get("/api/deleteStationDate", accessLog, (req, res) => {
   const code = +req.query.code;
   const date = convert_date(req.query.date);
   const state = +req.query.state;
   if(isNaN(code) || date === undefined || isNaN(state)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   if(state < 0 || state >= 2){
-    next(new RangeError("Invalid input"));
+    throw new InvalidValueError("Invalid value");
     return;
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   try{
@@ -1675,25 +1598,22 @@ app.get("/api/deleteStationDate", accessLog, (req, res, next) => {
       WHERE stationCode = ? AND state = ? AND userId = ?
     `).run(code, state, userId, code, state, userId);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.end("OK");
 });
 
+
 // 立ち寄りの履歴を削除
-app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
+app.get("/api/deleteStationGroupState", accessLog, (req, res) => {
   const code = +req.query.code;
   const date = convert_date(req.query.date);
   if(isNaN(code) || date === undefined){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   try{
@@ -1711,9 +1631,7 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
       WHERE stationGroupCode = ? AND userId = ?
     `).run(code, userId, code, userId);
   }catch(err){
-    console.error(err);
-    next(new Error("Server Error"));
-    return;
+    throw new ServerError("Server Error", err);
   }
   res.end("OK");
 });
@@ -1721,11 +1639,10 @@ app.get("/api/deleteStationGroupState", accessLog, (req, res, next) => {
 
 
 // 履歴のエクスポート
-app.post("/api/exportHistory", accessLog, (req, res, next) => {
+app.post("/api/exportHistory", accessLog, (req, res) => {
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   const data = export_sql(db, userId);
@@ -1733,17 +1650,15 @@ app.post("/api/exportHistory", accessLog, (req, res, next) => {
 });
 
 // 履歴のインポート
-app.post("/api/importHistory", accessLog, (req, res, next) => {
+app.post("/api/importHistory", accessLog, (req, res) => {
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
-    next(new Error("Unauthorized"));
-    return;
+    throw new AuthError("Unauthorized");
   }
 
   const data = req.body;
   if(!check_json_format(data)){
-    next(new Error("Invalid input"));
-    return;
+    throw new InputError("Invalid input");
   }
   import_sql(db, data, userId);
   res.end("OK");
@@ -1754,7 +1669,7 @@ app.use((err, req, res, next) => {
   console.error(`\x1b[31m[${err.name}] ${err.message}\x1b[39m`, err.stack.substr(err.stack.indexOf("\n")));
   const log_data = `[${err.name}] ${err.message} (${req.method} ${req.originalUrl}) ${err.stack.substr(err.stack.indexOf("\n"))}\n`;
   write_log_data(log_data);
-  res.status(500).send(err.message);
+  res.status(err?.status ?? 500).send(err.message);
 });
 
 app.listen(PORT);
