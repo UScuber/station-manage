@@ -15,8 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Company, StationProgress, useCompanyList, useCompanyProgress, useCompanyProgressList } from "../api/Api";
-import { useAuth } from "../auth/auth";
+import { Company, StationProgress, useCompanyList, useCompanyProgressList } from "../api/Api";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
 
 // 文字列同士の類似度、価が小さいほど高い
@@ -66,14 +65,13 @@ const Row = (
 };
 
 const CompanyList = () => {
-  const { isAuthenticated } = useAuth();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
   const companyListQuery = useCompanyList();
   const companyList = companyListQuery.data;
-  const companyProgressListQuery = useCompanyProgressList(isAuthenticated);
+  const companyProgressListQuery = useCompanyProgressList();
   const companyProgressList = companyProgressListQuery.data;
 
 

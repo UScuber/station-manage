@@ -15,12 +15,11 @@ import {
   useSearchKNearestStationGroups,
   useStationsInfoByGroupCode,
 } from "../api/Api";
-import { useAuth } from "../auth/auth";
 import { AroundTime } from "../components";
 
 
-const StationComponent = ({ info, isAuthenticated }: { info: Station, isAuthenticated: boolean }): JSX.Element => {
-  const latestDateQuery = useLatestStationHistory(isAuthenticated ? info.stationCode : undefined);
+const StationComponent = ({ info }: { info: Station }): JSX.Element => {
+  const latestDateQuery = useLatestStationHistory(info.stationCode);
   const latestDate = latestDateQuery.data;
 
   return (
@@ -46,7 +45,7 @@ const StationComponent = ({ info, isAuthenticated }: { info: Station, isAuthenti
         {info.railwayName}
       </Typography>
       
-      {isAuthenticated && (<>
+      {(latestDate || latestDateQuery.isLoading) && (<>
         <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
           <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
           <AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={16} />
@@ -67,7 +66,6 @@ const StationGroupInfo = (
     distance: number | undefined,
   }
 ): JSX.Element => {
-  const { isAuthenticated } = useAuth();
   const stations = useStationsInfoByGroupCode(code);
   const infos = stations.data;
 
@@ -103,7 +101,7 @@ const StationGroupInfo = (
         <Typography variant="h6" sx={{ fontSize: 18 }}>{distance.toFixed(3)}[km]</Typography>
       )}
       {infos.map(info => (
-        <StationComponent info={info} key={info.stationCode} isAuthenticated={isAuthenticated} />
+        <StationComponent info={info} key={info.stationCode} />
       ))}
     </Box>
   );

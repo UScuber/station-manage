@@ -84,14 +84,13 @@ const Row = (
 };
 
 const RailwayList = () => {
-  const { isAuthenticated } = useAuth();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
   const railwayListQuery = useRailwayList();
   const railwayList = railwayListQuery.data;
-  const railwayProgressListQuery = useRailwayProgressList(isAuthenticated);
+  const railwayProgressListQuery = useRailwayProgressList();
   const railwayProgressList = railwayProgressListQuery.data;
 
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {

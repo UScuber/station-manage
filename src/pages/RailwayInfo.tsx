@@ -65,17 +65,16 @@ const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationD
 
 const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
-  const { isAuthenticated } = useAuth();
 
   const railway = useRailwayInfo(railwayCode);
   const info = railway.data;
 
   const stationsQuery = useStationsInfoByRailwayCode(railwayCode);
   const stationList = stationsQuery.data;
-  const latestHistoryListQuery = useLatestStationHistoryListByRailwayCode(isAuthenticated ? railwayCode : undefined);
+  const latestHistoryListQuery = useLatestStationHistoryListByRailwayCode(railwayCode);
   const latestHistoryList = latestHistoryListQuery.data;
 
-  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? railwayCode : undefined);
+  const railwayProgressQuery = useRailwayProgress(railwayCode);
   const railwayProgress = railwayProgressQuery.data;
 
   const railwayPathQuery = useRailPath(railwayCode);
@@ -141,7 +140,7 @@ const RailwayInfo = () => {
         </CustomLink>
       </Box>
 
-      {isAuthenticated && railwayProgress && (
+      {railwayProgress && (
         <Box sx={{ mb: 2 }}>
           <Typography
             variant="h6"

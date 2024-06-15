@@ -214,7 +214,7 @@ const StationInfo = () => {
 
   const station = useStationInfo(stationCode);
   const info = station.data;
-  const latestDateQuery = useLatestStationHistory(isAuthenticated ? stationCode : undefined, (data: StationDate) => {
+  const latestDateQuery = useLatestStationHistory(stationCode, (data: StationDate) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
       setGetLoading(false);
     }else{
@@ -229,7 +229,7 @@ const StationInfo = () => {
   );
   const nearStations = nearStationsQuery.data;
 
-  const stationHistoryQuery = useStationAllHistory(isAuthenticated ? stationCode : undefined, () => {
+  const stationHistoryQuery = useStationAllHistory(stationCode, () => {
     setDeleteLoading(false);
   });
   const stationHistory = stationHistoryQuery.data;

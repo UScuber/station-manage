@@ -1,5 +1,6 @@
 import { useQuery, UseQueryResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { useAuth } from "../auth/auth";
 
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASEURL;
@@ -508,6 +509,7 @@ export const useLatestStationHistory = (
   code: number | undefined,
   onSuccessFn?: (data: StationDate) => unknown
 ): UseQueryResult<StationDate> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationDate>({
     queryKey: ["LatestStationHistory", code],
     queryFn: async() => {
@@ -515,20 +517,21 @@ export const useLatestStationHistory = (
       onSuccessFn && onSuccessFn(data);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
 
 // 路線に属する駅の最新のアクセス日時を取得
 export const useLatestStationHistoryListByRailwayCode = (code: number | undefined): UseQueryResult<StationDate[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationDate[]>({
     queryKey: ["LatestStationHistory", code],
     queryFn: async() => {
       const { data } = await axios.get<StationDate[]>("/api/latestRailwayStationHistory/" + code, ngrok_header);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
@@ -541,6 +544,7 @@ export const useLatestStationGroupHistory = (
   code: number | undefined,
   onSuccessFn?: (data: StationGroupDate) => unknown
 ): UseQueryResult<StationGroupDate> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationGroupDate>({
     queryKey: ["LatestStationGroupHistory", code],
     queryFn: async() => {
@@ -548,7 +552,7 @@ export const useLatestStationGroupHistory = (
       onSuccessFn && onSuccessFn(data);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
@@ -564,36 +568,42 @@ export type StationHistoryDetail = Station & StationHistory;
 
 // 乗降/通過の履歴を区間取得
 export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string): UseQueryResult<StationHistoryDetail[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationHistoryDetail[]>({
     queryKey: ["StationHistoryList", offset, length, name, type],
     queryFn: async() => {
       const { data } = await axios.get<StationHistoryDetail[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`, ngrok_header);
       return data;
     },
+    enabled: isAuthenticated,
   });
 };
 
 
 // 乗降/通過の履歴の個数を取得
 export const useStationHistoryCount = (name?: string, type?: string): UseQueryResult<number> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<number>({
     queryKey: ["StationHistoryCount", name, type],
     queryFn: async() => {
       const { data } = await axios.get<number>(`/api/stationHistoryCount?name=${name}&type=${type}`, ngrok_header);
       return data;
     },
+    enabled: isAuthenticated,
   });
 };
 
 
 // 駅情報を付与した履歴を取得
 export const useStationHistoryListAndInfo = (): UseQueryResult<StationHistoryDetail[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationHistoryDetail[]>({
     queryKey: ["StationHistoryDetail"],
     queryFn: async() => {
       const { data } = await axios.get<StationHistoryDetail[]>("/api/stationHistoryAndInfo", ngrok_header);
       return data;
     },
+    enabled: isAuthenticated,
   });
 };
 
@@ -603,6 +613,7 @@ export const useStationAllHistory = (
   code: number | undefined,
   onSuccessFn?: (data: StationHistory[]) => unknown
 ): UseQueryResult<StationHistory[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationHistory[]>({
     queryKey: ["StationHistory", code],
     queryFn: async() => {
@@ -610,7 +621,7 @@ export const useStationAllHistory = (
       onSuccessFn && onSuccessFn(data);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
@@ -629,6 +640,7 @@ export const useStationGroupAllHistory = (
   code: number | undefined,
   onSuccessFn?: (data: StationHistoryData[]) => unknown
 ): UseQueryResult<StationHistoryData[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationHistoryData[]>({
     queryKey: ["StationGroupHistory", code],
     queryFn: async() => {
@@ -636,7 +648,7 @@ export const useStationGroupAllHistory = (
       onSuccessFn && onSuccessFn(data);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
@@ -648,78 +660,84 @@ export type StationProgress = {
 
 // 路線の駅の個数と乗降/通過した駅の個数を取得
 export const useRailwayProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationProgress>({
     queryKey: ["RailwayProgress", code],
     queryFn: async() => {
       const { data } = await axios.get<StationProgress>("/api/railwayProgress/" + code, ngrok_header);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
 
 // 会社の各路線の駅の個数と乗降/通過した駅の個数を取得
 export const useRailwayProgressListByCompanyCode = (code: number | undefined): UseQueryResult<StationProgress[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationProgress[]>({
     queryKey: ["RailwayProgressList", code],
     queryFn: async() => {
       const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList/" + code, ngrok_header);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
 
 // 全会社の各路線の駅の個数と乗降/通過した駅の個数のリストを取得
-export const useRailwayProgressList = (auth: boolean): UseQueryResult<StationProgress[]> => {
+export const useRailwayProgressList = (): UseQueryResult<StationProgress[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationProgress[]>({
     queryKey: ["RailwayProgressList"],
     queryFn: async() => {
       const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList", ngrok_header);
       return data;
     },
-    enabled: auth,
+    enabled: isAuthenticated,
   });
 };
 
 
 // 会社の駅の個数と乗降/通過した駅の個数を取得
 export const useCompanyProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationProgress>({
     queryKey: ["CompanyProgress", code],
     queryFn: async() => {
       const { data } = await axios.get<StationProgress>("/api/companyProgress/" + code, ngrok_header);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
 
 // 全会社の駅の個数と乗降/通過した駅の個数のリストを取得
-export const useCompanyProgressList = (auth: boolean): UseQueryResult<StationProgress[]> => {
+export const useCompanyProgressList = (): UseQueryResult<StationProgress[]> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationProgress[]>({
     queryKey: ["CompanyProgress"],
     queryFn: async() => {
       const { data } = await axios.get<StationProgress[]>("/api/companyProgress", ngrok_header);
       return data;
     },
-    enabled: auth,
+    enabled: isAuthenticated,
   });
 };
 
 
 // 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
 export const usePrefProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
+  const { isAuthenticated } = useAuth();
   return useQuery<StationProgress>({
     queryKey: ["PrefProgress", code],
     queryFn: async() => {
       const { data } = await axios.get<StationProgress>("/api/prefProgress/" + code, ngrok_header);
       return data;
     },
-    enabled: code !== undefined,
+    enabled: isAuthenticated && code !== undefined,
   });
 };
 
@@ -744,7 +762,7 @@ export const useSendStationStateMutation = () => {
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
   });
 };
 
@@ -768,7 +786,7 @@ export const useSendStationGroupStateMutation = () => {
     },
     onError: (err: Error) => {
       console.error(err);
-    }
+    },
   });
 };
 

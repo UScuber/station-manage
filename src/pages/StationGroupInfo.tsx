@@ -71,8 +71,8 @@ const ChangeMapCenter = ({ position }: { position: LatLng }) => {
 };
 
 
-const StationItem = ({ info, isAuthenticated }: { info: Station, isAuthenticated: boolean }): JSX.Element => {
-  const latestDateQuery = useLatestStationHistory(isAuthenticated ? info.stationCode : undefined);
+const StationItem = ({ info }: { info: Station }): JSX.Element => {
+  const latestDateQuery = useLatestStationHistory(info.stationCode);
   const latestDate = latestDateQuery.data;
 
   return (
@@ -97,7 +97,7 @@ const StationItem = ({ info, isAuthenticated }: { info: Station, isAuthenticated
         {info.railwayName}
       </Typography>
 
-      {isAuthenticated && (<>
+      {(latestDate || latestDateQuery.isLoading) && (<>
         <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={latestDate?.getDate} invalidMsg="なし" /></Typography>
         <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={latestDate?.passDate} invalidMsg="なし" /></Typography>
       </>)}
@@ -191,12 +191,12 @@ const StationGroupInfo = () => {
 
   const groupStationQuery = useStationGroupInfo(stationGroupCode);
   const groupStationData = groupStationQuery.data;
-  const latestDateQuery = useLatestStationGroupHistory(isAuthenticated ? stationGroupCode : undefined, (data: StationGroupDate) => {
+  const latestDateQuery = useLatestStationGroupHistory(stationGroupCode, (data: StationGroupDate) => {
     setLoading(false);
   });
   const latestDate = latestDateQuery.data;
 
-  const stationGroupAllHistoryQuery = useStationGroupAllHistory(isAuthenticated ? stationGroupCode : undefined, (data: StationHistoryData[]) => {
+  const stationGroupAllHistoryQuery = useStationGroupAllHistory(stationGroupCode, (data: StationHistoryData[]) => {
     setDeleteLoading(false);
   });
   const stationGroupAllHistory = stationGroupAllHistoryQuery.data;
@@ -315,7 +315,7 @@ const StationGroupInfo = () => {
         <Divider sx={{ mb: 1 }} />
 
         {stationList?.map(item => (
-          <StationItem key={item.stationCode} info={item} isAuthenticated={isAuthenticated} />
+          <StationItem info={item} key={item.stationCode} />
         ))}
       </Box>
 

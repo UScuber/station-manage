@@ -19,7 +19,6 @@ import {
   useRailwaysInfoByCompanyCode,
   useStationsInfoByCompanyCode,
 } from "../api/Api";
-import { useAuth } from "../auth/auth";
 import { CircleProgress, CustomLink, StationMapGeojson } from "../components";
 
 
@@ -40,8 +39,6 @@ const FitMapZoom = (
 };
 
 const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgress | undefined }): JSX.Element => {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Button
       component={Link}
@@ -51,7 +48,7 @@ const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgr
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (isAuthenticated && progress && progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none"),
+        bgcolor: (progress && progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -68,7 +65,7 @@ const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgr
           >
             {info.railwayName}
           </Typography>
-          {isAuthenticated && progress && (<CircleProgress size={25} progress={progress} />)}
+          {progress && (<CircleProgress size={25} progress={progress} />)}
         </Box>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
@@ -76,16 +73,16 @@ const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgr
   );
 };
 
+
 const CompanyInfo = () => {
   const companyCode = Number(useParams<"companyCode">().companyCode);
-  const { isAuthenticated } = useAuth();
 
   const companyQuery = useCompanyInfo(companyCode);
   const info = companyQuery.data;
 
   const railwaysQuery = useRailwaysInfoByCompanyCode(companyCode);
   const railwayList = railwaysQuery.data;
-  const railwayProgressQuery = useRailwayProgressListByCompanyCode(isAuthenticated ? companyCode : undefined);
+  const railwayProgressQuery = useRailwayProgressListByCompanyCode(companyCode);
   const railwayProgress = railwayProgressQuery.data;
 
   const stationsQuery = useStationsInfoByCompanyCode(companyCode);

@@ -11,16 +11,14 @@ import {
   Typography,
 } from "@mui/material";
 import { Prefecture, usePrefList, usePrefProgress } from "../api/Api";
-import { useAuth } from "../auth/auth";
 import { CircleProgress, CustomLink } from "../components";
 
 
 const Row = ({ info }: { info: Prefecture }) => {
-  const { isAuthenticated } = useAuth();
-  const prefProgressQuery = usePrefProgress(isAuthenticated ? info.prefCode : undefined);
+  const prefProgressQuery = usePrefProgress(info.prefCode);
   const prefProgress = prefProgressQuery.data;
 
-  if(!isAuthenticated || !prefProgress){
+  if(!prefProgress){
     return (
       <TableRow>
         <TableCell>

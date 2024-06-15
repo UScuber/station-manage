@@ -27,7 +27,6 @@ import {
   useRailwaysInfoByPrefCode,
   useStationsInfoByPrefCode,
 } from "../api/Api";
-import { useAuth } from "../auth/auth";
 import { CustomLink } from "../components";
 
 
@@ -48,8 +47,7 @@ const FitMapZoom = (
 };
 
 const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
-  const { isAuthenticated } = useAuth();
-  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
+  const railwayProgressQuery = useRailwayProgress(info.railwayCode);
   const railwayProgress = railwayProgressQuery.data;
 
   return (
@@ -61,7 +59,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (isAuthenticated && railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+        bgcolor: (railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -76,7 +74,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {isAuthenticated && railwayProgress && (
+          {railwayProgress && (
               <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
                 <CircularProgress
                   variant="determinate"
@@ -119,7 +117,6 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
 
 const PrefectureInfo = () => {
   const prefCode = Number(useParams<"prefCode">().prefCode);
-  const { isAuthenticated } = useAuth();
 
   const railwaysQuery = useRailwaysInfoByPrefCode(prefCode);
   const railwayList = railwaysQuery.data;
@@ -127,7 +124,7 @@ const PrefectureInfo = () => {
   const stationsQuery = useStationsInfoByPrefCode(prefCode);
   const stationList = stationsQuery.data;
 
-  const prefProgressQuery = usePrefProgress(isAuthenticated ? prefCode : undefined);
+  const prefProgressQuery = usePrefProgress(prefCode);
   const prefProgress = prefProgressQuery.data;
 
   const prefQuery = usePrefName(prefCode);
@@ -171,7 +168,7 @@ const PrefectureInfo = () => {
           <Typography variant="h6" sx={{ fontSize: 14 }}>都道府県一覧</Typography>
         </CustomLink>
       </Box>
-      {isAuthenticated && prefProgress && (
+      {prefProgress && (
         <Box sx={{ mb: 2 }}>
           <Typography
             variant="h6"

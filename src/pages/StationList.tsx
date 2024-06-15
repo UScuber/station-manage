@@ -33,10 +33,10 @@ import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import getDateString from "../utils/getDateString";
 
 
-const Row = ({ info, isAuthenticated }: { info: StationGroup, isAuthenticated: boolean }): JSX.Element => {
+const Row = ({ info }: { info: StationGroup }): JSX.Element => {
   const [open, setOpen] = useState(false);
 
-  const latestDateQuery = useLatestStationGroupHistory(isAuthenticated ? info.stationGroupCode : undefined);
+  const latestDateQuery = useLatestStationGroupHistory(info.stationGroupCode);
   const latestDate = latestDateQuery.data;
 
   return (
@@ -55,7 +55,7 @@ const Row = ({ info, isAuthenticated }: { info: StationGroup, isAuthenticated: b
             <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
           </CustomLink>
         </TableCell>
-        {isAuthenticated && (<>
+        {(latestDate || latestDateQuery.isLoading) && (<>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
             <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14}/>
           </TableCell>
@@ -70,7 +70,7 @@ const Row = ({ info, isAuthenticated }: { info: StationGroup, isAuthenticated: b
           </TableCell>
         </>)}
         </TableRow>
-        {isAuthenticated && (
+        {(latestDate || latestDateQuery.isLoading) && (
           <TableRow>
             <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
               <Collapse in={open} timeout="auto" unmountOnExit>
@@ -106,7 +106,7 @@ const StationList = () => {
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
 
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const stationGroupCount = useSearchStationGroupCount({ name: searchName });
 
@@ -219,7 +219,7 @@ const StationList = () => {
           </TableHead>
           <TableBody>
             {stationGroupsInfo.map(item => (
-              <Row key={item.stationGroupCode} info={item} isAuthenticated={isAuthenticated} />
+              <Row key={item.stationGroupCode} info={item} />
             ))}
           </TableBody>
         </Table>
