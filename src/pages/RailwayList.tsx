@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Railway, useRailwayList, useRailwayProgress } from "../api/Api";
+import { Railway, StationProgress, useRailwayList, useRailwayProgress, useRailwayProgressList } from "../api/Api";
 import { useAuth } from "../auth/auth";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
 
@@ -30,12 +30,15 @@ const nameSimilarity = (name: string, input: string) => {
   return 3;
 };
 
-const Row = ({ info }: { info: Railway }) => {
-  const { isAuthenticated } = useAuth();
-  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
-  const railwayProgress = railwayProgressQuery.data;
 
-  if(!isAuthenticated || !railwayProgress){
+const Row = (
+  { info, progress }
+  :{
+    info: Railway,
+    progress: StationProgress | undefined,
+  }
+) => {
+  if(!progress){
     return (
       <TableRow>
         <TableCell>
@@ -58,7 +61,7 @@ const Row = ({ info }: { info: Railway }) => {
 
   return (
     <TableRow sx={{
-      bgcolor: (railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none")
+      bgcolor: (progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none")
     }}>
       <TableCell>
         <CustomLink to={"/railway/" + info.railwayCode}>
@@ -74,19 +77,22 @@ const Row = ({ info }: { info: Railway }) => {
         </CustomLink>
       </TableCell>
       <TableCell>
-        <CircleProgress size={25} progress={railwayProgress} />
+        <CircleProgress size={25} progress={progress} />
       </TableCell>
     </TableRow>
   );
 };
 
 const RailwayList = () => {
+  const { isAuthenticated } = useAuth();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [inputName, setInputName] = useState("");
 
   const railwayListQuery = useRailwayList();
   const railwayList = railwayListQuery.data;
+  const railwayProgressListQuery = useRailwayProgressList(isAuthenticated);
+  const railwayProgressList = railwayProgressListQuery.data;
 
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
@@ -119,7 +125,11 @@ const RailwayList = () => {
 
   const filteredRailways =
     railwayList
-      .map(rail => ({ ...rail, ord: nameSimilarity(rail.railwayName, inputName) }))
+      .map((rail, idx) => ({
+        ...rail,
+        ord: nameSimilarity(rail.railwayName, inputName),
+        idx: idx,
+      }))
       .filter(rail => rail.ord < 4)
       .sort((a, b) => a.ord - b.ord);
   const dividedRailways = filteredRailways.slice((page-1)*rowsPerPage, page*rowsPerPage);
@@ -165,7 +175,11 @@ const RailwayList = () => {
           </TableHead>
           <TableBody>
             {dividedRailways.map(item => (
-              <Row info={item} key={item.railwayCode} />
+              <Row
+                info={item}
+                progress={railwayProgressList ? railwayProgressList[item.idx] : undefined}
+                key={item.railwayCode}
+              />
             ))}
           </TableBody>
         </Table>

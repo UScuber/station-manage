@@ -345,6 +345,7 @@ app.get("/api/company", accessLog, (req, res) => {
   try{
     data = db.prepare(`
       SELECT * FROM Companies
+      ORDER BY companyCode
     `).all();
   }catch(err){
     throw new ServerError("Server Error", err);
@@ -1421,6 +1422,43 @@ app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res) => {
 });
 
 
+// 全会社の各路線の駅の個数と乗降/通過した駅の個数のリストを取得
+app.get("/api/railwayProgressList", accessLog, (req, res) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    throw new AuthError("Unauthorized");
+  }
+
+  let stationNumList, getOrPassStationNumList;
+  try{
+    stationNumList = db.prepare(`
+      SELECT COUNT(*) as num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      GROUP BY Stations.railwayCode
+      ORDER BY Stations.railwayCode
+    `).all();
+
+    getOrPassStationNumList = db.prepare(`
+      SELECT COUNT(LatestStationHistory.date) AS num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      LEFT JOIN LatestStationHistory
+        ON Stations.stationCode = LatestStationHistory.stationCode
+          AND LatestStationHistory.userId = ?
+      GROUP BY Stations.railwayCode
+      ORDER BY Stations.railwayCode
+    `).all(userId);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+  res.json(stationNumList.map((elem, idx) => ({
+    stationNum: elem.num,
+    getOrPassStationNum: getOrPassStationNumList[idx].num,
+  })));
+});
+
+
 // 会社の駅の個数と乗降/通過した駅の個数を取得
 app.get("/api/companyProgress/:companyCode", accessLog, (req, res) => {
   const code = +req.params.companyCode;
@@ -1455,6 +1493,7 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res) => {
   }
   res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
 });
+
 
 // 全会社の駅の個数と乗降/通過した駅の個数のリストを取得
 app.get("/api/companyProgress", accessLog, (req, res) => {

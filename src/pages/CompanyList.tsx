@@ -158,7 +158,11 @@ const CompanyList = () => {
           </TableHead>
           <TableBody>
             {dividedCompanies.map(item => (
-              <Row info={item} progress={companyProgressList ? companyProgressList[item.idx] : undefined} key={item.companyCode} />
+              <Row
+                info={item}
+                progress={companyProgressList ? companyProgressList[item.idx] : undefined}
+                key={item.companyCode}
+              />
             ))}
           </TableBody>
         </Table>

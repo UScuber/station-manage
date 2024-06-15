@@ -659,6 +659,7 @@ export const useRailwayProgress = (code: number | undefined): UseQueryResult<Sta
 };
 
 
+// 会社の各路線の駅の個数と乗降/通過した駅の個数を取得
 export const useRailwayProgressListByCompanyCode = (code: number | undefined): UseQueryResult<StationProgress[]> => {
   return useQuery<StationProgress[]>({
     queryKey: ["RailwayProgressList", code],
@@ -669,6 +670,20 @@ export const useRailwayProgressListByCompanyCode = (code: number | undefined): U
     enabled: code !== undefined,
   });
 };
+
+
+// 全会社の各路線の駅の個数と乗降/通過した駅の個数のリストを取得
+export const useRailwayProgressList = (auth: boolean): UseQueryResult<StationProgress[]> => {
+  return useQuery<StationProgress[]>({
+    queryKey: ["RailwayProgressList"],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList", ngrok_header);
+      return data;
+    },
+    enabled: auth,
+  });
+};
+
 
 // 会社の駅の個数と乗降/通過した駅の個数を取得
 export const useCompanyProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
