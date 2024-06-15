@@ -683,6 +683,19 @@ export const useCompanyProgress = (code: number | undefined): UseQueryResult<Sta
 };
 
 
+// 全会社の駅の個数と乗降/通過した駅の個数のリストを取得
+export const useCompanyProgressList = (auth: boolean): UseQueryResult<StationProgress[]> => {
+  return useQuery<StationProgress[]>({
+    queryKey: ["CompanyProgress"],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress[]>("/api/companyProgress", ngrok_header);
+      return data;
+    },
+    enabled: auth,
+  });
+};
+
+
 // 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
 export const usePrefProgress = (code: number | undefined): UseQueryResult<StationProgress> => {
   return useQuery<StationProgress>({

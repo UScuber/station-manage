@@ -369,7 +369,7 @@ app.get("/api/companyRailways/:companyCode", accessLog, (req, res) => {
       data = db.prepare(`
         SELECT * FROM Railways
         WHERE companyCode <= 6
-        ORDRE BY railwayCode
+        ORDER BY railwayCode
       `).all();
     }else{
       data = db.prepare(`
@@ -1455,6 +1455,43 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res) => {
   }
   res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
 });
+
+// 全会社の駅の個数と乗降/通過した駅の個数のリストを取得
+app.get("/api/companyProgress", accessLog, (req, res) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    throw new AuthError("Unauthorized");
+  }
+
+  let stationNumList, getOrPassStationNumList;
+  try{
+    stationNumList = db.prepare(`
+      SELECT COUNT(*) AS num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      GROUP BY Railways.companyCode
+      ORDER BY Railways.companyCode
+    `).all();
+
+    getOrPassStationNumList = db.prepare(`
+      SELECT COUNT(date) AS num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
+      LEFT JOIN LatestStationHistory
+        ON Stations.stationCode = LatestStationHistory.stationCode
+          AND LatestStationHistory.userId = ?
+      GROUP BY Railways.companyCode
+      ORDER BY Railways.companyCode
+    `).all(userId);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+  res.json(stationNumList.map((data, idx) => ({
+    stationNum: data.num,
+    getOrPassStationNum: getOrPassStationNumList[idx].num,
+  })))
+});
+
 
 
 // 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
