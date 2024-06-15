@@ -24,20 +24,24 @@ import {
 } from "@mui/icons-material";
 import {
   StationGroup,
-  useLatestStationGroupHistory,
+  StationGroupDate,
   useSearchStationGroupCount,
   useSearchStationGroupList,
+  useSearchStationGroupListHistory,
 } from "../api/Api";
 import { useAuth } from "../auth/auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import getDateString from "../utils/getDateString";
 
 
-const Row = ({ info }: { info: StationGroup }): JSX.Element => {
+const Row = (
+  { info, latestDate }
+  :{
+    info: StationGroup,
+    latestDate: StationGroupDate | undefined,
+  }
+): JSX.Element => {
   const [open, setOpen] = useState(false);
-
-  const latestDateQuery = useLatestStationGroupHistory(info.stationGroupCode);
-  const latestDate = latestDateQuery.data;
 
   return (
     <>
@@ -55,7 +59,7 @@ const Row = ({ info }: { info: StationGroup }): JSX.Element => {
             <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
           </CustomLink>
         </TableCell>
-        {(latestDate || latestDateQuery.isLoading) && (<>
+        {latestDate && (<>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
             <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14}/>
           </TableCell>
@@ -70,7 +74,7 @@ const Row = ({ info }: { info: StationGroup }): JSX.Element => {
           </TableCell>
         </>)}
         </TableRow>
-        {(latestDate || latestDateQuery.isLoading) && (
+        {latestDate && (
           <TableRow>
             <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
               <Collapse in={open} timeout="auto" unmountOnExit>
@@ -116,6 +120,13 @@ const StationList = () => {
     name: searchName,
   });
   const stationGroupsInfo = stationGroupList.data;
+
+  const latestHistoryListQuery = useSearchStationGroupListHistory({
+    offset: (page-1) * rowsPerPage,
+    length: Math.min(rowsPerPage, (stationGroupCount.data ?? 1e9) - (page-1) * rowsPerPage),
+    name: searchName,
+  });
+  const latestHistoryList = latestHistoryListQuery.data;
 
   const handleChangePage = (newPage: number) => {
     setPage(newPage);
@@ -218,8 +229,12 @@ const StationList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {stationGroupsInfo.map(item => (
-              <Row key={item.stationGroupCode} info={item} />
+            {stationGroupsInfo.map((item, idx) => (
+              <Row
+                info={item}
+                latestDate={latestHistoryList ? latestHistoryList[idx] : undefined}
+                key={item.stationGroupCode}
+              />
             ))}
           </TableBody>
         </Table>

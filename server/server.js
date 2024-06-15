@@ -1350,6 +1350,66 @@ app.get("/api/stationGroupHistory/:stationGroupCode", accessLog, (req, res) => {
 });
 
 
+// 駅グループを名前で検索、区間指定した時のグループの最新の履歴
+app.get("/api/searchStationGroupListHistory", accessLog, (req, res) => {
+  const off = +req.query.off;
+  const len = +req.query.len;
+  const name = req.query.name ?? "";
+  if(isNaN(off) || isNaN(len)){
+    throw new InputError("Invalid input");
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    throw new AuthError("Unauthorized");
+  }
+  let data;
+  try{
+    data = db.prepare(`
+      WITH StationData AS (
+        SELECT * FROM StationGroups
+      )
+      SELECT LatestStationGroupHistory.date FROM (
+          SELECT 0 AS ord, StationData.* FROM StationData
+            WHERE stationName = ?
+        UNION ALL
+          SELECT 1 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 2 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 3 AS ord, StationData.* FROM StationData
+            WHERE stationName LIKE ?
+        UNION ALL
+          SELECT 4 AS ord, StationData.* FROM StationData
+            WHERE kana = ?
+        UNION ALL
+          SELECT 5 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 6 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+        UNION ALL
+          SELECT 7 AS ord, StationData.* FROM StationData
+            WHERE kana LIKE ?
+      ) AS Results
+      LEFT JOIN LatestStationGroupHistory
+        ON Results.stationGroupCode = LatestStationGroupHistory.stationGroupCode
+      GROUP BY Results.stationGroupCode
+      ORDER BY Results.ord
+      LIMIT ? OFFSET ?
+    `).all(
+      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
+      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
+      len, off
+    );
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+  res.json(data);
+});
+
+
 // 路線の駅の個数と乗降/通過した駅の個数を取得
 app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res) => {
   const code = +req.params.railwayCode;

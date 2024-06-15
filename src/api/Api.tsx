@@ -653,6 +653,26 @@ export const useStationGroupAllHistory = (
 };
 
 
+// 駅グループを名前で検索、区間指定した時のグループの最新の履歴
+export const useSearchStationGroupListHistory = (
+  { offset, length, name }
+  :{
+    offset: number,
+    length: number,
+    name: string | undefined,
+  }
+): UseQueryResult<StationGroupDate[]> => {
+  const { isAuthenticated } = useAuth();
+  return useQuery<StationGroupDate[]>({
+    queryKey: ["StationGroupHistory", offset, length, name],
+    queryFn: async() => {
+      const { data } = await axios.get<StationGroupDate[]>(`/api/searchStationGroupListHistory?off=${offset}&len=${length}&name=${name}`, ngrok_header);
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
+};
+
 export type StationProgress = {
   stationNum: number,
   getOrPassStationNum: number,
