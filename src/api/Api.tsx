@@ -686,6 +686,20 @@ export const useRailwayProgressListByCompanyCode = (code: number | undefined): U
 };
 
 
+// 指定された都道府県に駅がが存在する路線の駅の個数と乗降/通過した駅の個数を取得
+export const useRailwayProgressListByPrefCode = (code: number | undefined): UseQueryResult<StationProgress[]> => {
+  const { isAuthenticated } = useAuth();
+  return useQuery<StationProgress[]>({
+    queryKey: ["RailwayProgressListByPref", code],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress[]>("/api/prefRailwayProgressList/" + code, ngrok_header);
+      return data;
+    },
+    enabled: isAuthenticated && code !== undefined,
+  });
+};
+
+
 // 全会社の各路線の駅の個数と乗降/通過した駅の個数のリストを取得
 export const useRailwayProgressList = (): UseQueryResult<StationProgress[]> => {
   const { isAuthenticated } = useAuth();

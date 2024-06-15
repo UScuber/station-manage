@@ -21,9 +21,10 @@ import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
 import {
   Railway,
+  StationProgress,
   usePrefName,
   usePrefProgress,
-  useRailwayProgress,
+  useRailwayProgressListByPrefCode,
   useRailwaysInfoByPrefCode,
   useStationsInfoByPrefCode,
 } from "../api/Api";
@@ -46,10 +47,13 @@ const FitMapZoom = (
   return null;
 };
 
-const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
-  const railwayProgressQuery = useRailwayProgress(info.railwayCode);
-  const railwayProgress = railwayProgressQuery.data;
-
+const RailwayItem = (
+  { info, progress }
+  :{
+    info: Railway,
+    progress: StationProgress | undefined,
+  }
+): JSX.Element => {
   return (
     <Button
       component={Link}
@@ -59,7 +63,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+        bgcolor: (progress && progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -74,7 +78,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {railwayProgress && (
+          {progress && (
               <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
                 <CircularProgress
                   variant="determinate"
@@ -90,7 +94,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
                   variant="determinate"
                   size={25}
                   thickness={6}
-                  value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
+                  value={progress.getOrPassStationNum / progress.stationNum * 100}
                   sx={{ position: "absolute", left: 0 }}
                 />
                 <Typography
@@ -104,7 +108,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
                     display: "inline-block",
                   }}
                 >
-                  {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
+                  {`${progress.getOrPassStationNum}/${progress.stationNum}`}
                 </Typography>
               </Box>
             )}
@@ -129,6 +133,9 @@ const PrefectureInfo = () => {
 
   const prefQuery = usePrefName(prefCode);
   const pref = prefQuery.data;
+
+  const progressListQuery = useRailwayProgressListByPrefCode(prefCode);
+  const progressList = progressListQuery.data;
 
   if(railwaysQuery.isError || stationsQuery.isError || prefQuery.isError){
     return (
@@ -187,8 +194,8 @@ const PrefectureInfo = () => {
         </Box>
       )}
       <Box>
-        {railwayList.map(item => (
-          <RailwayItem info={item} key={item.railwayCode} />
+        {railwayList.map((item, idx) => (
+          <RailwayItem info={item} progress={progressList ? progressList[idx] : undefined}  key={item.railwayCode} />
         ))}
       </Box>
 

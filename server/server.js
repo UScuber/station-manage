@@ -971,17 +971,20 @@ app.get("/api/latestRailwayStationHistory/:railwayCode", accessLog, (req, res) =
   let data;
   try{
     const stmt = db.prepare(`
-      SELECT date FROM LatestStationHistory
-      INNER JOIN Stations
-        ON LatestStationHistory.stationCode = Stations.stationCode
+      SELECT date FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
           AND Stations.railwayCode = ?
-          AND state = ? AND userId = ?
+      LEFT JOIN LatestStationHistory
+        ON Stations.stationCode = LatestStationHistory.stationCode
+          AND LatestStationHistory.state = ?
+          AND LatestStationHistory.userId = ?
     `);
     const getList = stmt.all(code, 0, userId);
-    const passList= stmt.all(code, 1, userId);
+    const passList = stmt.all(code, 1, userId);
     data = getList.map((getDate, idx) => ({
-      getDate: getDate?.date ?? null,
-      passDate: passList[idx]?.date ?? null,
+      getDate: getDate.date ?? null,
+      passDate: passList[idx].date ?? null,
     }));
   }catch(err){
     throw new ServerError("Server Error", err);
@@ -1406,6 +1409,66 @@ app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res) => {
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
           AND Railways.companyCode = ?
+      LEFT JOIN LatestStationHistory
+        ON Stations.stationCode = LatestStationHistory.stationCode
+          AND LatestStationHistory.userId = ?
+      GROUP BY Stations.railwayCode
+      ORDER BY Stations.railwayCode
+    `).all(code, userId);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+  res.json(stationNumList.map((elem, idx) => ({
+    stationNum: elem.num,
+    getOrPassStationNum: getOrPassStationNumList[idx].num,
+  })));
+});
+
+
+// 指定された都道府県に駅がが存在する路線の駅の個数と乗降/通過した駅の個数を取得
+app.get("/api/prefRailwayProgressList/:prefCode", accessLog, (req, res) => {
+  const code = +req.params.prefCode;
+  if(isNaN(code)){
+    throw new InputError("Invalid input");
+  }
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    throw new AuthError("Unauthorized");
+  }
+
+  let stationNumList, getOrPassStationNumList;
+  try{
+    stationNumList = db.prepare(`
+      WITH RailData AS (
+        SELECT Stations.railwayCode FROM Stations
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+            AND StationGroups.prefCode = ?
+        GROUP BY Stations.railwayCode
+      )
+      SELECT COUNT(*) AS num FROM Stations
+      INNER JOIN RailData
+        ON Stations.railwayCode = RailData.railwayCode
+      GROUP BY Stations.railwayCode
+      ORDER BY Stations.railwayCode
+    `).all(code);
+
+    getOrPassStationNumList = db.prepare(`
+      WITH RailData AS (
+        SELECT Stations.railwayCode FROM Stations
+        INNER JOIN StationGroups
+          ON Stations.stationGroupCode = StationGroups.stationGroupCode
+            AND StationGroups.prefCode = ?
+        GROUP BY Stations.railwayCode
+      )
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN LatestStationHistory.date IS NULL THEN NULL
+          ELSE LatestStationHistory.stationCode
+        END
+      ) AS num FROM Stations
+      INNER JOIN RailData
+        ON Stations.railwayCode = RailData.railwayCode
       LEFT JOIN LatestStationHistory
         ON Stations.stationCode = LatestStationHistory.stationCode
           AND LatestStationHistory.userId = ?
