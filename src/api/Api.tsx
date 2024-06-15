@@ -756,6 +756,20 @@ export const usePrefProgress = (code: number | undefined): UseQueryResult<Statio
 };
 
 
+// 全国の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
+export const usePrefProgressList = (): UseQueryResult<StationProgress[]> => {
+  const { isAuthenticated } = useAuth();
+  return useQuery<StationProgress[]>({
+    queryKey: ["PrefProgress"],
+    queryFn: async() => {
+      const { data } = await axios.get<StationProgress[]>("/api/prefProgress", ngrok_header);
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
+};
+
+
 // 乗降/通過の情報を追加
 export const useSendStationStateMutation = () => {
   const queryClient = useQueryClient();

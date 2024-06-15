@@ -1369,7 +1369,7 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res) => {
     `).get(code);
 
     getOrPassStationNum = db.prepare(`
-      SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
+      SELECT COUNT(DISTINCT StationHistory.stationCode) AS num FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
           AND Stations.railwayCode = ?
@@ -1543,7 +1543,7 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res) => {
     `).get(code);
 
     getOrPassStationNum = db.prepare(`
-      SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
+      SELECT COUNT(DISTINCT StationHistory.stationCode) AS num FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
           AND StationHistory.userId = ?
@@ -1591,7 +1591,7 @@ app.get("/api/companyProgress", accessLog, (req, res) => {
   res.json(stationNumList.map((data, idx) => ({
     stationNum: data.num,
     getOrPassStationNum: getOrPassStationNumList[idx].num,
-  })))
+  })));
 });
 
 
@@ -1617,7 +1617,7 @@ app.get("/api/prefProgress/:prefCode", accessLog, (req, res) => {
     `).get(code);
 
     getOrPassStationNum = db.prepare(`
-      SELECT COUNT(DISTINCT(StationHistory.stationCode)) AS num FROM StationHistory
+      SELECT COUNT(DISTINCT StationHistory.stationCode) AS num FROM StationHistory
       INNER JOIN Stations
         ON StationHistory.stationCode = Stations.stationCode
           AND StationHistory.userId = ?
@@ -1629,6 +1629,48 @@ app.get("/api/prefProgress/:prefCode", accessLog, (req, res) => {
     throw new ServerError("Server Error", err);
   }
   res.json({ stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num });
+});
+
+
+// 全国の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
+app.get("/api/prefProgress", accessLog, (req, res) => {
+  const userId = usersManager.getUserData(req).userId;
+  if(!userId){
+    throw new AuthError("Unauthorized");
+  }
+
+  let stationNumList, getOrPassStationNumList;
+  try{
+    stationNumList = db.prepare(`
+      SELECT COUNT(*) AS num FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+      GROUP BY StationGroups.prefCode
+      ORDER BY StationGroups.prefCode
+    `).all();
+
+    getOrPassStationNumList = db.prepare(`
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN LatestStationHistory.date IS NULL THEN NULL
+          ELSE LatestStationHistory.stationCode
+        END
+      ) AS num FROM Stations
+      INNER JOIN StationGroups
+        ON Stations.stationGroupCode = StationGroups.stationGroupCode
+      LEFT JOIN LatestStationHistory
+        ON LatestStationHistory.stationCode = Stations.stationCode
+          AND LatestStationHistory.userId = ?
+      GROUP BY StationGroups.prefCode
+      ORDER BY StationGroups.prefCode
+    `).all(userId);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+  res.json(stationNumList.map((data, idx) => ({
+    stationNum: data.num,
+    getOrPassStationNum: getOrPassStationNumList[idx].num,
+  })));
 });
 
 
