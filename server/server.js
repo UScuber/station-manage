@@ -1235,17 +1235,12 @@ app.get("/api/stationHistoryAndInfo", accessLog, (req, res) => {
     throw new AuthError("Unauthorized");
   }
 
-  // const off = req.query.off;
-  // const len = req.query.len;
-  // if(off === undefined || len === undefined){
-  //   next(new Error("Invalid input"));
-  //   return;
-  // }
   let data;
   try{
     data = db.prepare(`
       SELECT
-        StationHistory.*,
+        StationHistory.date,
+        StationHistory.state,
         Stations.*,
         StationGroups.stationName,
         StationGroups.kana,
@@ -1293,7 +1288,7 @@ app.get("/api/stationHistory/:stationCode", accessLog, (req, res) => {
   let data;
   try{
     data = db.prepare(`
-      SELECT * FROM StationHistory
+      SELECT stationCode, date, state FROM StationHistory
       WHERE stationCode = ? AND userId = ?
       ORDER BY date DESC
     `).all(code, userId);
@@ -1429,11 +1424,13 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res) => {
     `).get(code);
 
     getOrPassStationNum = db.prepare(`
-      SELECT COUNT(DISTINCT StationHistory.stationCode) AS num FROM StationHistory
-      INNER JOIN Stations
-        ON StationHistory.stationCode = Stations.stationCode
+      SELECT COUNT(date) AS num FROM Stations
+      INNER JOIN Railways
+        ON Stations.railwayCode = Railways.railwayCode
           AND Stations.railwayCode = ?
-          AND StationHistory.userId = ?
+      LEFT JOIN LatestStationHistory
+        ON Stations.stationCode = LatestStationHistory.stationCode
+          AND LatestStationHistory.userId = ?
     `).get(code, userId);
   }catch(err){
     throw new ServerError("Server Error", err);
