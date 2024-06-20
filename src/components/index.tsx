@@ -5,5 +5,7 @@ export { default as CircleProgress } from "./CircleProgress";
 export { default as Collapser } from "./Collapser";
 export { default as ConfirmDialog } from "./ConfirmDialog";
 export { default as CustomLink } from "./CustomLink";
+export { default as GroupHistoryTable } from "./GroupHistoryTable";
+export { default as HistoryListTable } from "./HistoryListTable";
 export { default as RespStationName } from "./RespStationName";
 export { default as StationMapGeojson } from "./StationMapGeojson";

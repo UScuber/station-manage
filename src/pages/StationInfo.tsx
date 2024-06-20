@@ -9,12 +9,6 @@ import {
   ListItemText,
   Stack,
   Divider,
-  IconButton,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   styled,
   FormControlLabel,
   RadioGroup,
@@ -23,11 +17,6 @@ import {
   FormHelperText,
   Checkbox,
 } from "@mui/material";
-import {
-  Delete as DeleteIcon,
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-} from "@mui/icons-material";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
@@ -40,13 +29,10 @@ import "dayjs/locale/ja";
 import {
   RecordState,
   StationDate,
-  StationHistoryData,
-  useDeleteStationHistoryMutation,
   useLatestStationHistory,
   useRailPath,
   useSearchKNearestStationGroups,
   useSendStationStateMutation,
-  useStationAllHistory,
   useStationInfo,
   useStationsInfoByRailwayCode,
 } from "../api/Api";
@@ -55,11 +41,10 @@ import {
   AccessButton,
   AroundTime,
   Collapser,
-  ConfirmDialog,
+  HistoryListTable,
   StationMapGeojson,
   RespStationName,
 } from "../components";
-import getDateString from "../utils/getDateString";
 
 
 const DefaultIcon = Leaflet.icon({
@@ -70,7 +55,6 @@ const DefaultIcon = Leaflet.icon({
 });
 Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
-const stateName = ["乗降", "通過"];
 
 const ChangeMapCenter = ({ position }: { position: LatLng }) => {
   const map = useMap();
@@ -121,97 +105,6 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
 };
 
 
-// 履歴のテーブル
-const HistoryListTable = (
-  { stationCode }
-  :{
-    stationCode: number,
-  }
-) => {
-  const [open, setOpen] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
-  const stationHistoryQuery = useStationAllHistory(open ? stationCode : undefined, () => {
-    setDeleteLoading(false);
-  });
-  const stationHistory = stationHistoryQuery.data;
-
-  const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
-
-  const handleDeleteHistory = (history: StationHistoryData) => {
-    deleteStationHistoryMutation.mutate({
-      stationCode: history.stationCode!,
-      stationGroupCode: history.stationGroupCode,
-      date: history.date,
-      state: history.state,
-    });
-    setDeleteLoading(true);
-  };
-
-  const handleDialogClose = (value: StationHistoryData | undefined) => {
-    setDialogOpen(false);
-    if(value) handleDeleteHistory(value);
-  };
-
-  const handleClickDeleteButton = (value: StationHistoryData) => {
-    setDialogOpen(true);
-    setDeleteHistoryItem(value);
-  };
-
-
-  return (
-    <Collapser
-      buttonText={
-        <Typography variant="h6" sx={{ display: "inline" }}>
-          履歴 {stationHistory ? `(${stationHistory.length}件)` : ""}
-        </Typography>
-      }
-      open={open}
-      onClick={() => setOpen(!open)}
-    >
-      <Box sx={{ margin: 1 }}>
-        {!stationHistory && <CircularProgress size={25} />}
-        {stationHistory && (
-          <Table size="small" aria-label="dates">
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>State</TableCell>
-                <TableCell />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {stationHistory.map(history => (
-                <TableRow key={`${history.date}|${history.state}`}>
-                  <TableCell>{getDateString(history.date)}</TableCell>
-                  <TableCell>{stateName[history.state]}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      aria-label="delete"
-                      size="small"
-                      onClick={() => handleClickDeleteButton(history)}
-                      disabled={deleteLoading}
-                    >
-                      <DeleteIcon fontSize="inherit" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Box>
-      <ConfirmDialog
-        open={dialogOpen}
-        selectedValue={deleteHistoryItem}
-        onClose={handleDialogClose}
-        title="データを削除しますか"
-        descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
-      />
-    </Collapser>
-  );
-};
 
 
 // 任意の日付を送信するフォーム
