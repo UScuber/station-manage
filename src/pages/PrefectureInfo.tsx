@@ -11,13 +11,10 @@ import {
 import {
   CircleMarker,
   FeatureGroup,
-  MapContainer,
   Polyline,
   Popup,
-  TileLayer,
   useMap,
 } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import Leaflet from "leaflet";
 import {
   Railway,
@@ -28,7 +25,7 @@ import {
   useRailwaysInfoByPrefCode,
   useStationsInfoByPrefCode,
 } from "../api/Api";
-import { CustomLink } from "../components";
+import { CustomLink, MapCustom } from "../components";
 
 
 const FitMapZoom = (
@@ -199,11 +196,7 @@ const PrefectureInfo = () => {
         ))}
       </Box>
 
-      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
         {stationList.map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
             <Popup>
@@ -235,7 +228,7 @@ const PrefectureInfo = () => {
           </CircleMarker>
         ))}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
-      </MapContainer>
+      </MapCustom>
     </Container>
   );
 };

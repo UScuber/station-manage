@@ -7,8 +7,7 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { useMap } from "react-leaflet";
 import Leaflet from "leaflet";
 import {
   Railway,
@@ -19,7 +18,7 @@ import {
   useRailwaysInfoByCompanyCode,
   useStationsInfoByCompanyCode,
 } from "../api/Api";
-import { CircleProgress, CustomLink, StationMapGeojson } from "../components";
+import { CircleProgress, CustomLink, MapCustom, StationMapGeojson } from "../components";
 
 
 const FitMapZoom = (
@@ -136,16 +135,12 @@ const CompanyInfo = () => {
         ))}
       </Box>
 
-      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
         {railwayPath && (
           <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
         )}
         <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
-      </MapContainer>
+      </MapCustom>
     </Container>
   );
 };

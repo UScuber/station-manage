@@ -15,8 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Railway, StationProgress, useRailwayList, useRailwayProgress, useRailwayProgressList } from "../api/Api";
-import { useAuth } from "../auth/auth";
+import { Railway, StationProgress, useRailwayList, useRailwayProgressList } from "../api/Api";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
 
 

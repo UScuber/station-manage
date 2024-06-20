@@ -9,8 +9,7 @@ import {
   Divider,
   Typography,
 } from "@mui/material";
-import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -30,6 +29,7 @@ import {
   AroundTime,
   CustomSubmitFormGroup,
   GroupHistoryTable,
+  MapCustom,
   RespStationName,
 } from "../components";
 
@@ -218,11 +218,7 @@ const StationGroupInfo = () => {
         </Button>
       </Box>
 
-      <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
         <Marker position={position}>
           <Popup>
             <Box sx={{ textAlign: "center" }}>{groupStationData?.stationName}</Box>
@@ -240,7 +236,7 @@ const StationGroupInfo = () => {
           </Marker>
         ))}
         <ChangeMapCenter position={position} />
-      </MapContainer>
+      </MapCustom>
     </Container>
   );
 };

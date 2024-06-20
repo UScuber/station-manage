@@ -5,18 +5,15 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import "leaflet/dist/leaflet.css";
 import {
   CircleMarker,
   FeatureGroup,
-  MapContainer,
   Polyline,
   Popup,
-  TileLayer,
 } from "react-leaflet";
 import { StationHistoryDetail, useStationHistoryListAndInfo } from "../api/Api";
 import { useAuth } from "../auth/auth";
-import { CustomLink } from "../components";
+import { CustomLink, MapCustom } from "../components";
 import NotFound from "./NotFound";
 
 
@@ -99,11 +96,7 @@ const HistoryMap = () => {
         </CustomLink>
       </Box>
 
-      <MapContainer center={[36.265185, 138.126471]} zoom={6} style={{ height: "90vh" }}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={[36.265185, 138.126471]} zoom={6} style={{ height: "90vh" }}>
         {splitHistoryList(historyList).map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.key}>
             <Popup>
@@ -128,7 +121,7 @@ const HistoryMap = () => {
             </Popup>
           </CircleMarker>
         ))}
-      </MapContainer>
+      </MapCustom>
     </Container>
   );
 };
