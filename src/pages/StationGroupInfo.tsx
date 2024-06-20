@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Box,
@@ -7,18 +7,13 @@ import {
   CircularProgress,
   Container,
   Divider,
-  FormControl,
-  FormHelperText,
   Typography,
 } from "@mui/material";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import dayjs, { Dayjs } from "dayjs";
 import {
   Station,
   StationGroupDate,
@@ -33,7 +28,7 @@ import { useAuth } from "../auth/auth";
 import {
   AccessButton,
   AroundTime,
-  Collapser,
+  CustomSubmitFormGroup,
   GroupHistoryTable,
   RespStationName,
 } from "../components";
@@ -89,75 +84,6 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
   );
 };
 
-
-const CustomSubmitForm = (
-  { onSubmit }
-  :{
-    onSubmit: (date: Date) => unknown,
-  }
-) => {
-  const [date, setDate] = useState<Dayjs | null>(null);
-  const [time, setTime] = useState<Dayjs | null>(null);
-  const [error, setError] = useState(false);
-  const [helperText, setHelperText] = useState("");
-
-  const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if(date === null || time === null || date > dayjs()){
-      setError(true);
-      setHelperText("日付を選択してください");
-    }else{
-      setError(false);
-      setHelperText("追加されました");
-      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")));
-      // reset
-      setDate(null);
-      setTime(null);
-    }
-  };
-
-  return (
-    <Collapser
-      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
-      sx={{ mb: 2 }}
-      collapseSx={{ mx: 2 }}
-    >
-      <form onSubmit={onSubmitForm}>
-        <FormControl error={error} variant="standard" required>
-          <LocalizationProvider
-            dateAdapter={AdapterDayjs}
-            adapterLocale="ja"
-            dateFormats={{ year: "YYYY", month: "M月" }}
-          >
-            <DatePicker
-              label="日付"
-              value={date}
-              onChange={(date) => setDate(date)}
-              slotProps={{
-                textField: { size: "small" },
-                toolbar: { toolbarFormat: "YYYY年 M月" },
-              }}
-              format="YYYY-MM-DD"
-              sx={{ display: "inline-block", mb: 1 }}
-              disableFuture
-            />
-            <TimePicker
-              label="時間"
-              value={time}
-              onChange={(time) => setTime(time)}
-              slotProps={{ textField: { size: "small" } }}
-              views={["hours", "minutes", "seconds"]}
-              sx={{ mb: 1 }}
-            />
-          </LocalizationProvider>
-          <FormHelperText>{helperText}</FormHelperText>
-          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
-        </FormControl>
-      </form>
-    </Collapser>
-  );
-};
 
 
 const StationGroupInfo = () => {
@@ -273,7 +199,7 @@ const StationGroupInfo = () => {
         <Box sx={{ mb: 2 }}>
           <GroupHistoryTable stationGroupCode={stationGroupCode} />
 
-          <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
+          <CustomSubmitFormGroup onSubmit={handleSubmitCustomDate} />
         </Box>
       )}
 
