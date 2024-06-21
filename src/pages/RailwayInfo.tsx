@@ -7,8 +7,6 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { useMap } from "react-leaflet";
-import Leaflet from "leaflet";
 import {
   Station,
   StationDate,
@@ -19,20 +17,14 @@ import {
   useStationsInfoByRailwayCode,
 } from "../api/Api";
 import { useAuth } from "../auth/auth";
-import { AroundTime, CustomLink, MapCustom, StationMapGeojson } from "../components";
+import {
+  AroundTime,
+  CustomLink,
+  FitMapZoom,
+  MapCustom,
+  StationMapGeojson,
+} from "../components";
 
-
-const FitMapZoom = (
-  { positions }
-  :{
-    positions: { lat: number, lng: number}[],
-  }
-) => {
-  const map = useMap();
-  const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
-  map.fitBounds(group.getBounds());
-  return null;
-};
 
 const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationDate | undefined }): JSX.Element => {
   const { isAuthenticated } = useAuth();
@@ -61,6 +53,7 @@ const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationD
     </Button>
   );
 };
+
 
 const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
@@ -160,7 +153,11 @@ const RailwayInfo = () => {
 
       <Box>
         {stationList.map((item, idx) => (
-          <StationItem key={item.stationCode} info={item} latestDate={latestHistoryList ? latestHistoryList[idx] : undefined} />
+          <StationItem
+            info={item}
+            latestDate={latestHistoryList ? latestHistoryList[idx] : undefined}
+            key={item.stationCode}
+          />
         ))}
       </Box>
 
@@ -169,7 +166,9 @@ const RailwayInfo = () => {
         {railwayPath && (
           <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
         )}
-        <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
+        <FitMapZoom
+          positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])}
+        />
       </MapCustom>
     </Container>
   )

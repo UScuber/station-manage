@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Box,
@@ -13,9 +12,7 @@ import {
   FeatureGroup,
   Polyline,
   Popup,
-  useMap,
 } from "react-leaflet";
-import Leaflet from "leaflet";
 import {
   Railway,
   StationProgress,
@@ -25,24 +22,8 @@ import {
   useRailwaysInfoByPrefCode,
   useStationsInfoByPrefCode,
 } from "../api/Api";
-import { CustomLink, MapCustom } from "../components";
+import { CustomLink, FitMapZoom, MapCustom } from "../components";
 
-
-const FitMapZoom = (
-  { positions }
-  :{
-    positions: { lat: number, lng: number}[],
-  }
-) => {
-  const map = useMap();
-  const [first, setFirst] = useState(true);
-  if(first){
-    const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
-    map.fitBounds(group.getBounds());
-    setFirst(false);
-  }
-  return null;
-};
 
 const RailwayItem = (
   { info, progress }
@@ -190,9 +171,14 @@ const PrefectureInfo = () => {
           />
         </Box>
       )}
+      {/* 路線のリスト */}
       <Box>
         {railwayList.map((item, idx) => (
-          <RailwayItem info={item} progress={progressList ? progressList[idx] : undefined}  key={item.railwayCode} />
+          <RailwayItem
+            info={item}
+            progress={progressList ? progressList[idx] : undefined}
+            key={item.railwayCode}
+          />
         ))}
       </Box>
 
@@ -227,7 +213,9 @@ const PrefectureInfo = () => {
             </Popup>
           </CircleMarker>
         ))}
-        <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
+        <FitMapZoom
+          positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])}
+        />
       </MapCustom>
     </Container>
   );

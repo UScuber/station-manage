@@ -1,10 +1,11 @@
-import { MapContainer, TileLayer } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { CSSProperties, useState } from "react";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import Leaflet from "leaflet";
 import { LatLngExpression } from "leaflet";
-import { CSSProperties } from "react";
+import "leaflet/dist/leaflet.css";
 
 
-const MapCustom = (
+export const MapCustom = (
   { center, zoom, style, children }
   :{
     center?: LatLngExpression | undefined,
@@ -24,4 +25,19 @@ const MapCustom = (
   );
 };
 
-export default MapCustom;
+
+export const FitMapZoom = (
+  { positions }
+  :{
+    positions: { lat: number, lng: number}[],
+  }
+) => {
+  const map = useMap();
+  const [first, setFirst] = useState(true);
+  if(first){
+    const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
+    map.fitBounds(group.getBounds());
+    setFirst(false);
+  }
+  return null;
+};

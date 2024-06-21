@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Box,
@@ -7,8 +6,6 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { useMap } from "react-leaflet";
-import Leaflet from "leaflet";
 import {
   Railway,
   StationProgress,
@@ -18,24 +15,14 @@ import {
   useRailwaysInfoByCompanyCode,
   useStationsInfoByCompanyCode,
 } from "../api/Api";
-import { CircleProgress, CustomLink, MapCustom, StationMapGeojson } from "../components";
+import {
+  CircleProgress,
+  CustomLink,
+  FitMapZoom,
+  MapCustom,
+  StationMapGeojson,
+} from "../components";
 
-
-const FitMapZoom = (
-  { positions }
-  :{
-    positions: { lat: number, lng: number}[],
-  }
-) => {
-  const map = useMap();
-  const [first, setFirst] = useState(true);
-  if(first){
-    const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
-    map.fitBounds(group.getBounds());
-    setFirst(false);
-  }
-  return null;
-};
 
 const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgress | undefined }): JSX.Element => {
   return (
@@ -81,6 +68,7 @@ const CompanyInfo = () => {
 
   const railwaysQuery = useRailwaysInfoByCompanyCode(companyCode);
   const railwayList = railwaysQuery.data;
+
   const railwayProgressQuery = useRailwayProgressListByCompanyCode(companyCode);
   const railwayProgress = railwayProgressQuery.data;
 
@@ -131,7 +119,11 @@ const CompanyInfo = () => {
       </Box>
       <Box>
         {railwayList.map((item, idx) => (
-          <RailwayItem info={item} progress={railwayProgress ? railwayProgress[idx] : undefined} key={item.railwayCode} />
+          <RailwayItem
+            info={item}
+            progress={railwayProgress ? railwayProgress[idx] : undefined}
+            key={item.railwayCode}
+          />
         ))}
       </Box>
 
@@ -139,7 +131,9 @@ const CompanyInfo = () => {
         {railwayPath && (
           <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
         )}
-        <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
+        <FitMapZoom
+          positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])}
+        />
       </MapCustom>
     </Container>
   );
