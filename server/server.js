@@ -1570,7 +1570,12 @@ app.get("/api/railwayProgressList", accessLog, (req, res) => {
     `).all();
 
     getOrPassStationNumList = db.prepare(`
-      SELECT COUNT(LatestStationHistory.date) AS num FROM Stations
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN LatestStationHistory.date IS NULL THEN NULL
+          ELSE LatestStationHistory.stationCode
+        END
+      ) AS num FROM Stations
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
       LEFT JOIN LatestStationHistory
@@ -1648,7 +1653,12 @@ app.get("/api/companyProgress", accessLog, (req, res) => {
     `).all();
 
     getOrPassStationNumList = db.prepare(`
-      SELECT COUNT(date) AS num FROM Stations
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN LatestStationHistory.date IS NULL THEN NULL
+          ELSE LatestStationHistory.stationCode
+        END
+      ) AS num FROM Stations
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
       LEFT JOIN LatestStationHistory
