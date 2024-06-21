@@ -17,7 +17,7 @@ import {
   useExportHistoryMutation,
   useImportHistoryMutation,
 } from "../api/Api";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth";
 import { ConfirmDialog } from "../components";
 
 

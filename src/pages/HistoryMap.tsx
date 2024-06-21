@@ -12,7 +12,7 @@ import {
   Popup,
 } from "react-leaflet";
 import { StationHistoryDetail, useStationHistoryListAndInfo } from "../api/Api";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth";
 import { CustomLink, MapCustom } from "../components";
 import NotFound from "./NotFound";
 

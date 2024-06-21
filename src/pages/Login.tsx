@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth";
 
 
 const Login = () => {

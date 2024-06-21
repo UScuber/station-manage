@@ -29,7 +29,7 @@ import {
   useSearchStationGroupList,
   useSearchStationGroupListHistory,
 } from "../api/Api";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import getDateString from "../utils/getDateString";
 

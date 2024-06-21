@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth";
 
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASEURL;

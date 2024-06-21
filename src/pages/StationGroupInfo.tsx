@@ -23,7 +23,7 @@ import {
   useStationGroupInfo,
   useStationsInfoByGroupCode,
 } from "../api/Api";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth";
 import {
   AccessButton,
   AroundTime,
