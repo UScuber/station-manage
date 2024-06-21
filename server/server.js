@@ -1424,7 +1424,12 @@ app.get("/api/railwayProgress/:railwayCode", accessLog, (req, res) => {
     `).get(code);
 
     getOrPassStationNum = db.prepare(`
-      SELECT COUNT(date) AS num FROM Stations
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN LatestStationHistory.date IS NULL THEN NULL
+          ELSE LatestStationHistory.stationCode
+        END
+      ) AS num FROM Stations
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
           AND Stations.railwayCode = ?
@@ -1462,7 +1467,12 @@ app.get("/api/railwayProgressList/:companyCode", accessLog, (req, res) => {
     `).all(code);
 
     getOrPassStationNumList = db.prepare(`
-      SELECT COUNT(LatestStationHistory.date) AS num FROM Stations
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN LatestStationHistory.date IS NULL THEN NULL
+          ELSE LatestStationHistory.stationCode
+        END
+      ) AS num FROM Stations
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
           AND Railways.companyCode = ?
@@ -1600,14 +1610,19 @@ app.get("/api/companyProgress/:companyCode", accessLog, (req, res) => {
     `).get(code);
 
     getOrPassStationNum = db.prepare(`
-      SELECT COUNT(date) AS num FROM Stations
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN LatestStationHistory.date IS NULL THEN NULL
+          ELSE LatestStationHistory.stationCode
+        END
+      ) AS num FROM Stations
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
           AND Railways.companyCode = ?
       LEFT JOIN LatestStationHistory
         ON Stations.stationCode = LatestStationHistory.stationCode
           AND LatestStationHistory.userId = ?
-    `).get(userId, code);
+    `).get(code, userId);
   }catch(err){
     throw new ServerError("Server Error", err);
   }
