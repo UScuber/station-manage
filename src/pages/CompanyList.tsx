@@ -15,7 +15,12 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Company, StationProgress, useCompanyList, useCompanyProgressList } from "../api/Api";
+import {
+  Company,
+  StationProgress,
+  useCompanyList,
+  useCompanyProgressList,
+} from "../api";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
 
 // 文字列同士の類似度、価が小さいほど高い

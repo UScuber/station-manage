@@ -1,39 +1,22 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import axios from "./axios";
 import { useAuth } from "../auth";
+import {
+  ExportHistoryJSON,
+  StationDate,
+  StationGroupDate,
+  StationGroupHistory,
+  StationHistory,
+  StationHistoryData,
+  StationHistoryDetail,
+  StationProgress,
+} from "./types";
 
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASEURL;
-axios.defaults.withCredentials = true;
-
-// 日付をDate型に変換する
-axios.interceptors.response.use(res => {
-  const dateFormat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-  for(const key of Object.keys(res.data)){
-    const value = res.data[key];
-    if(typeof value === "string" && dateFormat.test(value)){
-      res.data[key] = new Date(value);
-      continue;
-    }
-    if(value === null){
-      res.data[key] = undefined;
-      continue;
-    }
-    if(typeof value === "object"){
-      for(const k of Object.keys(value)){
-        const val = value[k];
-        if(typeof val === "string" && dateFormat.test(val)){
-          res.data[key][k] = new Date(val);
-        }
-      }
-    }
-  }
-  return res;
-});
 
 const ngrok_header = {
   headers: { "ngrok-skip-browser-warning": "a" },
 };
+
 
 const convert_date = (date: Date) => {
   return new Date(date).toLocaleString(
@@ -77,462 +60,6 @@ const deleteAllHistoryCache = (queryClient: QueryClient) => {
 };
 
 
-export enum RecordState {
-  Get,
-  Pass,
-};
-
-export type Station = {
-  stationCode: number,
-  stationName: string,
-  companyCode: number,
-  railwayCode: number,
-  stationGroupCode: number,
-  railwayName: string,
-  railwayCompany: string,
-  latitude: number,
-  longitude: number,
-  prefCode: number,
-  prefName: string,
-  kana: string,
-  railwayColor: string,
-  left: number[],
-  right: number[],
-};
-
-// 駅情報取得
-export const useStationInfo = (
-  code: number | undefined,
-  onSuccessFn?: (data: Station) => unknown
-) => {
-  return useQuery<Station>({
-    queryKey: ["Station", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Station>("/api/station/" + code, ngrok_header);
-      onSuccessFn && onSuccessFn(data);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 駅グループに属する駅の駅情報を取得
-export const useStationsInfoByGroupCode = (code: number | undefined) => {
-  return useQuery<Station[]>({
-    queryKey: ["GroupStations", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/stationsByGroupCode/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-
-export type StationGroup = {
-  stationGroupCode: number,
-  stationName: string,
-  latitude: number,
-  longitude: number,
-  prefCode: number,
-  prefName: string,
-  kana: string,
-  distance?: number,
-};
-
-// 駅グループの情報取得
-export const useStationGroupInfo = (
-  code: number | undefined,
-  onSuccessFn?: (data: StationGroup) => unknown
-) => {
-  return useQuery<StationGroup>({
-    queryKey: ["StationGroup", code],
-    queryFn: async() => {
-      const { data } = await axios.get<StationGroup>("/api/stationGroup/" + code, ngrok_header);
-      onSuccessFn && onSuccessFn(data);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-export type Railway = {
-  railwayCode: number,
-  railwayName: string,
-  companyCode: number,
-  companyName: string,
-  railwayKana: string,
-  formalName: string,
-  railwayColor: string,
-};
-
-// 路線情報取得
-export const useRailwayInfo = (code: number | undefined) => {
-  return useQuery<Railway>({
-    queryKey: ["Railway", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Railway>("/api/railway/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 路線情報全取得
-export const useRailwayList = () => {
-  return useQuery<Railway[]>({
-    queryKey: ["Railway"],
-    queryFn: async() => {
-      const { data } = await axios.get<Railway[]>("/api/railway", ngrok_header);
-      return data;
-    },
-    staleTime: Infinity,
-  });
-};
-
-
-// 路線に属する駅の駅情報を取得
-export const useStationsInfoByRailwayCode = (
-  code: number | undefined,
-  onSuccessFn?: (data: Station[]) => unknown
-) => {
-  return useQuery<Station[]>({
-    queryKey: ["RailwayStations", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/railwayStations/" + code, ngrok_header);
-      onSuccessFn && onSuccessFn(data);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-export type Company = {
-  companyCode: number,
-  companyName: string,
-  formalName: string,
-};
-
-// 会社情報取得
-export const useCompanyInfo = (code: number | undefined) => {
-  return useQuery<Company>({
-    queryKey: ["Company", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Company>("/api/company/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 会社情報全取得
-export const useCompanyList = () => {
-  return useQuery<Company[]>({
-    queryKey: ["Company"],
-    queryFn: async() => {
-      const { data } = await axios.get<Company[]>("/api/company", ngrok_header);
-      return data;
-    },
-    staleTime: Infinity,
-  });
-};
-
-
-// 会社に属する路線の路線情報を取得
-export const useRailwaysInfoByCompanyCode = (code: number | undefined) => {
-  return useQuery<Railway[]>({
-    queryKey: ["CompanyRailways", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Railway[]>("/api/companyRailways/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 会社に属する路線の駅情報を全取得
-export const useStationsInfoByCompanyCode = (code: number | undefined) => {
-  return useQuery<Station[]>({
-    queryKey: ["CompanyStations", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/companyStations/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 県に属する路線の路線情報を取得
-export const useRailwaysInfoByPrefCode = (code: number | undefined) => {
-  return useQuery<Railway[]>({
-    queryKey: ["PrefRailways", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Railway[]>("/api/prefRailways/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 県に属する路線の駅情報を全取得
-export const useStationsInfoByPrefCode = (code: number | undefined) => {
-  return useQuery<Station[]>({
-    queryKey: ["PrefStations", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/prefStations/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 駅グループを名前で検索、区間指定
-export const useSearchStationGroupList = (
-  { offset, length, name }
-  :{
-    offset: number,
-    length: number,
-    name: string | undefined,
-  }
-) => {
-  return useQuery<StationGroup[]>({
-    queryKey: ["StationGroupList", offset, length, name],
-    queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${offset}&len=${length}&name=${name ?? ""}`, ngrok_header);
-      return data;
-    },
-  });
-};
-
-
-// 駅グループを名前で検索した際の件数
-export const useSearchStationGroupCount = (
-  { name }
-  :{
-    name: string | undefined,
-  }
-) => {
-  return useQuery<number>({
-    queryKey: ["StationGroupCount", name],
-    queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${name ?? ""}`, ngrok_header);
-      return data;
-    },
-  });
-};
-
-
-export type Coordinate = {
-  lat: number,
-  lng: number,
-};
-
-// 座標から近い駅/駅グループを複数取得
-export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?: number) => {
-  return useQuery<StationGroup[]>({
-    queryKey: ["SearchKNearestStationGroups", pos, num ?? 0],
-    queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}&num=${num ?? ""}`, ngrok_header);
-      return data;
-    },
-    enabled: pos !== undefined,
-  });
-};
-
-
-export type Prefecture = {
-  prefCode: number,
-  prefName: string,
-};
-
-// 都道府県名を取得
-export const usePrefName = (code: number | undefined) => {
-  return useQuery<Prefecture>({
-    queryKey: ["Prefecture", code],
-    queryFn: async() => {
-      const { data } = await axios.get<Prefecture>("/api/pref/" + code, ngrok_header);
-      return data;
-    },
-    enabled: code !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 都道府県名を全取得
-export const usePrefList = () => {
-  return useQuery<Prefecture[]>({
-    queryKey: ["Prefecture"],
-    queryFn: async() => {
-      const { data } = await axios.get<Prefecture[]>("/api/pref", ngrok_header);
-      return data;
-    },
-    staleTime: Infinity,
-  });
-};
-
-
-export type PathData = {
-  type: "Feature",
-  geometry: {
-    type: "MultiLineString",
-    coordinates: [number, number][][],
-  },
-  properties: Railway,
-};
-
-// 路線の線路のpathを取得
-export const useRailPath = (railwayCode: number | undefined) => {
-  return useQuery<PathData>({
-    queryKey: ["RailPath", railwayCode],
-    queryFn: async() => {
-      const { data } = await axios.get<PathData>("/api/railpaths/" + railwayCode, ngrok_header);
-      return data;
-    },
-    enabled: railwayCode !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-// 会社に属する全路線の線路のpathを取得
-export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
-  return useQuery<PathData[]>({
-    queryKey: ["RailPathList", companyCode],
-    queryFn: async() => {
-      const { data } = await axios.get<PathData[]>("/api/pathslist/" + companyCode, ngrok_header);
-      return data;
-    },
-    enabled: companyCode !== undefined,
-    staleTime: Infinity,
-  });
-};
-
-
-export type User = {
-  userName: string,
-  userEmail: string,
-  password?: string,
-};
-
-// 新規登録
-export const useSignupMutation = (
-  callbackFn?: (authorized: boolean) => unknown
-) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async(req: User) => {
-      const { data } = await axios.post<Auth>("/api/signup", {
-        headers: ngrok_header.headers,
-        ...req,
-      });
-      return data;
-    },
-    onSuccess: (data: Auth, variables: User) => {
-      callbackFn && callbackFn(data.auth);
-      queryClient.invalidateQueries({ queryKey: ["UserData"] });
-    },
-    onError: (err: Error) => {
-      callbackFn && callbackFn(false);
-      console.error(err);
-    },
-  });
-};
-
-
-export type Auth = {
-  auth: boolean,
-  userName: string | undefined,
-  userEmail: string | undefined,
-};
-
-// ログイン
-export const useLoginMutation = (
-  onSuccessFn?: (authorized: boolean) => unknown
-) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async(req: User) => {
-      const { data } = await axios.post<Auth>("/api/login", {
-        headers: ngrok_header.headers,
-        ...req,
-      });
-      return data;
-    },
-    onSuccess: (data: Auth, variables: User) => {
-      onSuccessFn && onSuccessFn(data.auth);
-      queryClient.invalidateQueries({ queryKey: ["UserData"] });
-    },
-    onError: (err: Error) => {
-      console.error(err);
-    },
-  });
-};
-
-
-// check status
-export const useUserStatus = (
-  onSuccessFn?: (data: Auth) => unknown
-) => {
-  return useQuery<Auth>({
-    queryKey: ["UserData"],
-    queryFn: async() => {
-      const { data } = await axios.get<Auth>("/api/status", ngrok_header);
-      onSuccessFn && onSuccessFn(data);
-      return data;
-    },
-  });
-};
-
-
-// logout
-export const useLogoutMutation = (
-  onSuccessFn?: () => unknown
-) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async() => {
-      const { data } = await axios.get<string>("/api/logout", ngrok_header);
-      return data;
-    },
-    onSuccess: (data: string, variables: User) => {
-      onSuccessFn && onSuccessFn();
-      queryClient.invalidateQueries({ queryKey: ["UserData"] });
-      deleteAllHistoryCache(queryClient);
-    },
-    onError: (err: Error) => {
-      console.error(err);
-    },
-  });
-};
-
-
-
-export type StationDate = {
-  getDate: Date | undefined,
-  passDate: Date | undefined,
-};
-
 // 駅の最新のアクセス日時を取得
 export const useLatestStationHistory = (
   code: number | undefined,
@@ -564,9 +91,6 @@ export const useLatestStationHistoryListByRailwayCode = (code: number | undefine
   });
 };
 
-export type StationGroupDate = {
-  date: Date | undefined,
-};
 
 // 駅グループの最新のアクセス日時を取得
 export const useLatestStationGroupHistory = (
@@ -585,15 +109,6 @@ export const useLatestStationGroupHistory = (
   });
 };
 
-
-export type StationHistory = {
-  stationCode: number,
-  stationGroupCode: number,
-  date: Date,
-  state: number,
-};
-
-export type StationHistoryDetail = Station & StationHistory;
 
 // 乗降/通過の履歴を区間取得
 export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string) => {
@@ -655,15 +170,6 @@ export const useStationAllHistory = (
 };
 
 
-export type StationHistoryData = {
-  stationGroupCode: number,
-  stationCode: number | undefined,
-  date: Date,
-  state: number,
-  railwayName?: string,
-  railwayColor?: string,
-};
-
 // 駅グループ全体の履歴を取得(各駅の行動も含める)
 export const useStationGroupAllHistory = (
   code: number | undefined,
@@ -702,10 +208,6 @@ export const useSearchStationGroupListHistory = (
   });
 };
 
-export type StationProgress = {
-  stationNum: number,
-  getOrPassStationNum: number,
-};
 
 // 路線の駅の個数と乗降/通過した駅の個数を取得
 export const useRailwayProgress = (code: number | undefined) => {
@@ -853,11 +355,6 @@ export const useSendStationStateMutation = () => {
 };
 
 
-export type StationGroupHistory = {
-  stationGroupCode: number,
-  date: Date,
-};
-
 // 立ち寄りの情報を追加
 export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
@@ -937,34 +434,6 @@ export const useDeleteStationGroupHistoryMutation = (
   });
 };
 
-
-// ファイル入出力用のJSONの型
-export type ExportHistoryJSON = {
-  station_history: {
-    history: {
-      date: Date,
-      state: number,
-    }[],
-    info: {
-      railwayCode: number,
-      latitude: number,
-      longitude: number,
-      stationName: string,
-      railwayName: string,
-      companyName: string,
-    }[],
-  }[],
-  station_group_history: {
-    history: {
-      date: Date,
-    }[],
-    info: {
-      stationName: string,
-      latitude: number,
-      longitude: number,
-    }[],
-  }[],
-};
 
 // 履歴のエクスポート
 export const useExportHistoryMutation = (

@@ -15,7 +15,7 @@ import {
   StationHistoryData,
   useDeleteStationHistoryMutation,
   useStationAllHistory,
-} from "../api/Api";
+} from "../api";
 import { Collapser, ConfirmDialog } from "../components";
 import getDateString from "../utils/getDateString";
 

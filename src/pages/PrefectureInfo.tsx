@@ -21,7 +21,7 @@ import {
   useRailwayProgressListByPrefCode,
   useRailwaysInfoByPrefCode,
   useStationsInfoByPrefCode,
-} from "../api/Api";
+} from "../api";
 import { CustomLink, FitMapZoom, MapCustom } from "../components";
 
 

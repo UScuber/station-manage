@@ -7,7 +7,7 @@ import {
   useLogoutMutation,
   useSignupMutation,
   useUserStatus,
-} from "../api/Api";
+} from "../api";
 
 
 export type AuthInfo = {

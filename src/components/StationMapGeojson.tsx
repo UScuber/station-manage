@@ -2,7 +2,7 @@ import ReactDomServer from "react-dom/server";
 import { GeoJSON } from "react-leaflet";
 import { GeoJsonObject } from "geojson";
 import Leaflet from "leaflet";
-import { PathData, Station } from "../api/Api";
+import { PathData, Station } from "../api";
 
 
 const RailwayGeojson = (

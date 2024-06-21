@@ -28,7 +28,7 @@ import {
   useSearchStationGroupCount,
   useSearchStationGroupList,
   useSearchStationGroupListHistory,
-} from "../api/Api";
+} from "../api";
 import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import getDateString from "../utils/getDateString";

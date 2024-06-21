@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "../api/Api";
+import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "../api";
 import { useAuth } from "../auth";
 import { BinaryPagination, CustomLink, RespStationName } from "../components";
 import getDateString from "../utils/getDateString";

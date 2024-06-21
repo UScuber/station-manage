@@ -15,7 +15,7 @@ import {
   useRailwayInfo,
   useRailwayProgress,
   useStationsInfoByRailwayCode,
-} from "../api/Api";
+} from "../api";
 import { useAuth } from "../auth";
 import {
   AroundTime,

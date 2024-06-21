@@ -14,7 +14,7 @@ import {
   useRailwayProgressListByCompanyCode,
   useRailwaysInfoByCompanyCode,
   useStationsInfoByCompanyCode,
-} from "../api/Api";
+} from "../api";
 import {
   CircleProgress,
   CustomLink,

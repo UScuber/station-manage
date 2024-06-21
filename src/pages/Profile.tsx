@@ -16,7 +16,7 @@ import {
   ExportHistoryJSON,
   useExportHistoryMutation,
   useImportHistoryMutation,
-} from "../api/Api";
+} from "../api";
 import { useAuth } from "../auth";
 import { ConfirmDialog } from "../components";
 

@@ -13,7 +13,7 @@ import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-picker
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ja";
-import { RecordState } from "../api/Api";
+import { RecordState } from "../api";
 import { Collapser } from ".";
 
 

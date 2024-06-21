@@ -22,7 +22,7 @@ import {
   useSendStationGroupStateMutation,
   useStationGroupInfo,
   useStationsInfoByGroupCode,
-} from "../api/Api";
+} from "../api";
 import { useAuth } from "../auth";
 import {
   AccessButton,
