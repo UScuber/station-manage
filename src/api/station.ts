@@ -10,11 +10,6 @@ import {
 } from "./types";
 
 
-const ngrok_header = {
-  headers: { "ngrok-skip-browser-warning": "a" },
-};
-
-
 
 // 駅情報取得
 export const useStationInfo = (
@@ -24,7 +19,7 @@ export const useStationInfo = (
   return useQuery<Station>({
     queryKey: ["Station", code],
     queryFn: async() => {
-      const { data } = await axios.get<Station>("/api/station/" + code, ngrok_header);
+      const { data } = await axios.get<Station>("/api/station/" + code);
       onSuccessFn && onSuccessFn(data);
       return data;
     },
@@ -39,7 +34,7 @@ export const useStationsInfoByGroupCode = (code: number | undefined) => {
   return useQuery<Station[]>({
     queryKey: ["GroupStations", code],
     queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/stationsByGroupCode/" + code, ngrok_header);
+      const { data } = await axios.get<Station[]>("/api/stationsByGroupCode/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -56,7 +51,7 @@ export const useStationGroupInfo = (
   return useQuery<StationGroup>({
     queryKey: ["StationGroup", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup>("/api/stationGroup/" + code, ngrok_header);
+      const { data } = await axios.get<StationGroup>("/api/stationGroup/" + code);
       onSuccessFn && onSuccessFn(data);
       return data;
     },
@@ -71,7 +66,7 @@ export const useRailwayInfo = (code: number | undefined) => {
   return useQuery<Railway>({
     queryKey: ["Railway", code],
     queryFn: async() => {
-      const { data } = await axios.get<Railway>("/api/railway/" + code, ngrok_header);
+      const { data } = await axios.get<Railway>("/api/railway/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -85,7 +80,7 @@ export const useRailwayList = () => {
   return useQuery<Railway[]>({
     queryKey: ["Railway"],
     queryFn: async() => {
-      const { data } = await axios.get<Railway[]>("/api/railway", ngrok_header);
+      const { data } = await axios.get<Railway[]>("/api/railway");
       return data;
     },
     staleTime: Infinity,
@@ -101,7 +96,7 @@ export const useStationsInfoByRailwayCode = (
   return useQuery<Station[]>({
     queryKey: ["RailwayStations", code],
     queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/railwayStations/" + code, ngrok_header);
+      const { data } = await axios.get<Station[]>("/api/railwayStations/" + code);
       onSuccessFn && onSuccessFn(data);
       return data;
     },
@@ -116,7 +111,7 @@ export const useCompanyInfo = (code: number | undefined) => {
   return useQuery<Company>({
     queryKey: ["Company", code],
     queryFn: async() => {
-      const { data } = await axios.get<Company>("/api/company/" + code, ngrok_header);
+      const { data } = await axios.get<Company>("/api/company/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -130,7 +125,7 @@ export const useCompanyList = () => {
   return useQuery<Company[]>({
     queryKey: ["Company"],
     queryFn: async() => {
-      const { data } = await axios.get<Company[]>("/api/company", ngrok_header);
+      const { data } = await axios.get<Company[]>("/api/company");
       return data;
     },
     staleTime: Infinity,
@@ -143,7 +138,7 @@ export const useRailwaysInfoByCompanyCode = (code: number | undefined) => {
   return useQuery<Railway[]>({
     queryKey: ["CompanyRailways", code],
     queryFn: async() => {
-      const { data } = await axios.get<Railway[]>("/api/companyRailways/" + code, ngrok_header);
+      const { data } = await axios.get<Railway[]>("/api/companyRailways/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -157,7 +152,7 @@ export const useStationsInfoByCompanyCode = (code: number | undefined) => {
   return useQuery<Station[]>({
     queryKey: ["CompanyStations", code],
     queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/companyStations/" + code, ngrok_header);
+      const { data } = await axios.get<Station[]>("/api/companyStations/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -171,7 +166,7 @@ export const useRailwaysInfoByPrefCode = (code: number | undefined) => {
   return useQuery<Railway[]>({
     queryKey: ["PrefRailways", code],
     queryFn: async() => {
-      const { data } = await axios.get<Railway[]>("/api/prefRailways/" + code, ngrok_header);
+      const { data } = await axios.get<Railway[]>("/api/prefRailways/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -185,7 +180,7 @@ export const useStationsInfoByPrefCode = (code: number | undefined) => {
   return useQuery<Station[]>({
     queryKey: ["PrefStations", code],
     queryFn: async() => {
-      const { data } = await axios.get<Station[]>("/api/prefStations/" + code, ngrok_header);
+      const { data } = await axios.get<Station[]>("/api/prefStations/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -206,7 +201,7 @@ export const useSearchStationGroupList = (
   return useQuery<StationGroup[]>({
     queryKey: ["StationGroupList", offset, length, name],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${offset}&len=${length}&name=${name ?? ""}`, ngrok_header);
+      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${offset}&len=${length}&name=${name ?? ""}`);
       return data;
     },
   });
@@ -223,7 +218,7 @@ export const useSearchStationGroupCount = (
   return useQuery<number>({
     queryKey: ["StationGroupCount", name],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${name ?? ""}`, ngrok_header);
+      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${name ?? ""}`);
       return data;
     },
   });
@@ -235,7 +230,7 @@ export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?
   return useQuery<StationGroup[]>({
     queryKey: ["SearchKNearestStationGroups", pos, num ?? 0],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}&num=${num ?? ""}`, ngrok_header);
+      const { data } = await axios.get<StationGroup[]>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}&num=${num ?? ""}`);
       return data;
     },
     enabled: pos !== undefined,
@@ -253,7 +248,7 @@ export const usePrefName = (code: number | undefined) => {
   return useQuery<Prefecture>({
     queryKey: ["Prefecture", code],
     queryFn: async() => {
-      const { data } = await axios.get<Prefecture>("/api/pref/" + code, ngrok_header);
+      const { data } = await axios.get<Prefecture>("/api/pref/" + code);
       return data;
     },
     enabled: code !== undefined,
@@ -267,7 +262,7 @@ export const usePrefList = () => {
   return useQuery<Prefecture[]>({
     queryKey: ["Prefecture"],
     queryFn: async() => {
-      const { data } = await axios.get<Prefecture[]>("/api/pref", ngrok_header);
+      const { data } = await axios.get<Prefecture[]>("/api/pref");
       return data;
     },
     staleTime: Infinity,
@@ -280,7 +275,7 @@ export const useRailPath = (railwayCode: number | undefined) => {
   return useQuery<PathData>({
     queryKey: ["RailPath", railwayCode],
     queryFn: async() => {
-      const { data } = await axios.get<PathData>("/api/railpaths/" + railwayCode, ngrok_header);
+      const { data } = await axios.get<PathData>("/api/railpaths/" + railwayCode);
       return data;
     },
     enabled: railwayCode !== undefined,
@@ -294,7 +289,7 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
   return useQuery<PathData[]>({
     queryKey: ["RailPathList", companyCode],
     queryFn: async() => {
-      const { data } = await axios.get<PathData[]>("/api/pathslist/" + companyCode, ngrok_header);
+      const { data } = await axios.get<PathData[]>("/api/pathslist/" + companyCode);
       return data;
     },
     enabled: companyCode !== undefined,

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "./axios";
 import { useAuth } from "../auth";
 import {
@@ -12,10 +12,6 @@ import {
   StationProgress,
 } from "./types";
 
-
-const ngrok_header = {
-  headers: { "ngrok-skip-browser-warning": "a" },
-};
 
 
 const convert_date = (date: Date) => {
@@ -33,33 +29,6 @@ const convert_date = (date: Date) => {
 };
 
 
-// 履歴関連のデータのキャッシュを全削除
-const deleteAllHistoryCache = (queryClient: QueryClient) => {
-  const cahceList = [
-    "LatestStationHistory",
-    "LatestStationHistoryList",
-    "LatestStationGroupHistory",
-    "StationHistoryList",
-    "StationHistoryCount",
-    "StationHistoryDetail",
-    "StationHistory",
-    "StationGroupHistory",
-    "LatestStationGroupHistoryList",
-    "RailwayProgress",
-    "RailwayProgressList",
-    "RailwayProgressListByPref",
-    "RailwayProgressListAll",
-    "CompanyProgress",
-    "CompanyProgressList",
-    "PrefProgress",
-    "PrefProgressList",
-  ];
-  for(const name in cahceList){
-    queryClient.invalidateQueries({ queryKey: [name] });
-  }
-};
-
-
 // 駅の最新のアクセス日時を取得
 export const useLatestStationHistory = (
   code: number | undefined,
@@ -69,7 +38,7 @@ export const useLatestStationHistory = (
   return useQuery<StationDate>({
     queryKey: ["LatestStationHistory", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationDate>("/api/latestStationHistory/" + code, ngrok_header);
+      const { data } = await axios.get<StationDate>("/api/latestStationHistory/" + code);
       onSuccessFn && onSuccessFn(data);
       return data;
     },
@@ -84,7 +53,7 @@ export const useLatestStationHistoryListByRailwayCode = (code: number | undefine
   return useQuery<StationDate[]>({
     queryKey: ["LatestStationHistoryList", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationDate[]>("/api/latestRailwayStationHistory/" + code, ngrok_header);
+      const { data } = await axios.get<StationDate[]>("/api/latestRailwayStationHistory/" + code);
       return data;
     },
     enabled: isAuthenticated && code !== undefined,
@@ -101,7 +70,7 @@ export const useLatestStationGroupHistory = (
   return useQuery<StationGroupDate>({
     queryKey: ["LatestStationGroupHistory", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroupDate>("/api/latestStationGroupHistory/" + code, ngrok_header);
+      const { data } = await axios.get<StationGroupDate>("/api/latestStationGroupHistory/" + code);
       onSuccessFn && onSuccessFn(data);
       return data;
     },
@@ -116,7 +85,7 @@ export const useStationHistoryList = (offset: number, length: number, name?: str
   return useQuery<StationHistoryDetail[]>({
     queryKey: ["StationHistoryList", offset, length, name, type],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistoryDetail[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`, ngrok_header);
+      const { data } = await axios.get<StationHistoryDetail[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`);
       return data;
     },
     enabled: isAuthenticated,
@@ -130,7 +99,7 @@ export const useStationHistoryCount = (name?: string, type?: string) => {
   return useQuery<number>({
     queryKey: ["StationHistoryCount", name, type],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/stationHistoryCount?name=${name}&type=${type}`, ngrok_header);
+      const { data } = await axios.get<number>(`/api/stationHistoryCount?name=${name}&type=${type}`);
       return data;
     },
     enabled: isAuthenticated,
@@ -144,7 +113,7 @@ export const useStationHistoryListAndInfo = () => {
   return useQuery<StationHistoryDetail[]>({
     queryKey: ["StationHistoryDetail"],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistoryDetail[]>("/api/stationHistoryAndInfo", ngrok_header);
+      const { data } = await axios.get<StationHistoryDetail[]>("/api/stationHistoryAndInfo");
       return data;
     },
     enabled: isAuthenticated,
@@ -161,7 +130,7 @@ export const useStationAllHistory = (
   return useQuery<StationHistory[]>({
     queryKey: ["StationHistory", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistory[]>("/api/stationHistory/" + code, ngrok_header);
+      const { data } = await axios.get<StationHistory[]>("/api/stationHistory/" + code);
       onSuccessFn && onSuccessFn(data);
       return data;
     },
@@ -179,7 +148,7 @@ export const useStationGroupAllHistory = (
   return useQuery<StationHistoryData[]>({
     queryKey: ["StationGroupHistory", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistoryData[]>("/api/stationGroupHistory/" + code, ngrok_header);
+      const { data } = await axios.get<StationHistoryData[]>("/api/stationGroupHistory/" + code);
       onSuccessFn && onSuccessFn(data);
       return data;
     },
@@ -201,7 +170,7 @@ export const useSearchStationGroupListHistory = (
   return useQuery<StationGroupDate[]>({
     queryKey: ["LatestStationGroupHistoryList", offset, length, name],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroupDate[]>(`/api/searchStationGroupListHistory?off=${offset}&len=${length}&name=${name}`, ngrok_header);
+      const { data } = await axios.get<StationGroupDate[]>(`/api/searchStationGroupListHistory?off=${offset}&len=${length}&name=${name}`);
       return data;
     },
     enabled: isAuthenticated,
@@ -215,7 +184,7 @@ export const useRailwayProgress = (code: number | undefined) => {
   return useQuery<StationProgress>({
     queryKey: ["RailwayProgress", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress>("/api/railwayProgress/" + code, ngrok_header);
+      const { data } = await axios.get<StationProgress>("/api/railwayProgress/" + code);
       return data;
     },
     enabled: isAuthenticated && code !== undefined,
@@ -229,7 +198,7 @@ export const useRailwayProgressListByCompanyCode = (code: number | undefined) =>
   return useQuery<StationProgress[]>({
     queryKey: ["RailwayProgressList", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList/" + code, ngrok_header);
+      const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList/" + code);
       return data;
     },
     enabled: isAuthenticated && code !== undefined,
@@ -243,7 +212,7 @@ export const useRailwayProgressListByPrefCode = (code: number | undefined) => {
   return useQuery<StationProgress[]>({
     queryKey: ["RailwayProgressListByPref", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress[]>("/api/prefRailwayProgressList/" + code, ngrok_header);
+      const { data } = await axios.get<StationProgress[]>("/api/prefRailwayProgressList/" + code);
       return data;
     },
     enabled: isAuthenticated && code !== undefined,
@@ -257,7 +226,7 @@ export const useRailwayProgressList = () => {
   return useQuery<StationProgress[]>({
     queryKey: ["RailwayProgressListAll"],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList", ngrok_header);
+      const { data } = await axios.get<StationProgress[]>("/api/railwayProgressList");
       return data;
     },
     enabled: isAuthenticated,
@@ -271,7 +240,7 @@ export const useCompanyProgress = (code: number | undefined) => {
   return useQuery<StationProgress>({
     queryKey: ["CompanyProgress", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress>("/api/companyProgress/" + code, ngrok_header);
+      const { data } = await axios.get<StationProgress>("/api/companyProgress/" + code);
       return data;
     },
     enabled: isAuthenticated && code !== undefined,
@@ -285,7 +254,7 @@ export const useCompanyProgressList = () => {
   return useQuery<StationProgress[]>({
     queryKey: ["CompanyProgressList"],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress[]>("/api/companyProgress", ngrok_header);
+      const { data } = await axios.get<StationProgress[]>("/api/companyProgress");
       return data;
     },
     enabled: isAuthenticated,
@@ -299,7 +268,7 @@ export const usePrefProgress = (code: number | undefined) => {
   return useQuery<StationProgress>({
     queryKey: ["PrefProgress", code],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress>("/api/prefProgress/" + code, ngrok_header);
+      const { data } = await axios.get<StationProgress>("/api/prefProgress/" + code);
       return data;
     },
     enabled: isAuthenticated && code !== undefined,
@@ -313,7 +282,7 @@ export const usePrefProgressList = () => {
   return useQuery<StationProgress[]>({
     queryKey: ["PrefProgressList"],
     queryFn: async() => {
-      const { data } = await axios.get<StationProgress[]>("/api/prefProgress", ngrok_header);
+      const { data } = await axios.get<StationProgress[]>("/api/prefProgress");
       return data;
     },
     enabled: isAuthenticated,
@@ -326,7 +295,7 @@ export const useSendStationStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`, ngrok_header);
+      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`);
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
@@ -360,7 +329,7 @@ export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationGroupDate?code=${req.stationGroupCode}&date=${convert_date(req.date)}`, ngrok_header);
+      const { data } = await axios.get<string>(`/api/postStationGroupDate?code=${req.stationGroupCode}&date=${convert_date(req.date)}`);
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
@@ -382,7 +351,7 @@ export const useDeleteStationHistoryMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
-      const { data } = await axios.get<string>(`/api/deleteStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`, ngrok_header);
+      const { data } = await axios.get<string>(`/api/deleteStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`);
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
@@ -419,7 +388,7 @@ export const useDeleteStationGroupHistoryMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/deleteStationGroupState?code=${req.stationGroupCode}&date=${convert_date(req.date)}`, ngrok_header);
+      const { data } = await axios.get<string>(`/api/deleteStationGroupState?code=${req.stationGroupCode}&date=${convert_date(req.date)}`);
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
@@ -441,7 +410,7 @@ export const useExportHistoryMutation = (
 ) => {
   return useMutation({
     mutationFn: async() => {
-      const { data } = await axios.post<ExportHistoryJSON>("/api/exportHistory", ngrok_header);
+      const { data } = await axios.post<ExportHistoryJSON>("/api/exportHistory");
       return JSON.stringify(data);
     },
     onSuccess: (data: string) => {
@@ -462,13 +431,29 @@ export const useImportHistoryMutation = (
   return useMutation({
     mutationFn: async(req: ExportHistoryJSON) => {
       const { data } = await axios.post<string>("/api/importHistory", {
-        headers: ngrok_header.headers,
         ...req,
       });
       return data;
     },
     onSuccess: (data: string) => {
-      deleteAllHistoryCache(queryClient);
+      // 履歴関連のキャッシュを全削除
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationHistoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistoryDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["StationHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgressList"] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgressListByPref"] });
+      queryClient.invalidateQueries({ queryKey: ["RailwayProgressListAll"] });
+      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["CompanyProgressList"] });
+      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
+      queryClient.invalidateQueries({ queryKey: ["PrefProgressList"] });
       onSuccessFn && onSuccessFn(data);
     },
     onError: (err: Error) => {
