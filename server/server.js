@@ -3,15 +3,15 @@ const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("better-sqlite3");
 const cookieParser = require("cookie-parser");
-const { Users } = require("./user");
-const { export_sql } = require("./export-sql");
-const { import_sql, check_json_format } = require("./import-sql");
+const { Users } = require("./src/user");
+const { export_sql } = require("./src/export-sql");
+const { import_sql, check_json_format } = require("./src/import-sql");
 const {
   AuthError,
   InputError,
   InvalidValueError,
-  ServerError
-} = require("./custom-errors");
+  ServerError,
+} = require("./src/custom-errors");
 require("dotenv").config();
 
 const db_path = __dirname + "/station.db";

@@ -20,6 +20,8 @@ if(!fs.existsSync(unknown_data_file_path)){
   process.exit(1);
 }
 
+const db_path = "../station.db";
+
 
 const kanaToHira = (str) => {
   return str.replace(/[\u30a1-\u30f6]/g, (match) => {
@@ -107,9 +109,9 @@ const station_data =
 const railPaths = new RailPaths(station_railway_data.nextStations, station_data);
 
 
-if(fs.existsSync("./station.db")) fs.rmSync("./station.db");
+if(fs.existsSync(db_path)) fs.rmSync(db_path);
 
-const db = sqlite3("./station.db");
+const db = sqlite3(db_path);
 
 const prefecture = [
   { code: 1, name: "北海道" },
