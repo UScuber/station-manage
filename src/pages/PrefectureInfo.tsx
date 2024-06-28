@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Box,
@@ -8,35 +7,31 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { Railway, usePrefName, usePrefProgress, useRailwayProgress, useRailwaysInfoByPrefCode, useStationsInfoByPrefCode } from "../api/Api";
-import { CircleMarker, FeatureGroup, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import Leaflet from "leaflet";
-import { CustomLink } from "../components";
-import { useAuth } from "../auth/auth";
+import {
+  CircleMarker,
+  FeatureGroup,
+  Polyline,
+  Popup,
+} from "react-leaflet";
+import {
+  Railway,
+  StationProgress,
+  usePrefName,
+  usePrefProgress,
+  useRailwayProgressListByPrefCode,
+  useRailwaysInfoByPrefCode,
+  useStationsInfoByPrefCode,
+} from "../api";
+import { CustomLink, FitMapZoom, MapCustom } from "../components";
 
 
-const FitMapZoom = (
-  { positions }
+const RailwayItem = (
+  { info, progress }
   :{
-    positions: { lat: number, lng: number}[],
+    info: Railway,
+    progress: StationProgress | undefined,
   }
-) => {
-  const map = useMap();
-  const [first, setFirst] = useState(true);
-  if(first){
-    const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
-    map.fitBounds(group.getBounds());
-    setFirst(false);
-  }
-  return null;
-};
-
-const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
-  const { isAuthenticated } = useAuth();
-  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
-  const railwayProgress = railwayProgressQuery.data;
-
+): JSX.Element => {
   return (
     <Button
       component={Link}
@@ -46,7 +41,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (isAuthenticated && railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+        bgcolor: (progress && progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -61,7 +56,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {isAuthenticated && railwayProgress && (
+          {progress && (
               <Box sx={{ position: "relative", display: "flex", height: 25, alignItems: "center" }}>
                 <CircularProgress
                   variant="determinate"
@@ -77,7 +72,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
                   variant="determinate"
                   size={25}
                   thickness={6}
-                  value={railwayProgress.getOrPassStationNum / railwayProgress.stationNum * 100}
+                  value={progress.getOrPassStationNum / progress.stationNum * 100}
                   sx={{ position: "absolute", left: 0 }}
                 />
                 <Typography
@@ -91,7 +86,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
                     display: "inline-block",
                   }}
                 >
-                  {`${railwayProgress.getOrPassStationNum}/${railwayProgress.stationNum}`}
+                  {`${progress.getOrPassStationNum}/${progress.stationNum}`}
                 </Typography>
               </Box>
             )}
@@ -104,7 +99,6 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
 
 const PrefectureInfo = () => {
   const prefCode = Number(useParams<"prefCode">().prefCode);
-  const { isAuthenticated } = useAuth();
 
   const railwaysQuery = useRailwaysInfoByPrefCode(prefCode);
   const railwayList = railwaysQuery.data;
@@ -112,11 +106,14 @@ const PrefectureInfo = () => {
   const stationsQuery = useStationsInfoByPrefCode(prefCode);
   const stationList = stationsQuery.data;
 
-  const prefProgressQuery = usePrefProgress(isAuthenticated ? prefCode : undefined);
+  const prefProgressQuery = usePrefProgress(prefCode);
   const prefProgress = prefProgressQuery.data;
 
   const prefQuery = usePrefName(prefCode);
   const pref = prefQuery.data;
+
+  const progressListQuery = useRailwayProgressListByPrefCode(prefCode);
+  const progressList = progressListQuery.data;
 
   if(railwaysQuery.isError || stationsQuery.isError || prefQuery.isError){
     return (
@@ -156,7 +153,7 @@ const PrefectureInfo = () => {
           <Typography variant="h6" sx={{ fontSize: 14 }}>都道府県一覧</Typography>
         </CustomLink>
       </Box>
-      {isAuthenticated && prefProgress && (
+      {prefProgress && (
         <Box sx={{ mb: 2 }}>
           <Typography
             variant="h6"
@@ -174,17 +171,18 @@ const PrefectureInfo = () => {
           />
         </Box>
       )}
+      {/* 路線のリスト */}
       <Box>
-        {railwayList.map(item => (
-          <RailwayItem info={item} key={item.railwayCode} />
+        {railwayList.map((item, idx) => (
+          <RailwayItem
+            info={item}
+            progress={progressList ? progressList[idx] : undefined}
+            key={item.railwayCode}
+          />
         ))}
       </Box>
 
-      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
         {stationList.map(item => (
           <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.stationCode}>
             <Popup>
@@ -215,8 +213,10 @@ const PrefectureInfo = () => {
             </Popup>
           </CircleMarker>
         ))}
-        <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
-      </MapContainer>
+        <FitMapZoom
+          positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])}
+        />
+      </MapCustom>
     </Container>
   );
 };

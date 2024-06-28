@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Box,
@@ -7,35 +6,25 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { Railway, useCompanyInfo, useRailPathByCompanyCode, useRailwayProgress, useRailwaysInfoByCompanyCode, useStationsInfoByCompanyCode } from "../api/Api";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import Leaflet from "leaflet";
-import { CircleProgress, CustomLink, StationMapGeojson } from "../components";
-import { useAuth } from "../auth/auth";
+import {
+  Railway,
+  StationProgress,
+  useCompanyInfo,
+  useRailPathByCompanyCode,
+  useRailwayProgressListByCompanyCode,
+  useRailwaysInfoByCompanyCode,
+  useStationsInfoByCompanyCode,
+} from "../api";
+import {
+  CircleProgress,
+  CustomLink,
+  FitMapZoom,
+  MapCustom,
+  StationMapGeojson,
+} from "../components";
 
 
-const FitMapZoom = (
-  { positions }
-  :{
-    positions: { lat: number, lng: number}[],
-  }
-) => {
-  const map = useMap();
-  const [first, setFirst] = useState(true);
-  if(first){
-    const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
-    map.fitBounds(group.getBounds());
-    setFirst(false);
-  }
-  return null;
-};
-
-const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
-  const { isAuthenticated } = useAuth();
-  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? info.railwayCode : undefined);
-  const railwayProgress = railwayProgressQuery.data;
-
+const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgress | undefined }): JSX.Element => {
   return (
     <Button
       component={Link}
@@ -45,7 +34,7 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (isAuthenticated && railwayProgress && railwayProgress.getOrPassStationNum === railwayProgress.stationNum ? "access.main" : "none"),
+        bgcolor: (progress && progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none"),
       }}
     >
       <Box sx={{ mb: 1 }}>
@@ -62,13 +51,14 @@ const RailwayItem = ({ info }: { info: Railway }): JSX.Element => {
           >
             {info.railwayName}
           </Typography>
-          {isAuthenticated && railwayProgress && (<CircleProgress size={25} progress={railwayProgress} />)}
+          {progress && (<CircleProgress size={25} progress={progress} />)}
         </Box>
         <Typography variant="h6" sx={{ fontSize: 16 }}>{info.formalName}</Typography>
       </Box>
     </Button>
   );
 };
+
 
 const CompanyInfo = () => {
   const companyCode = Number(useParams<"companyCode">().companyCode);
@@ -78,6 +68,9 @@ const CompanyInfo = () => {
 
   const railwaysQuery = useRailwaysInfoByCompanyCode(companyCode);
   const railwayList = railwaysQuery.data;
+
+  const railwayProgressQuery = useRailwayProgressListByCompanyCode(companyCode);
+  const railwayProgress = railwayProgressQuery.data;
 
   const stationsQuery = useStationsInfoByCompanyCode(companyCode);
   const stationList = stationsQuery.data;
@@ -125,21 +118,23 @@ const CompanyInfo = () => {
         </CustomLink>
       </Box>
       <Box>
-        {railwayList.map(item => (
-          <RailwayItem info={item} key={item.railwayCode} />
+        {railwayList.map((item, idx) => (
+          <RailwayItem
+            info={item}
+            progress={railwayProgress ? railwayProgress[idx] : undefined}
+            key={item.railwayCode}
+          />
         ))}
       </Box>
 
-      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
         {railwayPath && (
           <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
         )}
-        <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
-      </MapContainer>
+        <FitMapZoom
+          positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])}
+        />
+      </MapCustom>
     </Container>
   );
 };

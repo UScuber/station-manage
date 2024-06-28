@@ -1,5 +1,6 @@
 import { Typography, styled } from "@mui/material";
 
+
 const RespStationName = styled(Typography)(({ theme, variant }) => {
   // 大きい駅名
   if(variant === "h3"){

@@ -7,29 +7,27 @@ import {
   LinearProgress,
   Typography,
 } from "@mui/material";
-import { Station, useLatestStationHistory, useRailPath, useRailwayInfo, useRailwayProgress, useStationsInfoByRailwayCode } from "../api/Api";
-import { AroundTime, CustomLink, StationMapGeojson } from "../components";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import Leaflet from "leaflet";
-import { useAuth } from "../auth/auth";
+import {
+  Station,
+  StationDate,
+  useLatestStationHistoryListByRailwayCode,
+  useRailPath,
+  useRailwayInfo,
+  useRailwayProgress,
+  useStationsInfoByRailwayCode,
+} from "../api";
+import { useAuth } from "../auth";
+import {
+  AroundTime,
+  CustomLink,
+  FitMapZoom,
+  MapCustom,
+  StationMapGeojson,
+} from "../components";
 
 
-const FitMapZoom = (
-  { positions }
-  :{
-    positions: { lat: number, lng: number}[],
-  }
-) => {
-  const map = useMap();
-  const group = Leaflet.featureGroup(positions.map(pos => Leaflet.marker(pos)));
-  map.fitBounds(group.getBounds());
-  return null;
-};
-
-const StationItem = ({ info, isAuthenticated }: { info: Station, isAuthenticated: boolean }): JSX.Element => {
-  const latestDateQuery = useLatestStationHistory(isAuthenticated ? info.stationCode : undefined);
-  const latestDate = latestDateQuery.data;
+const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationDate | undefined }): JSX.Element => {
+  const { isAuthenticated } = useAuth();
 
   return (
     <Button
@@ -56,17 +54,19 @@ const StationItem = ({ info, isAuthenticated }: { info: Station, isAuthenticated
   );
 };
 
+
 const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
-  const { isAuthenticated } = useAuth();
 
   const railway = useRailwayInfo(railwayCode);
   const info = railway.data;
 
   const stationsQuery = useStationsInfoByRailwayCode(railwayCode);
   const stationList = stationsQuery.data;
+  const latestHistoryListQuery = useLatestStationHistoryListByRailwayCode(railwayCode);
+  const latestHistoryList = latestHistoryListQuery.data;
 
-  const railwayProgressQuery = useRailwayProgress(isAuthenticated ? railwayCode : undefined);
+  const railwayProgressQuery = useRailwayProgress(railwayCode);
   const railwayProgress = railwayProgressQuery.data;
 
   const railwayPathQuery = useRailPath(railwayCode);
@@ -132,7 +132,7 @@ const RailwayInfo = () => {
         </CustomLink>
       </Box>
 
-      {isAuthenticated && railwayProgress && (
+      {railwayProgress && (
         <Box sx={{ mb: 2 }}>
           <Typography
             variant="h6"
@@ -152,22 +152,24 @@ const RailwayInfo = () => {
       )}
 
       <Box>
-        {stationList.map(item => (
-          <StationItem key={item.stationCode} info={item} isAuthenticated={isAuthenticated} />
+        {stationList.map((item, idx) => (
+          <StationItem
+            info={item}
+            latestDate={latestHistoryList ? latestHistoryList[idx] : undefined}
+            key={item.stationCode}
+          />
         ))}
       </Box>
 
 
-      <MapContainer center={centerPosition} zoom={10} style={{ height: "80vh" }} renderer={Leaflet.canvas()}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
         {railwayPath && (
           <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
         )}
-        <FitMapZoom positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])} />
-      </MapContainer>
+        <FitMapZoom
+          positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])}
+        />
+      </MapCustom>
     </Container>
   )
 };

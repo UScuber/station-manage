@@ -1,19 +1,5 @@
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  RecordState,
-  Station,
-  StationDate,
-  StationHistoryData,
-  useDeleteStationHistoryMutation,
-  useLatestStationHistory,
-  useRailPath,
-  useSearchKNearestStationGroups,
-  useSendStationStateMutation,
-  useStationAllHistory,
-  useStationInfo,
-  useStationsInfoByRailwayCode,
-} from "../api/Api";
 import {
   Box,
   Button,
@@ -23,33 +9,33 @@ import {
   ListItemText,
   Stack,
   Divider,
-  IconButton,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   styled,
-  FormControlLabel,
-  RadioGroup,
-  Radio,
-  FormControl,
-  FormHelperText,
   Checkbox,
 } from "@mui/material";
-import { Delete as DeleteIcon } from "@mui/icons-material";
-import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs, { Dayjs } from "dayjs";
-import "dayjs/locale/ja";
-import { AccessButton, AroundTime, Collapser, ConfirmDialog, StationMapGeojson, RespStationName } from "../components";
-import getDateString from "../utils/getDateString";
-import { useAuth } from "../auth/auth";
+import {
+  RecordState,
+  StationDate,
+  useLatestStationHistory,
+  useRailPath,
+  useSearchKNearestStationGroups,
+  useSendStationStateMutation,
+  useStationInfo,
+  useStationsInfoByRailwayCode,
+} from "../api";
+import { useAuth } from "../auth";
+import {
+  AccessButton,
+  AroundTime,
+  CustomSubmitFormStation,
+  HistoryListTable,
+  MapCustom,
+  StationMapGeojson,
+  RespStationName,
+} from "../components";
 
 
 const DefaultIcon = Leaflet.icon({
@@ -60,7 +46,6 @@ const DefaultIcon = Leaflet.icon({
 });
 Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
-const stateName = ["乗降", "通過"];
 
 const ChangeMapCenter = ({ position }: { position: LatLng }) => {
   const map = useMap();
@@ -111,104 +96,17 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
 };
 
 
-const CustomSubmitForm = (
-  { onSubmit }
-  :{
-    onSubmit: (date: Date, state: RecordState) => unknown,
-  }
-) => {
-  const [date, setDate] = useState<Dayjs | null>(null);
-  const [time, setTime] = useState<Dayjs | null>(null);
-  const [radioState, setRadioState] = useState<RecordState | null>(null);
-  const [error, setError] = useState(false);
-  const [helperText, setHelperText] = useState("");
-
-  const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if(date === null || time === null || date > dayjs()){
-      setError(true);
-      setHelperText("日付を選択してください");
-    }else if(radioState === null){
-      setError(true);
-      setHelperText("選択してください");
-      return;
-    }else{
-      setError(false);
-      setHelperText("追加されました");
-      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")), radioState);
-      // reset
-      setDate(null);
-      setTime(null);
-      setRadioState(null);
-    }
-  };
-
-  return (
-    <Collapser
-      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
-      sx={{ mb: 2 }}
-      collapseSx={{ mx: 2 }}
-    >
-      <form onSubmit={onSubmitForm}>
-        <FormControl error={error} variant="standard" required>
-          <LocalizationProvider
-            dateAdapter={AdapterDayjs}
-            adapterLocale="ja"
-            dateFormats={{ year: "YYYY", month: "M月" }}
-          >
-            <DatePicker
-              label="日付"
-              value={date}
-              onChange={(date) => setDate(date)}
-              slotProps={{
-                textField: { size: "small" },
-                toolbar: { toolbarFormat: "YYYY年 M月" },
-              }}
-              format="YYYY-MM-DD"
-              sx={{ display: "inline-block", mb: 1 }}
-              disableFuture
-            />
-            <TimePicker
-              label="時間"
-              value={time}
-              onChange={(time) => setTime(time)}
-              slotProps={{ textField: { size: "small" } }}
-              views={["hours", "minutes", "seconds"]}
-              sx={{ mb: 1 }}
-            />
-          </LocalizationProvider>
-          <RadioGroup
-            name="state"
-            value={radioState}
-            onChange={(e) => setRadioState(+e.target.value)}
-            row
-          >
-            <FormControlLabel value={RecordState.Get} control={<Radio size="small" />} label="乗降" />
-            <FormControlLabel value={RecordState.Pass} control={<Radio size="small" />} label="通過" />
-          </RadioGroup>
-          <FormHelperText>{helperText}</FormHelperText>
-          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
-        </FormControl>
-      </form>
-    </Collapser>
-  );
-};
-
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
   const { isAuthenticated } = useAuth();
 
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
   const [disableTooltip, setDisableTooltip] = useState(false);
 
   const station = useStationInfo(stationCode);
   const info = station.data;
-  const latestDateQuery = useLatestStationHistory(isAuthenticated ? stationCode : undefined, (data: StationDate) => {
+  const latestDateQuery = useLatestStationHistory(stationCode, (data: StationDate) => {
     if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
       setGetLoading(false);
     }else{
@@ -223,18 +121,12 @@ const StationInfo = () => {
   );
   const nearStations = nearStationsQuery.data;
 
-  const stationHistoryQuery = useStationAllHistory(isAuthenticated ? stationCode : undefined, () => {
-    setDeleteLoading(false);
-  });
-  const stationHistory = stationHistoryQuery.data;
-
   const stationsListQuery = useStationsInfoByRailwayCode(info?.railwayCode);
   const stationList = stationsListQuery.data;
   const railwayPathQuery = useRailPath(info?.railwayCode);
   const railwayPath = railwayPathQuery.data;
 
   const mutation = useSendStationStateMutation();
-  const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
 
   const navigation = useNavigate();
   const rightKeyRef = useRef(false);
@@ -254,16 +146,6 @@ const StationInfo = () => {
     });
   };
 
-  const handleDeleteHistory = (history: StationHistoryData) => {
-    deleteStationHistoryMutation.mutate({
-      stationCode: history.stationCode!,
-      stationGroupCode: history.stationGroupCode,
-      date: history.date,
-      state: history.state,
-    });
-    setDeleteLoading(true);
-  };
-
   const handleSubmitCustomDate = (date: Date, state: RecordState) => {
     if(!info) return;
 
@@ -273,16 +155,6 @@ const StationInfo = () => {
       state: Number(state),
       date: date,
     })
-  };
-
-  const handleDialogClose = (value: StationHistoryData | undefined) => {
-    setDialogOpen(false);
-    if(value) handleDeleteHistory(value);
-  };
-
-  const handleClickDeleteButton = (value: StationHistoryData) => {
-    setDialogOpen(true);
-    setDeleteHistoryItem(value);
   };
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -316,7 +188,7 @@ const StationInfo = () => {
   }, []);
 
 
-  if(station.isError || stationHistoryQuery.isError){
+  if(station.isError){
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -444,51 +316,9 @@ const StationInfo = () => {
 
       {isAuthenticated && (
         <Box sx={{ mb: 2 }}>
-          {!stationHistory && (<Typography variant="h6" sx={{ display: "inline" }}>履歴 <CircularProgress size={20} /></Typography>)}
-          {stationHistory && (
-            <Collapser
-              buttonText={<Typography variant="h6" sx={{ display: "inline" }}>履歴 ({stationHistory.length}件)</Typography>}
-            >
-              <Box sx={{ margin: 1 }}>
-                <Table size="small" aria-label="dates">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Date</TableCell>
-                      <TableCell>State</TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {stationHistory.map(history => (
-                      <TableRow key={`${history.date}|${history.state}`}>
-                        <TableCell>{getDateString(history.date)}</TableCell>
-                        <TableCell>{stateName[history.state]}</TableCell>
-                        <TableCell>
-                          <IconButton
-                            aria-label="delete"
-                            size="small"
-                            onClick={() => handleClickDeleteButton(history)}
-                            disabled={deleteLoading}
-                          >
-                            <DeleteIcon fontSize="inherit" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
-              <ConfirmDialog
-                open={dialogOpen}
-                selectedValue={deleteHistoryItem}
-                onClose={handleDialogClose}
-                title="データを削除しますか"
-                descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
-              />
-            </Collapser>
-          )}
+          <HistoryListTable stationCode={stationCode} />
 
-          <CustomSubmitForm onSubmit={handleSubmitCustomDate} />
+          <CustomSubmitFormStation onSubmit={handleSubmitCustomDate} />
         </Box>
         )}
 
@@ -507,11 +337,7 @@ const StationInfo = () => {
         </Button>
       </Box>
 
-      <MapContainer center={position} zoom={15} style={{ height: "60vh" }}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
         {stationList && railwayPath && (
           <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
         )}
@@ -532,7 +358,7 @@ const StationInfo = () => {
           </Marker>
         ))}
         <ChangeMapCenter position={position} />
-      </MapContainer>
+      </MapCustom>
     </Container>
   );
 };

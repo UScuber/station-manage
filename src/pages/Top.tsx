@@ -7,7 +7,7 @@ import {
   Container,
   Typography
 } from "@mui/material";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth";
 
 
 const links: Array<{ text: string, url: string, description: JSX.Element, auth: boolean }> = [

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import { UseMutationResult } from "@tanstack/react-query";
 import {
   Auth,
   User,
@@ -6,8 +7,7 @@ import {
   useLogoutMutation,
   useSignupMutation,
   useUserStatus,
-} from "../api/Api";
-import { UseMutationResult } from "@tanstack/react-query";
+} from "../api";
 
 
 export type AuthInfo = {

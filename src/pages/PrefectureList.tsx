@@ -10,16 +10,23 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Prefecture, usePrefList, usePrefProgress } from "../api/Api";
+import {
+  Prefecture,
+  StationProgress,
+  usePrefList,
+  usePrefProgressList,
+} from "../api";
 import { CircleProgress, CustomLink } from "../components";
-import { useAuth } from "../auth/auth";
 
-const Row = ({ info }: { info: Prefecture }) => {
-  const { isAuthenticated } = useAuth();
-  const prefProgressQuery = usePrefProgress(isAuthenticated ? info.prefCode : undefined);
-  const prefProgress = prefProgressQuery.data;
 
-  if(!isAuthenticated || !prefProgress){
+const Row = (
+  { info, progress }
+  :{
+    info: Prefecture,
+    progress: StationProgress | undefined,
+  }
+) => {
+  if(!progress){
     return (
       <TableRow>
         <TableCell>
@@ -34,7 +41,7 @@ const Row = ({ info }: { info: Prefecture }) => {
 
   return (
     <TableRow sx={{
-      bgcolor: (prefProgress.getOrPassStationNum === prefProgress.stationNum ? "access.main" : "none")
+      bgcolor: (progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none")
     }}>
       <TableCell>
         <CustomLink to={"/pref/" + info.prefCode}>
@@ -42,7 +49,7 @@ const Row = ({ info }: { info: Prefecture }) => {
         </CustomLink>
       </TableCell>
       <TableCell>
-        <CircleProgress size={25} progress={prefProgress} />
+        <CircleProgress size={25} progress={progress} />
       </TableCell>
     </TableRow>
   );
@@ -51,6 +58,10 @@ const Row = ({ info }: { info: Prefecture }) => {
 const PrefectureList = () => {
   const prefListQuery = usePrefList();
   const prefList = prefListQuery.data;
+
+  const progressListQuery = usePrefProgressList();
+  const progressList = progressListQuery.data;
+
 
   if(prefListQuery.isError){
     return (
@@ -79,8 +90,12 @@ const PrefectureList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {prefList.map(item => (
-              <Row info={item} key={item.prefCode} />
+            {prefList.map((item, idx) => (
+              <Row
+                info={item}
+                progress={progressList ? progressList[idx] : undefined}
+                key={item.prefCode}
+              />
             ))}
           </TableBody>
         </Table>

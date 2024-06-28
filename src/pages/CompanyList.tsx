@@ -15,9 +15,13 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { Company, useCompanyList, useCompanyProgress } from "../api/Api";
+import {
+  Company,
+  StationProgress,
+  useCompanyList,
+  useCompanyProgressList,
+} from "../api";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
-import { useAuth } from "../auth/auth";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -29,12 +33,14 @@ const nameSimilarity = (name: string, input: string) => {
   return 3;
 };
 
-const Row = ({ info }: { info: Company }) => {
-  const { isAuthenticated } = useAuth();
-  const companyProgressQuery = useCompanyProgress(isAuthenticated ? info.companyCode : undefined);
-  const companyProgress = companyProgressQuery.data;
-
-  if(!isAuthenticated || !companyProgress){
+const Row = (
+  { info, progress }
+  :{
+    info: Company,
+    progress: StationProgress | undefined,
+  }
+) => {
+  if(!progress){
     return (
       <TableRow>
         <TableCell>
@@ -49,7 +55,7 @@ const Row = ({ info }: { info: Company }) => {
 
   return (
     <TableRow sx={{
-      bgcolor: (companyProgress.getOrPassStationNum === companyProgress.stationNum ? "access.main" : "none")
+      bgcolor: (progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none")
     }}>
       <TableCell>
         <CustomLink to={"/company/" + info.companyCode}>
@@ -57,7 +63,7 @@ const Row = ({ info }: { info: Company }) => {
         </CustomLink>
       </TableCell>
       <TableCell>
-        <CircleProgress size={25} progress={companyProgress} />
+        <CircleProgress size={25} progress={progress} />
       </TableCell>
     </TableRow>
   );
@@ -70,6 +76,9 @@ const CompanyList = () => {
 
   const companyListQuery = useCompanyList();
   const companyList = companyListQuery.data;
+  const companyProgressListQuery = useCompanyProgressList();
+  const companyProgressList = companyProgressListQuery.data;
+
 
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
@@ -102,7 +111,11 @@ const CompanyList = () => {
 
   const filteredCompanies =
     companyList
-      .map(comp => ({ ...comp, ord: nameSimilarity(comp.companyName, inputName) }))
+      .map((comp, idx) => ({
+        ...comp,
+        ord: nameSimilarity(comp.companyName, inputName),
+        idx: idx,
+      }))
       .filter(comp => comp.ord < 4)
       .sort((a, b) => a.ord - b.ord);
   const dividedCompanies = filteredCompanies.slice((page-1)*rowsPerPage, page*rowsPerPage);
@@ -148,7 +161,11 @@ const CompanyList = () => {
           </TableHead>
           <TableBody>
             {dividedCompanies.map(item => (
-              <Row info={item} key={item.companyCode} />
+              <Row
+                info={item}
+                progress={companyProgressList ? companyProgressList[item.idx] : undefined}
+                key={item.companyCode}
+              />
             ))}
           </TableBody>
         </Table>

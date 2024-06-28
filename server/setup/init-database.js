@@ -20,6 +20,8 @@ if(!fs.existsSync(unknown_data_file_path)){
   process.exit(1);
 }
 
+const db_path = "../station.db";
+
 
 const kanaToHira = (str) => {
   return str.replace(/[\u30a1-\u30f6]/g, (match) => {
@@ -107,9 +109,9 @@ const station_data =
 const railPaths = new RailPaths(station_railway_data.nextStations, station_data);
 
 
-if(fs.existsSync("./station.db")) fs.rmSync("./station.db");
+if(fs.existsSync(db_path)) fs.rmSync(db_path);
 
-const db = sqlite3("./station.db");
+const db = sqlite3(db_path);
 
 const prefecture = [
   { code: 1, name: "北海道" },
@@ -298,8 +300,9 @@ db.transaction(() => {
 // data insert
 db.transaction(() => {
   // Companies
+  const comp_stmt = db.prepare("INSERT INTO Companies VALUES(?,?,?)");
   company_data.forEach(data => {
-    db.prepare("INSERT INTO Companies VALUES(?,?,?)").run(
+    comp_stmt.run(
       data.companyCode,
       data.companyName,
       data.formalName
@@ -307,8 +310,9 @@ db.transaction(() => {
   });
 
   // Railways
+  const rail_stmt = db.prepare("INSERT INTO Railways VALUES(?,?,?,?,?,?)");
   railway_data.forEach(data => {
-    db.prepare("INSERT INTO Railways VALUES(?,?,?,?,?,?)").run(
+    rail_stmt.run(
       data.railwayCode,
       data.railwayName,
       data.formalName,
@@ -319,8 +323,9 @@ db.transaction(() => {
   });
 
   // StationGroups
+  const group_stmt = db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,?,?)");
   stationGroup_data.forEach(data => {
-    db.prepare("INSERT INTO StationGroups VALUES(?,?,?,?,?,?)").run(
+    group_stmt.run(
       data.stationGroupCode,
       data.stationName,
       data.lat.toFixed(6),
@@ -331,8 +336,9 @@ db.transaction(() => {
   });
 
   // Stations
+  const sta_stmt = db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?)");
   station_data.forEach(data => {
-    db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?)").run(
+    sta_stmt.run(
       data.stationCode,
       data.stationGroupCode,
       data.railwayCode,
@@ -341,18 +347,34 @@ db.transaction(() => {
     );
   });
 
+  // 駅がない路線名や会社を省く
+  db.prepare(`
+    DELETE FROM Railways
+    WHERE 0 = (
+      SELECT COUNT(*) FROM Stations
+      WHERE Railways.railwayCode = Stations.railwayCode
+    )
+  `).run();
+  db.prepare(`
+    DELETE FROM Companies
+    WHERE 0 = (
+      SELECT COUNT(*) FROM Railways
+      WHERE Companies.companyCode = Railways.companyCode
+    )
+  `).run();
+
   // NextStations
+  const next_stmt = db.prepare("INSERT INTO NextStations VALUES(?,?,?)");
   station_railway_data.nextStations.forEach(data => {
-    const stmt = db.prepare("INSERT INTO NextStations VALUES(?,?,?)");
     data.left.forEach(code => {
-      stmt.run(
+      next_stmt.run(
         data.stationCode,
         code,
         0
       );
     });
     data.right.forEach(code => {
-      stmt.run(
+      next_stmt.run(
         data.stationCode,
         code,
         1
@@ -361,10 +383,10 @@ db.transaction(() => {
   });
 
   // RailPaths
-  const stmt = db.prepare("INSERT INTO RailPaths VALUES(?,?,?,?,?)");
+  const path_stmt = db.prepare("INSERT INTO RailPaths VALUES(?,?,?,?,?)");
   railPaths.getRailwayList().map(railwayCode => {
     railPaths.getPaths(railwayCode).map((path, pathId) => {
-      path.map((cord, ord) => stmt.run(
+      path.map((cord, ord) => path_stmt.run(
         railwayCode,
         pathId, 
         ord, 

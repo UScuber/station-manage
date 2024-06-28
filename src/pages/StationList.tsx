@@ -17,18 +17,31 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Search as SearchIcon, KeyboardArrowUp as KeyboardArrowUpIcon, KeyboardArrowDown as KeyboardArrowDownIcon } from "@mui/icons-material";
-import { StationGroup, useLatestStationGroupHistory, useSearchStationGroupCount, useSearchStationGroupList } from "../api/Api";
+import {
+  Search as SearchIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+} from "@mui/icons-material";
+import {
+  StationGroup,
+  StationGroupDate,
+  useSearchStationGroupCount,
+  useSearchStationGroupList,
+  useSearchStationGroupListHistory,
+} from "../api";
+import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import getDateString from "../utils/getDateString";
-import { useAuth } from "../auth/auth";
 
 
-const Row = ({ info, isAuthenticated }: { info: StationGroup, isAuthenticated: boolean }): JSX.Element => {
+const Row = (
+  { info, latestDate }
+  :{
+    info: StationGroup,
+    latestDate: StationGroupDate | undefined,
+  }
+): JSX.Element => {
   const [open, setOpen] = useState(false);
-
-  const latestDateQuery = useLatestStationGroupHistory(isAuthenticated ? info.stationGroupCode : undefined);
-  const latestDate = latestDateQuery.data;
 
   return (
     <>
@@ -46,7 +59,7 @@ const Row = ({ info, isAuthenticated }: { info: StationGroup, isAuthenticated: b
             <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
           </CustomLink>
         </TableCell>
-        {isAuthenticated && (<>
+        {latestDate && (<>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
             <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14}/>
           </TableCell>
@@ -61,7 +74,7 @@ const Row = ({ info, isAuthenticated }: { info: StationGroup, isAuthenticated: b
           </TableCell>
         </>)}
         </TableRow>
-        {isAuthenticated && (
+        {latestDate && (
           <TableRow>
             <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
               <Collapse in={open} timeout="auto" unmountOnExit>
@@ -97,7 +110,7 @@ const StationList = () => {
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
 
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const stationGroupCount = useSearchStationGroupCount({ name: searchName });
 
@@ -107,6 +120,13 @@ const StationList = () => {
     name: searchName,
   });
   const stationGroupsInfo = stationGroupList.data;
+
+  const latestHistoryListQuery = useSearchStationGroupListHistory({
+    offset: (page-1) * rowsPerPage,
+    length: Math.min(rowsPerPage, (stationGroupCount.data ?? 1e9) - (page-1) * rowsPerPage),
+    name: searchName,
+  });
+  const latestHistoryList = latestHistoryListQuery.data;
 
   const handleChangePage = (newPage: number) => {
     setPage(newPage);
@@ -209,8 +229,12 @@ const StationList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {stationGroupsInfo.map(item => (
-              <Row key={item.stationGroupCode} info={item} isAuthenticated={isAuthenticated} />
+            {stationGroupsInfo.map((item, idx) => (
+              <Row
+                info={item}
+                latestDate={latestHistoryList ? latestHistoryList[idx] : undefined}
+                key={item.stationGroupCode}
+              />
             ))}
           </TableBody>
         </Table>
