@@ -1,6 +1,7 @@
 /node_modules
 station.db*
 .env
+setup/.env
 info.log
-unknown-*.json
-/data
+setup/unknown-*.json
+setup/data

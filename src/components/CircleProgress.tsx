@@ -1,5 +1,6 @@
 import { Box, CircularProgress, Typography } from "@mui/material";
-import { StationProgress } from "../Api";
+import { StationProgress } from "../api";
+
 
 const CircleProgress = (
   { progress, size }
