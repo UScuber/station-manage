@@ -41,6 +41,7 @@ exports.signup = (req, res) => {
     maxAge: usersManager.expirationTime,
     httpOnly: true,
     secure: true,
+    sameSite: "none",
   });
   res.json({ auth: true });
 };
@@ -75,6 +76,7 @@ exports.login = (req, res) => {
     maxAge: usersManager.expirationTime,
     httpOnly: true,
     secure: true,
+    sameSite: "none",
   });
   res.json({ auth: true });
 };
@@ -89,6 +91,7 @@ exports.status = (req, res) => {
       maxAge: usersManager.expirationTime,
       httpOnly: true,
       secure: true,
+      sameSite: "none",
     });
   }
   res.json(userData);
@@ -111,6 +114,7 @@ exports.logout = (req, res) => {
     maxAge: 0,
     httpOnly: true,
     secure: true,
+    sameSite: "none",
   });
   res.end("OK");
 };
