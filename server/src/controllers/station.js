@@ -506,49 +506,63 @@ exports.stationGroupList = (req, res) => {
   }
   let data;
   try{
-    data = db.prepare(`
-      WITH StationData AS (
+    if(name === ""){
+      data = db.prepare(`
         SELECT
           StationGroups.*,
           Prefectures.code AS prefCode,
-          Prefectures.name AS prefName
+          Prefectures.name AS prefName,
+          0 AS ord
         FROM StationGroups
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
-      )
-      SELECT * FROM (
-          SELECT 0 AS ord, StationData.* FROM StationData
-            WHERE stationName = ?
-        UNION ALL
-          SELECT 1 AS ord, StationData.* FROM StationData
-            WHERE stationName LIKE ?
-        UNION ALL
-          SELECT 2 AS ord, StationData.* FROM StationData
-            WHERE stationName LIKE ?
-        UNION ALL
-          SELECT 3 AS ord, StationData.* FROM StationData
-            WHERE stationName LIKE ?
-        UNION ALL
-          SELECT 4 AS ord, StationData.* FROM StationData
-            WHERE kana = ?
-        UNION ALL
-          SELECT 5 AS ord, StationData.* FROM StationData
-            WHERE kana LIKE ?
-        UNION ALL
-          SELECT 6 AS ord, StationData.* FROM StationData
-            WHERE kana LIKE ?
-        UNION ALL
-          SELECT 7 AS ord, StationData.* FROM StationData
-            WHERE kana LIKE ?
-      ) AS Results
-      GROUP BY Results.stationGroupCode
-      ORDER BY Results.ord
-      LIMIT ? OFFSET ?
-    `).all(
-      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
-      name,`${name}_%`,`_%${name}`,`_%${name}_%`,
-      len, off
-    );
+        LIMIT ? OFFSET ?
+      `).all(len, off);
+    }else{
+      data = db.prepare(`
+        WITH StationData AS (
+          SELECT
+            StationGroups.*,
+            Prefectures.code AS prefCode,
+            Prefectures.name AS prefName
+          FROM StationGroups
+          INNER JOIN Prefectures
+            ON StationGroups.prefCode = Prefectures.code
+        )
+        SELECT * FROM (
+            SELECT 0 AS ord, StationData.* FROM StationData
+              WHERE stationName = ?
+          UNION ALL
+            SELECT 1 AS ord, StationData.* FROM StationData
+              WHERE stationName LIKE ?
+          UNION ALL
+            SELECT 2 AS ord, StationData.* FROM StationData
+              WHERE stationName LIKE ?
+          UNION ALL
+            SELECT 3 AS ord, StationData.* FROM StationData
+              WHERE stationName LIKE ?
+          UNION ALL
+            SELECT 4 AS ord, StationData.* FROM StationData
+              WHERE kana = ?
+          UNION ALL
+            SELECT 5 AS ord, StationData.* FROM StationData
+              WHERE kana LIKE ?
+          UNION ALL
+            SELECT 6 AS ord, StationData.* FROM StationData
+              WHERE kana LIKE ?
+          UNION ALL
+            SELECT 7 AS ord, StationData.* FROM StationData
+              WHERE kana LIKE ?
+        ) AS Results
+        GROUP BY Results.stationGroupCode
+        ORDER BY Results.ord
+        LIMIT ? OFFSET ?
+      `).all(
+        name,`${name}_%`,`_%${name}`,`_%${name}_%`,
+        name,`${name}_%`,`_%${name}`,`_%${name}_%`,
+        len, off
+      );
+    }
   }catch(err){
     throw new ServerError("Server Error", err);
   }
