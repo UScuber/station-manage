@@ -64,6 +64,7 @@ const BinaryPagination = (
     [1, page, pageNum]
       .concat([...Array(Math.floor(Math.log2(page))+1).keys()].map(v => page - (1 << v) + 1))
       .concat([...Array(Math.floor(Math.log2(pageNum - page + 1))+1).keys()].map(v => page + (1 << v) - 1))
+      .sort((a, b) => a - b)
   ));
 
   return (
