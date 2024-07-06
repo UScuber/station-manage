@@ -33,6 +33,14 @@ const insert_next_stations = (elem, code) => {
   return elem;
 };
 
+const set_cache_control = (res) => {
+  res.setHeader("Cache-Control", [
+    "max-age=" + 60*60*24*7, // 1 week
+    "stale-while-revalidate=" + 60*60*24*7, // 1 week
+    "stale-if-error=" + 60*60*24*7, // 1 week
+  ]);
+};
 
 exports.convert_date = convert_date;
 exports.insert_next_stations = insert_next_stations;
+exports.set_cache_control = set_cache_control;

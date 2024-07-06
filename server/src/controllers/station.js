@@ -4,7 +4,10 @@ const {
   InvalidValueError,
   ServerError,
 } = require("../components/custom-errors");
-const { insert_next_stations } = require("../components/lib");
+const {
+  insert_next_stations,
+  set_cache_control,
+} = require("../components/lib");
 
 
 
@@ -45,9 +48,11 @@ exports.station = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -77,9 +82,11 @@ exports.groupStations = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -117,9 +124,11 @@ exports.stationGroup = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data.length){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -147,9 +156,11 @@ exports.railway = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -172,6 +183,8 @@ exports.railways = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
+  set_cache_control(res);
   res.json(data);
 };
 
@@ -212,9 +225,11 @@ exports.railwayStations = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data.length){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -244,9 +259,11 @@ exports.company = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -264,9 +281,11 @@ exports.companies = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -297,9 +316,11 @@ exports.companyRailways = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -366,9 +387,11 @@ exports.companyStations = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -405,9 +428,11 @@ exports.prefRailways = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -460,9 +485,11 @@ exports.prefStations = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -525,6 +552,7 @@ exports.stationGroupList = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   res.json(data);
 };
 
@@ -552,6 +580,7 @@ exports.stationGroupCount = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   res.json(data.count);
 };
 
@@ -589,6 +618,7 @@ exports.searchKNearestStationGroups = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
   res.json(data);
 };
 
@@ -612,6 +642,8 @@ exports.prefecture = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
+  set_cache_control(res);
   res.json(data);
 };
 
@@ -628,6 +660,8 @@ exports.prefectures = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
+  set_cache_control(res);
   res.json(data);
 };
 
@@ -687,6 +721,8 @@ exports.railPath = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
+  set_cache_control(res);
   res.json(data);
 };
 
@@ -730,5 +766,7 @@ exports.railPathList = (req, res) => {
   }catch(err){
     throw new ServerError("Server Error", err);
   }
+
+  set_cache_control(res);
   res.json(data);
 };
