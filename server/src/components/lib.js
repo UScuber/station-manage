@@ -1,10 +1,10 @@
 const { db } = require("./db");
 
 
-const is_valid_date = (date) => /^\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}$/.test(date);
+const is_valid_date_str = (date) => /^\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}$/.test(date);
 
 const convert_date = (date) => {
-  if(!is_valid_date(date)) return undefined;
+  if(!(date instanceof Date) && !is_valid_date_str(date)) return undefined;
   const date_options = {
     year: "numeric",
     month: "2-digit",
