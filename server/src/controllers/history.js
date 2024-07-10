@@ -234,7 +234,8 @@ exports.stationHistoryList = (req, res) => {
           Railways.railwayColor,
           Companies.companyCode,
           Companies.companyName AS railwayCompany,
-          StationHistory.*
+          StationHistory.date,
+          StationHistory.state
         FROM StationHistory
         INNER JOIN Stations
           ON StationHistory.stationCode = Stations.stationCode
