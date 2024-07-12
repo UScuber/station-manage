@@ -124,7 +124,7 @@ class Users {
   }
 
   // 一定期間が経過したsessionを消す
-  look(){
+  watch(){
     setInterval(() => {
       this.db.prepare(`
         DELETE FROM Sessions
