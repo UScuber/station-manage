@@ -8,7 +8,7 @@ const {
 
 
 
-usersManager.look();
+usersManager.watch();
 
 
 // 新規登録
@@ -41,7 +41,7 @@ exports.signup = (req, res) => {
     maxAge: usersManager.expirationTime,
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "Lax",
   });
   res.json({ auth: true });
 };
@@ -72,11 +72,12 @@ exports.login = (req, res) => {
     res.json({ auth: false });
     return;
   }
+
   res.cookie("sessionId", sessionId, {
     maxAge: usersManager.expirationTime,
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "Lax",
   });
   res.json({ auth: true });
 };
@@ -91,10 +92,14 @@ exports.status = (req, res) => {
       maxAge: usersManager.expirationTime,
       httpOnly: true,
       secure: true,
-      sameSite: "none",
+      sameSite: "Lax",
     });
   }
-  res.json(userData);
+  res.json({
+    auth: userData.auth,
+    userEmail: userData.userEmail,
+    userName: userData.userName,
+  });
 };
 
 
@@ -114,7 +119,7 @@ exports.logout = (req, res) => {
     maxAge: 0,
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "Lax",
   });
   res.end("OK");
 };
