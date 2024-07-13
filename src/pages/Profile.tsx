@@ -168,7 +168,7 @@ const DownloadButton = () => {
 
 
 const Profile = () => {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, isAdmin, logout } = useAuth();
 
   const [open, setOpen] = useState(false);
   const navigation = useNavigate();
@@ -204,6 +204,7 @@ const Profile = () => {
   return (
     <Container>
       <Typography variant="h4">{user.userName}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 16 }}>{isAdmin && "admin"}</Typography>
       <Divider sx={{ mt: 0.5, mb: 2 }} />
 
       <Box>
