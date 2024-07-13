@@ -16,8 +16,25 @@ const date_string = (date) => {
 class Users {
   constructor(db){
     this.db = db;
+  }
+
+  static {
     this.expirationTime = 1000*60*60*24 * 20; // [ms] (20 days)
     this.sessionCheckInterval = 1000*60*15; // [ms] (15 min.)
+    // role
+    this.roleFlags = Object.freeze({
+      none: 0,
+      admin: 1,
+    });
+  }
+
+  // admin権限を持ってるか判定
+  static hasAdmin(role){
+    return role === this.roleFlags.admin;
+  }
+
+  hasAdmin(role){
+    return this.hasAdmin(role);
   }
 
   // 新規
@@ -29,8 +46,8 @@ class Users {
 
     try{
       this.db.prepare(`
-        INSERT INTO Users VALUES(?, ?, ?, ?)
-      `).run(userId, userName, userEmail, hash);
+        INSERT INTO Users VALUES(?, ?, ?, ?, ?)
+      `).run(userId, userName, userEmail, 0, hash);
       this.db.prepare(`
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
       `).run(userId, sessionId, date_string(new Date()));
@@ -73,6 +90,7 @@ class Users {
         userId: undefined,
         userName: undefined,
         userEmail: undefined,
+        role: undefined,
       };
     }
     const userData = this.status(sessionId);
@@ -81,6 +99,7 @@ class Users {
       userId: userData?.userId,
       userName: userData?.userName,
       userEmail: userData?.userEmail,
+      role: userData?.role,
     };
   }
 
@@ -92,7 +111,8 @@ class Users {
         SELECT
           Users.userId,
           Users.userName,
-          Users.userEmail
+          Users.userEmail,
+          Users.role
         FROM Users
         INNER JOIN Sessions
           ON Users.userId = Sessions.userId

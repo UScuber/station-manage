@@ -229,6 +229,7 @@ db.transaction(() => {
       userId CHAR(64),
       userName VARCHAR(64) NOT NULL,
       userEmail VARCHAR(64) NOT NULL UNIQUE,
+      role INTEGER NOT NULL,
       hash VARCHAR(64) NOT NULL,
       PRIMARY KEY (userId)
     )

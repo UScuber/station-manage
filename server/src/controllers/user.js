@@ -99,6 +99,7 @@ exports.status = (req, res) => {
     auth: userData.auth,
     userEmail: userData.userEmail,
     userName: userData.userName,
+    role: userData.role,
   });
 };
 
