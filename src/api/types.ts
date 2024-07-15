@@ -165,3 +165,13 @@ export type ExportHistoryJSON = {
     }[],
   }[],
 };
+
+
+// 駅のURL出力用のJSONの型
+export type ExportStationURLJSON = {
+  data: {
+    stationCode: number,
+    timetableURL: string | undefined,
+    trainPosURL: string | undefined,
+  }[],
+};

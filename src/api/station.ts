@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "./axios";
 import {
   Company,
   Coordinate,
+  ExportStationURLJSON,
   PathData,
   Railway,
   Station,
@@ -296,3 +297,68 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
     staleTime: Infinity,
   });
 };
+
+
+// 時刻表と走行位置のURL追加更新(admin)
+export const useUpdateTimetableURLMutation = (
+  onSuccessFn?: (data: string) => unknown,
+) => {
+  return useMutation({
+    mutationFn: async(req: { stationCode: number, type: string, url: string }) => {
+      const { data } = await axios.get<string>(
+        `/api/updateTimetableURL?code=${req.stationCode}&type=${req.type}&url=${req.url}`
+      );
+      return data;
+    },
+    onSuccess: (data: string) => {
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 時刻表と走行位置のURLのexport(admin)
+export const useExportStationURLMutation = (
+  onSuccessFn?: (data: string) => unknown,
+) => {
+  return useMutation({
+    mutationFn: async() => {
+      const { data } = await axios.post<ExportStationURLJSON>("/api/exportStationURL");
+      return JSON.stringify(data);
+    },
+    onSuccess: (data: string) => {
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 時刻表と走行位置のURLのimport(admin)
+export const useImportStationURLMutation = (
+  onSuccessFn?: (data: string) => unknown
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: ExportStationURLJSON) => {
+      const { data } = await axios.post<string>("/api/importStationURL", {
+        ...req,
+      });
+      return data;
+    },
+    onSuccess: (data: string) => {
+      queryClient.invalidateQueries({ queryKey: ["Station"] });
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+

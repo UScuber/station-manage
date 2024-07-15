@@ -789,6 +789,40 @@ exports.railPathList = (req, res) => {
 };
 
 
+// 時刻表と走行位置のURL追加更新(admin)
+// /api/updateTimetableURL
+exports.updateTimetableURL = (req, res) => {
+  const code = +req.query.code;
+  const type = req.query.type; // timetable or trainPos
+  const url = req.query.url || null;
+  if(isNaN(code) || !["timetable", "trainPos"].includes(type) || url === undefined){
+    throw new InputError("Invalid input");
+  }
+  const { userId, isAdmin } = usersManager.getUserData(req);
+  if(!userId || !isAdmin){
+    throw new AuthError("Unauthorized");
+  }
+
+  try{
+    if(type === "timetable"){
+      db.prepare(`
+        UPDATE Stations SET timetableURL = ?
+        WHERE stationCode = ?
+      `).run(url, code);
+    }else{
+      db.prepare(`
+        UPDATE Stations SET trainPosURL = ?
+        WHERE stationCode = ?
+      `).run(url, code);
+    }
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.end("OK");
+};
+
+
 // 時刻表と走行位置のURLのexport(admin)
 // /api/exportStationURL
 exports.exportStationURL = (req, res) => {

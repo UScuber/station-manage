@@ -34,7 +34,7 @@ class Users {
   }
 
   hasAdmin(role){
-    return this.hasAdmin(role);
+    return Users.hasAdmin(role);
   }
 
   // 新規

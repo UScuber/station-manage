@@ -99,7 +99,9 @@ const export_stationURL = (db) => {
   const data = db.prepare(`
     SELECT stationCode, timetableURL, trainPosURL FROM Stations
   `).all();
-  return data;
+  return {
+    data: data,
+  };
 };
 
 
