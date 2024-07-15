@@ -150,7 +150,7 @@ const check_json_format = (json) => {
 
 const import_stationURL = (db, input_json) => {
   db.transaction(() => {
-    input_json.forEach(station => {
+    input_json.data.forEach(station => {
       if(!("stationCode" in station)) return;
 
       db.prepare(`

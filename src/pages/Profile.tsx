@@ -14,8 +14,11 @@ import {
 } from "@mui/material";
 import {
   ExportHistoryJSON,
+  ExportStationURLJSON,
   useExportHistoryMutation,
+  useExportStationURLMutation,
   useImportHistoryMutation,
+  useImportStationURLMutation,
 } from "../api";
 import { useAuth } from "../auth";
 import { ConfirmDialog } from "../components";
@@ -160,7 +163,142 @@ const DownloadButton = () => {
         onClose={() => setOpen(false)}
         descriptionFn={() => <DownloadForm />}
         title="ダウンロードしますか"
-        deleteButtonText="確認"
+        deleteButtonText="閉じる"
+      />
+    </Box>
+  );
+};
+
+
+
+const UploadURLButton = () => {
+  const [open, setOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [selectedFilename, setSelectedFilename] = useState("");
+  const [fileContent, setFileContent] = useState("");
+
+  const importMutation = useImportStationURLMutation();
+
+  const uploadFile = () => {
+    const json = JSON.parse(fileContent) as ExportStationURLJSON;
+    importMutation.mutate(json);
+  };
+
+  const handleClose = (value: number | undefined) => {
+    setOpen(false);
+    // OK
+    if(value) uploadFile();
+
+    setSelectedFilename("");
+    setFileContent("");
+    setErrorMessage("");
+  };
+
+  const UploadForm = () => {
+    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const files = event.currentTarget.files;
+      if(!files || !files.length) return;
+
+      const file = files[0];
+      if(file.name.substring(file.name.lastIndexOf(".")+1) !== "json"){
+        setErrorMessage("JSONファイルを選択してください");
+        return;
+      }
+      setSelectedFilename(file.name);
+
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setFileContent(typeof reader.result === "string" ? reader.result : "");
+      });
+      reader.readAsText(file, "UTF-8");
+    };
+
+    return (
+      <Box>
+        <FormHelperText sx={{ m: 0 }} error>今までのデータは消されます</FormHelperText>
+        <Button
+          component="label"
+          variant="contained"
+          role={undefined}
+          tabIndex={-1}
+        >
+          ファイルを選択
+          <VisuallyHiddenInput type="file" accept=".json" onChange={handleFileChange} />
+        </Button>
+        <DialogContentText
+          variant="h6"
+          sx={{ fontSize: 14, ml: 1,  display: "inline" }}
+        >
+          {selectedFilename}
+        </DialogContentText>
+        <FormHelperText error>{errorMessage}</FormHelperText>
+      </Box>
+    );
+  };
+
+
+  return (
+    <Box>
+      <Button
+        variant="outlined"
+        onClick={() => setOpen(true)}
+      >
+        Upload
+      </Button>
+      <ConfirmDialog
+        open={open}
+        selectedValue={1}
+        onClose={handleClose}
+        descriptionFn={() => <UploadForm />}
+        title="ファイルを選択してください"
+        deleteButtonText="送信"
+      />
+    </Box>
+  );
+};
+
+
+const DownloadURLButton = () => {
+  const [open, setOpen] = useState(false);
+
+  const exportMutation = useExportStationURLMutation(data => {
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "station-URL-data.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  const DownloadForm = () => {
+    return (
+      <Box sx={{ textAlign: "center" }}>
+        <Button
+          variant="contained"
+          onClick={() => exportMutation.mutate()}
+        >
+          ダウンロード
+        </Button>
+      </Box>
+    );
+  };
+
+
+  return (
+    <Box>
+      <Button
+        variant="outlined"
+        onClick={() => setOpen(true)}
+      >
+        Download
+      </Button>
+      <ConfirmDialog
+        open={open}
+        selectedValue={1}
+        onClose={() => setOpen(false)}
+        descriptionFn={() => <DownloadForm />}
+        title="ダウンロードしますか"
+        deleteButtonText="閉じる"
       />
     </Box>
   );
@@ -214,10 +352,19 @@ const Profile = () => {
 
       <Typography variant="h6" sx={{ fontSize: 16 }}>乗降履歴をダウンロードする(json)</Typography>
       <DownloadButton />
-      <Typography variant="h6" sx={{ fontSize: 16, mt: 2}}>乗降履歴をアップロードする(json)</Typography>
+      <Typography variant="h6" sx={{ fontSize: 16, mt: 2 }}>乗降履歴をアップロードする(json)</Typography>
       <UploadButton />
 
       <Divider sx={{ mt: 3, mb: 2 }} />
+
+      {isAdmin && <Box>
+        <Typography variant="h6" sx={{ fontSize: 14 }}>admin</Typography>
+        <Typography variant="h6" sx={{ fontSize: 16 }}>駅のURLデータをダウンロードする(json)</Typography>
+        <DownloadURLButton />
+        <Typography variant="h6" sx={{ fontSize: 16, mt: 2 }}>駅のURLデータをアップロードする(json)</Typography>
+        <UploadURLButton />
+        <Divider sx={{ mt: 3, mb: 2 }} />
+      </Box>}
 
       <ConfirmDialog
         open={open}
