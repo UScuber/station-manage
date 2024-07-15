@@ -91,6 +91,7 @@ class Users {
         userName: undefined,
         userEmail: undefined,
         role: undefined,
+        isAdmin: false,
       };
     }
     const userData = this.status(sessionId);
@@ -100,6 +101,7 @@ class Users {
       userName: userData?.userName,
       userEmail: userData?.userEmail,
       role: userData?.role,
+      isAdmin: this.hasAdmin(userData?.role),
     };
   }
 

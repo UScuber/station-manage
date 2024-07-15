@@ -1,13 +1,16 @@
-const { db } = require("../components/db");
+const { db, usersManager } = require("../components/db");
 const {
   InputError,
   InvalidValueError,
   ServerError,
+  AuthError,
 } = require("../components/custom-errors");
 const {
   insert_next_stations,
   set_cache_control,
 } = require("../components/lib");
+const { export_stationURL } = require("../components/export-sql");
+const { import_stationURL } = require("../components/import-sql");
 
 
 
@@ -783,4 +786,42 @@ exports.railPathList = (req, res) => {
 
   set_cache_control(res);
   res.json(data);
+};
+
+
+// 時刻表と走行位置のURLのexport(admin)
+// /api/exportStationURL
+exports.exportStationURL = (req, res) => {
+  const { userId, isAdmin } = usersManager.getUserData(req);
+  if(!userId || !isAdmin){
+    throw new AuthError("Unauthorized");
+  }
+
+  let data;
+  try {
+    data = export_stationURL(db);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.json(data);
+};
+
+
+// 時刻表と走行位置のURLのimport(admin)
+// /api/importStationURL
+exports.importStationURL = (req, res) => {
+  const { userId, isAdmin } = usersManager.getUserData(req);
+  if(!userId || !isAdmin){
+    throw new AuthError("Unauthorized");
+  }
+
+  const data = req.body;
+  try {
+    import_stationURL(db, data);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.end("OK");
 };

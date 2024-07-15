@@ -192,6 +192,8 @@ db.transaction(() => {
       railwayCode INTEGER,
       latitude DOUBLE PRECISION NOT NULL,
       longitude DOUBLE PRECISION NOT NULL,
+      timetableURL VARCHAR(128),
+      trainPosURL VARCHAR(128),
       PRIMARY KEY (stationCode),
       FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode),
       FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
@@ -337,7 +339,7 @@ db.transaction(() => {
   });
 
   // Stations
-  const sta_stmt = db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?)");
+  const sta_stmt = db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?,NULL,NULL)");
   station_data.forEach(data => {
     sta_stmt.run(
       data.stationCode,
