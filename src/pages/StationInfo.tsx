@@ -12,6 +12,7 @@ import {
   styled,
   Checkbox,
 } from "@mui/material";
+import { OpenInNew } from "@mui/icons-material";
 import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -35,6 +36,7 @@ import {
   MapCustom,
   StationMapGeojson,
   RespStationName,
+  TimetableURL,
 } from "../components";
 
 
@@ -316,8 +318,13 @@ const StationInfo = () => {
 
       {isAuthenticated && (
         <Box sx={{ mb: 2 }}>
+          {/* 時刻表 */}
+          <TimetableURL info={info} />
+
+          {/* 履歴 */}
           <HistoryListTable stationCode={stationCode} />
 
+          {/* 履歴追加 */}
           <CustomSubmitFormStation onSubmit={handleSubmitCustomDate} />
         </Box>
         )}

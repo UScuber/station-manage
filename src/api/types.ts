@@ -23,6 +23,8 @@ export type Station = {
   railwayColor: string,
   left: number[],
   right: number[],
+  timetableURL: string | undefined,
+  trainPosURL: string | undefined,
 };
 
 

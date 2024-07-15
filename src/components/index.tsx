@@ -11,3 +11,4 @@ export { default as HistoryListTable } from "./HistoryListTable";
 export * from "./MapCustom";
 export { default as RespStationName } from "./RespStationName";
 export { default as StationMapGeojson } from "./StationMapGeojson";
+export { default as TimetableURL } from "./TimetableURL";
