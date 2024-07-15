@@ -94,13 +94,12 @@ const TimetableURL = ({ info }: { info: Station }) => {
       stationCode: info.stationCode,
       type: "trainPos",
       url: text,
-    })
+    });
   };
 
   return (
-    <Collapser
-      buttonText={<Typography variant="h6">リンク</Typography>}
-    >
+    <Box>
+      <Typography variant="h6">リンク</Typography>
       <Box>
         <Button
           component={Link}
@@ -125,7 +124,7 @@ const TimetableURL = ({ info }: { info: Station }) => {
         </Button>
         {isAdmin && <EditableText text={info.trainPosURL ?? ""} onChangeText={handleUpdateTrainPos} />}
       </Box>
-    </Collapser>
+    </Box>
   );
 };
 

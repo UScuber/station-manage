@@ -55,7 +55,7 @@ exports.station = (req, res) => {
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
-    set_cache_control(res);
+    // set_cache_control(res);
     res.json(data);
   }
 };

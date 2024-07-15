@@ -303,14 +303,16 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
 export const useUpdateTimetableURLMutation = (
   onSuccessFn?: (data: string) => unknown,
 ) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: { stationCode: number, type: string, url: string }) => {
       const { data } = await axios.get<string>(
-        `/api/updateTimetableURL?code=${req.stationCode}&type=${req.type}&url=${req.url}`
+        `/api/updateTimetableURL?code=${req.stationCode}&type=${req.type}&url=${encodeURIComponent(req.url)}`
       );
       return data;
     },
-    onSuccess: (data: string) => {
+    onSuccess: (data: string, variant: { stationCode: number, type: string, url: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["Station", variant.stationCode] });
       onSuccessFn && onSuccessFn(data);
     },
     onError: (err: Error) => {
