@@ -96,12 +96,21 @@ const export_sql = (db, userId) => {
 
 // 駅の情報のURLを出力する
 const export_stationURL = (db) => {
-  const data = db.prepare(`
-    SELECT stationCode, timetableURL, trainPosURL FROM Stations
+  const stations = db.prepare(`
+    SELECT stationCode FROM Stations
   `).all();
-  return {
-    data: data,
-  };
+  const data = stations.map(station => ({
+    stationCode: station.stationCode,
+    timetable: db.prepare(`
+        SELECT direction, url FROM TimetableLinks
+        WHERE stationCode = ?
+      `).all(station.stationCode),
+    trainPosURL: db.prepare(`
+        SELECT url FROM TrainPosLinks
+        WHERE stationCode = ?
+      `).get(station.stationCode)?.url ?? null,
+  }));
+  return data;
 };
 
 

@@ -8,6 +8,7 @@ import {
   Railway,
   Station,
   StationGroup,
+  TimetableLinks,
 } from "./types";
 
 
@@ -299,20 +300,54 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
 };
 
 
+// 時刻表と列車走行位置のURLを取得
+export const useTimetableURL = (code: number | undefined) => {
+  return useQuery<TimetableLinks>({
+    queryKey: ["TimetableURL", code],
+    queryFn: async() => {
+      const { data } = await axios.get<TimetableLinks>("/api/timetableURL/" + code);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
 // 時刻表と走行位置のURL追加更新(admin)
 export const useUpdateTimetableURLMutation = (
   onSuccessFn?: (data: string) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async(req: { stationCode: number, type: string, url: string }) => {
+    mutationFn: async(req: { stationCode: number, direction: string, mode: string, url: string }) => {
       const { data } = await axios.get<string>(
-        `/api/updateTimetableURL?code=${req.stationCode}&type=${req.type}&url=${encodeURIComponent(req.url)}`
+        `/api/updateTimetableURL?code=${req.stationCode}&direction=${encodeURIComponent(req.direction)}&mode=${req.mode}&url=${encodeURIComponent(req.url)}`
       );
       return data;
     },
-    onSuccess: (data: string, variant: { stationCode: number, type: string, url: string }) => {
-      queryClient.invalidateQueries({ queryKey: ["Station", variant.stationCode] });
+    onSuccess: (data: string, variant: { stationCode: number, direction: string, mode: string, url: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["TimetableURL", variant.stationCode] });
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 列車走行位置のURL追加更新(admin)
+export const useUpdateTrainPosURLMutation = (
+  onSuccessFn?: (data: string) => unknown,
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: { stationCode: number, url: string }) => {
+      const { data } = await axios.get<string>(`/api/updateTrainPosURL?code=${req.stationCode}&url=${encodeURIComponent(req.url)}`);
+      return data;
+    },
+    onSuccess: (data: string, variant: { stationCode: number, url: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["TimetableURL", variant.stationCode] });
       onSuccessFn && onSuccessFn(data);
     },
     onError: (err: Error) => {

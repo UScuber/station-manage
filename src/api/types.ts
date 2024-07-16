@@ -169,6 +169,15 @@ export type ExportHistoryJSON = {
 };
 
 
+export type TimetableLinks = {
+  timetable: {
+    direction: string,
+    url: string,
+  }[],
+  trainPos: string,
+};
+
+
 // 駅のURL出力用のJSONの型
 export type ExportStationURLJSON = {
   data: {

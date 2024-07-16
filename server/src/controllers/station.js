@@ -789,6 +789,36 @@ exports.railPathList = (req, res) => {
 };
 
 
+// 時刻表と列車走行位置のURLを取得
+// /api/timetableURL/:stationCode
+exports.timetableURL = (req, res) => {
+  const code = +req.params.stationCode;
+  if(isNaN(code)){
+    throw new InputError("Invalid input");
+  }
+
+  let data;
+  try{
+    const timetable = db.prepare(`
+      SELECT direction, url FROM TimetableLinks
+      WHERE stationCode = ?
+    `).all(code);
+    const trainPos = db.prepare(`
+      SELECT url FROM TrainPosLinks
+      WHERE stationCode = ?
+    `).get(code);
+    data = {
+      timetable: timetable,
+      trainPos: trainPos?.url ?? "",
+    };
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.json(data);
+};
+
+
 // 時刻表のURL追加更新(admin)
 // /api/updateTimetableURL
 exports.updateTimetableURL = (req, res) => {
@@ -811,7 +841,7 @@ exports.updateTimetableURL = (req, res) => {
     if(mode === "update"){
       db.prepare(`
         INSERT INTO TimetableLinks VALUES(?, ?, ?)
-        ON CONFLICT(stationCode, direction, url)
+        ON CONFLICT(stationCode, direction)
         DO UPDATE SET url = ?
       `).run(code, direction, url, url);
     }else{
@@ -829,6 +859,7 @@ exports.updateTimetableURL = (req, res) => {
 
 
 // 列車走行位置のURL追加更新(admin)
+// /api/updateTrainPosURL
 exports.updateTrainPosURL = (req, res) => {
   const code = +req.query.code;
   const url = req.query.url;
