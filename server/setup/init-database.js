@@ -192,8 +192,6 @@ db.transaction(() => {
       railwayCode INTEGER,
       latitude DOUBLE PRECISION NOT NULL,
       longitude DOUBLE PRECISION NOT NULL,
-      timetableURL VARCHAR(128),
-      trainPosURL VARCHAR(128),
       PRIMARY KEY (stationCode),
       FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode),
       FOREIGN KEY (stationGroupCode) REFERENCES StationGroups(stationGroupCode)
@@ -222,6 +220,27 @@ db.transaction(() => {
       longitude DOUBLE PRECIION NOT NULL,
       PRIMARY KEY (railwayCode, pathId, ord)
       FOREIGN KEY (railwayCode) REFERENCES Railways(railwayCode)
+    )
+  `).run();
+
+  // TimetableLinks
+  db.prepare(`
+    CREATE TABLE TimetableLinks(
+      stationCode INTEGER,
+      direction VARCHAR(128),
+      url VARCHAR(128),
+      PRIMARY KEY (stationCode, direction)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+    )
+  `).run();
+
+  // TrainPosLinks
+  db.prepare(`
+    CREATE TABLE TrainPosLinks(
+      stationCode INTEGER,
+      url VARCHAR(128),
+      PRIMARY KEY (stationCode)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
     )
   `).run();
 
@@ -339,7 +358,7 @@ db.transaction(() => {
   });
 
   // Stations
-  const sta_stmt = db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?,NULL,NULL)");
+  const sta_stmt = db.prepare("INSERT INTO Stations VALUES(?,?,?,?,?)");
   station_data.forEach(data => {
     sta_stmt.run(
       data.stationCode,
@@ -348,6 +367,12 @@ db.transaction(() => {
       data.lat,
       data.lng
     );
+  });
+
+  station_data.forEach(data => {
+    db.prepare(`
+      INSERT INTO TrainPosLinks VALUES(?, NULL)
+    `).run(data.stationCode);
   });
 
   // 駅がない路線名や会社を省く

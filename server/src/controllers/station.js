@@ -55,7 +55,7 @@ exports.station = (req, res) => {
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
-    // set_cache_control(res);
+    set_cache_control(res);
     res.json(data);
   }
 };
@@ -789,13 +789,17 @@ exports.railPathList = (req, res) => {
 };
 
 
-// 時刻表と走行位置のURL追加更新(admin)
+// 時刻表のURL追加更新(admin)
 // /api/updateTimetableURL
 exports.updateTimetableURL = (req, res) => {
   const code = +req.query.code;
-  const type = req.query.type; // timetable or trainPos
+  const direction = req.query.direction;
+  const mode = req.query.mode;
   const url = req.query.url || null;
-  if(isNaN(code) || !["timetable", "trainPos"].includes(type) || url === undefined){
+  if(isNaN(code) || !direction || !["update", "delete"].includes(mode)){
+    throw new InputError("Invalid input");
+  }
+  if(mode === "update" && url === undefined){
     throw new InputError("Invalid input");
   }
   const { userId, isAdmin } = usersManager.getUserData(req);
@@ -804,17 +808,39 @@ exports.updateTimetableURL = (req, res) => {
   }
 
   try{
-    if(type === "timetable"){
+    if(mode === "update"){
       db.prepare(`
-        UPDATE Stations SET timetableURL = ?
-        WHERE stationCode = ?
-      `).run(url, code);
+        INSERT INTO TimetableLinks VALUES(?, ?, ?)
+        ON CONFLICT(stationCode, direction, url)
+        DO UPDATE SET url = ?
+      `).run(code, direction, url, url);
     }else{
       db.prepare(`
-        UPDATE Stations SET trainPosURL = ?
-        WHERE stationCode = ?
-      `).run(url, code);
+        DELETE FROM TimetableLinks
+        WHERE stationCode = ? AND direction = ?
+      `).run(code, direction);
     }
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.end("OK");
+};
+
+
+// 列車走行位置のURL追加更新(admin)
+exports.updateTrainPosURL = (req, res) => {
+  const code = +req.query.code;
+  const url = req.query.url;
+  if(isNaN(code) || url === undefined){
+    throw new InputError("Invalid input");
+  }
+
+  try{
+    db.prepare(`
+      UPDATE TrainPosLinks SET url = ?
+      WHERE stationCode = ?
+    `).run(url, code);
   }catch(err){
     throw new ServerError("Server Error", err);
   }
