@@ -150,13 +150,19 @@ const check_json_format = (json) => {
 
 const import_stationURL = (db, input_json) => {
   db.transaction(() => {
-    input_json.data.forEach(station => {
-      if(!("stationCode" in station)) return;
-
+    db.prepare("DELETE FROM TimetableLinks").run();
+    input_json.data.forEach(data => {
+      if(!data.stationCode) return;
+      data.timetable.forEach(timedata => {
+        if(!timedata.direction || !timedata.url) return;
+        db.prepare(`
+          INSERT INTO TimetableLinks VALUES(?, ?, ?)
+        `).run(data.stationCode, timedata.direction, timedata.url);
+      });
       db.prepare(`
-        UPDATE Stations SET timetableURL = ?, trainPosURL = ?
+        UPDATE TrainPosLinks SET url = ?
         WHERE stationCode = ?
-      `).run(station?.timetableURL ?? null, station?.trainPosURL ?? null, station.stationCode);
+      `).run(data.trainPosURL ?? null, data.stationCode);
     });
   })();
 };

@@ -97,6 +97,7 @@ const EditableTable = (
   const handleEditClick = (row: Column) => {
     setRowDirection(row.direction);
     setEditURL(row.url);
+    setAddingDirection("");
   };
 
   const handleSaveClick = () => {
@@ -138,9 +139,9 @@ const EditableTable = (
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>方面/方向</TableCell>
-            <TableCell>URL</TableCell>
-            <TableCell />
+            <TableCell sx={{ width: "30%" }}>方面/方向</TableCell>
+            <TableCell sx={{ width: "50%" }}>URL</TableCell>
+            <TableCell sx={{ width: "15%" }} />
           </TableRow>
         </TableHead>
         <TableBody>
@@ -193,6 +194,7 @@ const EditableTable = (
                 onKeyDown={(e) => e.key === "Enter" && handleAddClick()}
                 inputProps={{ style: { fontSize: 14 } }}
                 onChange={(e) => setAddingDirection(e.target.value)}
+                onFocus={handleCancelClick}
                 placeholder="～方面/～方向"
                 fullWidth
               />
@@ -200,11 +202,12 @@ const EditableTable = (
             <TableCell>
               <TextField
                 size="small"
-                value={!rowDirection ? editURL : ""}
+                value={addingDirection ? editURL : ""}
                 onKeyDown={(e) => e.key === "Enter" && handleAddClick()}
                 inputProps={{ style: { fontSize: 14 } }}
                 onChange={(e) => setEditURL(e.target.value)}
-                placeholder="時刻表のURL"
+                placeholder="時刻表のURL(先に方面を入力)"
+                disabled={!addingDirection}
                 fullWidth
               />
             </TableCell>
@@ -306,7 +309,7 @@ const TimetableURL = ({ info }: { info: Station }) => {
           >
             列車走行位置
           </Button>}
-        {isAdmin && <EditableText text={info.trainPosURL ?? ""} onChangeText={handleUpdateTrainPos} />}
+        {isAdmin && <EditableText text={timetable.trainPos ?? ""} onChangeText={handleUpdateTrainPos} />}
       </Box>
     </Box>
   );

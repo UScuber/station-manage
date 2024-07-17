@@ -110,7 +110,9 @@ const export_stationURL = (db) => {
         WHERE stationCode = ?
       `).get(station.stationCode)?.url ?? null,
   }));
-  return data;
+  return {
+    data: data,
+  };
 };
 
 
