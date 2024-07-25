@@ -42,7 +42,7 @@ export const CustomSubmitFormStation = (
     }else{
       setError(false);
       setHelperText("追加されました");
-      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")), radioState);
+      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("HH:mm:ss")), radioState);
       // reset
       setDate(null);
       setTime(null);
@@ -123,7 +123,7 @@ export const CustomSubmitFormGroup = (
     }else{
       setError(false);
       setHelperText("追加されました");
-      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("hh:mm:ss")));
+      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("HH:mm:ss")));
       // reset
       setDate(null);
       setTime(null);
