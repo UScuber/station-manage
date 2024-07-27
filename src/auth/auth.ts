@@ -17,6 +17,7 @@ export type AuthInfo = {
   isLoading: boolean,
   isAuthenticated: boolean,
   user: User | undefined,
+  isAdmin: boolean,
 };
 
 const AuthContext = createContext<AuthInfo>({
@@ -26,17 +27,30 @@ const AuthContext = createContext<AuthInfo>({
   isLoading: true,
   isAuthenticated: false,
   user: undefined,
+  isAdmin: false,
 });
+
+
+const roleFlags = Object.freeze({
+  none: 0,
+  admin: 1,
+});
+
+const hasAdmin = (role: number) => {
+  return role === roleFlags.admin;
+};
 
 
 export const getAuth = (): AuthInfo => {
   const [loading, setLoading] = useState(true);
   const [authState, setAuthState] = useState(false);
+  const [role, setRole] = useState(0);
   const [user, setUser] = useState<User>();
 
-  const userStatus = useUserStatus(
+  useUserStatus(
     (data) => {
       setAuthState(data.auth);
+      setRole(data.role);
       if(data.userName && data.userEmail){
         setUser({
           userName: data.userName,
@@ -54,6 +68,7 @@ export const getAuth = (): AuthInfo => {
     isLoading: loading,
     isAuthenticated: authState,
     user: user,
+    isAdmin: hasAdmin(role),
   };
 };
 

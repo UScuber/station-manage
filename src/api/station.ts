@@ -1,12 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "./axios";
 import {
   Company,
   Coordinate,
+  ExportStationURLJSON,
   PathData,
   Railway,
   Station,
   StationGroup,
+  TimetableLinks,
 } from "./types";
 
 
@@ -296,3 +298,104 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
     staleTime: Infinity,
   });
 };
+
+
+// 時刻表と列車走行位置のURLを取得
+export const useTimetableURL = (code: number | undefined) => {
+  return useQuery<TimetableLinks>({
+    queryKey: ["TimetableURL", code],
+    queryFn: async() => {
+      const { data } = await axios.get<TimetableLinks>("/api/timetableURL/" + code);
+      return data;
+    },
+    enabled: code !== undefined,
+  });
+};
+
+
+// 時刻表と走行位置のURL追加更新(admin)
+export const useUpdateTimetableURLMutation = (
+  onSuccessFn?: (data: string) => unknown,
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: { stationCode: number, direction: string, mode: string, url: string }) => {
+      const { data } = await axios.get<string>(
+        `/api/updateTimetableURL?code=${req.stationCode}&direction=${encodeURIComponent(req.direction)}&mode=${req.mode}&url=${encodeURIComponent(req.url)}`
+      );
+      return data;
+    },
+    onSuccess: (data: string, variant: { stationCode: number, direction: string, mode: string, url: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["TimetableURL", variant.stationCode] });
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 列車走行位置のURL追加更新(admin)
+export const useUpdateTrainPosURLMutation = (
+  onSuccessFn?: (data: string) => unknown,
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: { stationCode: number, url: string }) => {
+      const { data } = await axios.get<string>(`/api/updateTrainPosURL?code=${req.stationCode}&url=${encodeURIComponent(req.url)}`);
+      return data;
+    },
+    onSuccess: (data: string, variant: { stationCode: number, url: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["TimetableURL", variant.stationCode] });
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 時刻表と走行位置のURLのexport(admin)
+export const useExportStationURLMutation = (
+  onSuccessFn?: (data: string) => unknown,
+) => {
+  return useMutation({
+    mutationFn: async() => {
+      const { data } = await axios.post<ExportStationURLJSON>("/api/exportStationURL");
+      return JSON.stringify(data);
+    },
+    onSuccess: (data: string) => {
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+
+// 時刻表と走行位置のURLのimport(admin)
+export const useImportStationURLMutation = (
+  onSuccessFn?: (data: string) => unknown
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async(req: ExportStationURLJSON) => {
+      const { data } = await axios.post<string>("/api/importStationURL", {
+        ...req,
+      });
+      return data;
+    },
+    onSuccess: (data: string) => {
+      queryClient.invalidateQueries({ queryKey: ["Station"] });
+      onSuccessFn && onSuccessFn(data);
+    },
+    onError: (err: Error) => {
+      console.error(err);
+    },
+  });
+};
+
+

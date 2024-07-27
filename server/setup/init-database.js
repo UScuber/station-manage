@@ -223,12 +223,34 @@ db.transaction(() => {
     )
   `).run();
 
+  // TimetableLinks
+  db.prepare(`
+    CREATE TABLE TimetableLinks(
+      stationCode INTEGER,
+      direction VARCHAR(128),
+      url VARCHAR(128),
+      PRIMARY KEY (stationCode, direction)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+    )
+  `).run();
+
+  // TrainPosLinks
+  db.prepare(`
+    CREATE TABLE TrainPosLinks(
+      stationCode INTEGER,
+      url VARCHAR(128),
+      PRIMARY KEY (stationCode)
+      FOREIGN KEY (stationCode) REFERENCES Stations(stationCode)
+    )
+  `).run();
+
   // Users
   db.prepare(`
     CREATE TABLE Users(
       userId CHAR(64),
       userName VARCHAR(64) NOT NULL,
       userEmail VARCHAR(64) NOT NULL UNIQUE,
+      role INTEGER NOT NULL,
       hash VARCHAR(64) NOT NULL,
       PRIMARY KEY (userId)
     )
@@ -345,6 +367,12 @@ db.transaction(() => {
       data.lat,
       data.lng
     );
+  });
+
+  station_data.forEach(data => {
+    db.prepare(`
+      INSERT INTO TrainPosLinks VALUES(?, NULL)
+    `).run(data.stationCode);
   });
 
   // 駅がない路線名や会社を省く

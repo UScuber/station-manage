@@ -1,3 +1,4 @@
+// 履歴を出力する
 const export_sql = (db, userId) => {
   let station_history = [], station_group_history = [];
 
@@ -91,4 +92,29 @@ const export_sql = (db, userId) => {
   return result_json;
 };
 
+
+
+// 駅の情報のURLを出力する
+const export_stationURL = (db) => {
+  const stations = db.prepare(`
+    SELECT stationCode FROM Stations
+  `).all();
+  const data = stations.map(station => ({
+    stationCode: station.stationCode,
+    timetable: db.prepare(`
+        SELECT direction, url FROM TimetableLinks
+        WHERE stationCode = ?
+      `).all(station.stationCode),
+    trainPosURL: db.prepare(`
+        SELECT url FROM TrainPosLinks
+        WHERE stationCode = ?
+      `).get(station.stationCode)?.url ?? null,
+  }));
+  return {
+    data: data,
+  };
+};
+
+
 exports.export_sql = export_sql;
+exports.export_stationURL = export_stationURL;

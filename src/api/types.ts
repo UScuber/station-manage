@@ -23,6 +23,8 @@ export type Station = {
   railwayColor: string,
   left: number[],
   right: number[],
+  timetableURL: string | undefined,
+  trainPosURL: string | undefined,
 };
 
 
@@ -86,6 +88,7 @@ export type Auth = {
   auth: boolean,
   userName: string | undefined,
   userEmail: string | undefined,
+  role: number,
 };
 
 
@@ -162,5 +165,24 @@ export type ExportHistoryJSON = {
       latitude: number,
       longitude: number,
     }[],
+  }[],
+};
+
+
+export type TimetableLinks = {
+  timetable: {
+    direction: string,
+    url: string,
+  }[],
+  trainPos: string,
+};
+
+
+// 駅のURL出力用のJSONの型
+export type ExportStationURLJSON = {
+  data: {
+    stationCode: number,
+    timetableURL: string | undefined,
+    trainPosURL: string | undefined,
   }[],
 };
