@@ -1,3 +1,4 @@
+// 履歴データを取り込む
 const import_sql = (db, input_json, userId) => {
 
   // [latitude, longitude]
@@ -104,6 +105,8 @@ const import_sql = (db, input_json, userId) => {
 };
 
 
+
+// 履歴のjsonの形式をチェックする
 const check_json_format = (json) => {
   if(!("station_history" in json)) return false;
   if(!("station_group_history" in json)) return false;
@@ -144,5 +147,27 @@ const check_json_format = (json) => {
 };
 
 
+
+const import_stationURL = (db, input_json) => {
+  db.transaction(() => {
+    db.prepare("DELETE FROM TimetableLinks").run();
+    input_json.data.forEach(data => {
+      if(!data.stationCode) return;
+      data.timetable.forEach(timedata => {
+        if(!timedata.direction || !timedata.url) return;
+        db.prepare(`
+          INSERT INTO TimetableLinks VALUES(?, ?, ?)
+        `).run(data.stationCode, timedata.direction, timedata.url);
+      });
+      db.prepare(`
+        UPDATE TrainPosLinks SET url = ?
+        WHERE stationCode = ?
+      `).run(data.trainPosURL ?? null, data.stationCode);
+    });
+  })();
+};
+
+
 exports.import_sql = import_sql;
 exports.check_json_format = check_json_format;
+exports.import_stationURL = import_stationURL;

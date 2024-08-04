@@ -1,13 +1,16 @@
-const { db } = require("../components/db");
+const { db, usersManager } = require("../components/db");
 const {
   InputError,
   InvalidValueError,
   ServerError,
+  AuthError,
 } = require("../components/custom-errors");
 const {
   insert_next_stations,
   set_cache_control,
 } = require("../components/lib");
+const { export_stationURL } = require("../components/export-sql");
+const { import_stationURL } = require("../components/import-sql");
 
 
 
@@ -783,4 +786,133 @@ exports.railPathList = (req, res) => {
 
   set_cache_control(res);
   res.json(data);
+};
+
+
+// 時刻表と列車走行位置のURLを取得
+// /api/timetableURL/:stationCode
+exports.timetableURL = (req, res) => {
+  const code = +req.params.stationCode;
+  if(isNaN(code)){
+    throw new InputError("Invalid input");
+  }
+
+  let data;
+  try{
+    const timetable = db.prepare(`
+      SELECT direction, url FROM TimetableLinks
+      WHERE stationCode = ?
+    `).all(code);
+    const trainPos = db.prepare(`
+      SELECT url FROM TrainPosLinks
+      WHERE stationCode = ?
+    `).get(code);
+    data = {
+      timetable: timetable,
+      trainPos: trainPos?.url ?? "",
+    };
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.json(data);
+};
+
+
+// 時刻表のURL追加更新(admin)
+// /api/updateTimetableURL
+exports.updateTimetableURL = (req, res) => {
+  const code = +req.query.code;
+  const direction = req.query.direction;
+  const mode = req.query.mode;
+  const url = req.query.url || null;
+  if(isNaN(code) || !direction || !["update", "delete"].includes(mode)){
+    throw new InputError("Invalid input");
+  }
+  if(mode === "update" && url === undefined){
+    throw new InputError("Invalid input");
+  }
+  const { userId, isAdmin } = usersManager.getUserData(req);
+  if(!userId || !isAdmin){
+    throw new AuthError("Unauthorized");
+  }
+
+  try{
+    if(mode === "update"){
+      db.prepare(`
+        INSERT INTO TimetableLinks VALUES(?, ?, ?)
+        ON CONFLICT(stationCode, direction)
+        DO UPDATE SET url = ?
+      `).run(code, direction, url, url);
+    }else{
+      db.prepare(`
+        DELETE FROM TimetableLinks
+        WHERE stationCode = ? AND direction = ?
+      `).run(code, direction);
+    }
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.end("OK");
+};
+
+
+// 列車走行位置のURL追加更新(admin)
+// /api/updateTrainPosURL
+exports.updateTrainPosURL = (req, res) => {
+  const code = +req.query.code;
+  const url = req.query.url;
+  if(isNaN(code) || url === undefined){
+    throw new InputError("Invalid input");
+  }
+
+  try{
+    db.prepare(`
+      UPDATE TrainPosLinks SET url = ?
+      WHERE stationCode = ?
+    `).run(url, code);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.end("OK");
+};
+
+
+// 時刻表と走行位置のURLのexport(admin)
+// /api/exportStationURL
+exports.exportStationURL = (req, res) => {
+  const { userId, isAdmin } = usersManager.getUserData(req);
+  if(!userId || !isAdmin){
+    throw new AuthError("Unauthorized");
+  }
+
+  let data;
+  try {
+    data = export_stationURL(db);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.json(data);
+};
+
+
+// 時刻表と走行位置のURLのimport(admin)
+// /api/importStationURL
+exports.importStationURL = (req, res) => {
+  const { userId, isAdmin } = usersManager.getUserData(req);
+  if(!userId || !isAdmin){
+    throw new AuthError("Unauthorized");
+  }
+
+  const data = req.body;
+  try {
+    import_stationURL(db, data);
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  res.end("OK");
 };
