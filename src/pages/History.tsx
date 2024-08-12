@@ -21,6 +21,9 @@ import { BinaryPagination, Collapser, CustomLink, RespStationName } from "../com
 import getDateString from "../utils/getDateString";
 import NotFound from "./NotFound";
 import aroundDayName from "../utils/aroundDayName";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 
 const stateNames = ["乗降", "通過"];
@@ -122,14 +125,13 @@ const History = () => {
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
   const [searchType, setSearchType] = useState("station");
+  const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
+  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
 
-  const historyList = useStationHistoryList((page-1) * rowsPerPage, rowsPerPage, searchName, searchType);
+  const historyList = useStationHistoryList((page-1) * rowsPerPage, rowsPerPage, searchName, searchType, dateFrom?.toDate(), dateTo?.toDate());
 
-  const historyListCount = useStationHistoryCount(searchName, searchType);
+  const historyListCount = useStationHistoryCount(searchName, searchType, dateFrom?.toDate(), dateTo?.toDate());
 
-  const handleChangePage = (newPage: number) => {
-    setPage(newPage);
-  };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
     setRowsPerPage(+event.target.value);
     setPage(1);
@@ -148,9 +150,6 @@ const History = () => {
     );
   };
 
-  const handleChangeSearchType = (event: SelectChangeEvent) => {
-    setSearchType(event.target.value);
-  };
 
   const CustomPagination = (): JSX.Element => {
     return (
@@ -159,7 +158,7 @@ const History = () => {
         count={historyListCount.data!}
         rowsPerPage={rowsPerPage}
         rowsPerPageOptions={[20,50,100,200,1000]}
-        onPageChange={handleChangePage}
+        onPageChange={(newPage) => setPage(newPage)}
         onRowsPerPageChange={handleChangeRowsPerPage}
         sx={{ my: 1 }}
       />
@@ -206,7 +205,7 @@ const History = () => {
               labelId="history-search-type-label"
               id="history-search-type-label"
               value={searchType}
-              onChange={handleChangeSearchType}
+              onChange={(e) => setSearchType(e.target.value)}
               label="type"
             >
               <MenuItem value="station">駅名</MenuItem>
@@ -248,7 +247,7 @@ const History = () => {
             labelId="history-search-type-label"
             id="history-search-type-label"
             value={searchType}
-            onChange={handleChangeSearchType}
+            onChange={(e) => setSearchType(e.target.value)}
             label="type"
           >
             <MenuItem value="station">駅名</MenuItem>
@@ -256,6 +255,36 @@ const History = () => {
             <MenuItem value="company">会社名</MenuItem>
           </Select>
         </FormControl>
+        <LocalizationProvider
+          dateAdapter={AdapterDayjs}
+          adapterLocale="ja"
+          dateFormats={{ year: "YYYY", month: "M月" }}
+        >
+          <DatePicker
+            label="開始日"
+            value={dateFrom}
+            onChange={(dateFrom) => setFromDate(dateFrom)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120, ml: 3 }}
+            disableFuture
+          />
+          <DatePicker
+            label="終了日"
+            value={dateTo}
+            onChange={(dateTo) => setDateTo(dateTo)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120,  ml: 3 }}
+            disableFuture
+          />
+        </LocalizationProvider>
       </Box>
 
       <CustomPagination />

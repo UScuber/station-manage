@@ -115,6 +115,10 @@ exports.stationHistoryList = (req, res) => {
   const len = +req.query.len;
   const name = req.query.name ?? "";
   const type = req.query.type;
+  const dateFrom = convert_date(req.query.dateFrom) ? convert_date(req.query.dateFrom).substr(0, 10) + " 00:00:00" : undefined;
+  const dateTo = convert_date(req.query.dateTo) ? convert_date(req.query.dateTo).substr(0, 10) + " 23:59:59" : undefined;
+  console.log(dateFrom, dateTo);
+
   if(isNaN(off) || isNaN(len)){
     throw new InputError("Invalid input");
   }
@@ -153,10 +157,12 @@ exports.stationHistoryList = (req, res) => {
           ON Railways.companyCode = Companies.companyCode
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, name, len, off);
+      `).all(userId, name, dateFrom, dateTo, len, off);
     }else if(type === "railway" && name !== ""){
       data = db.prepare(`
         SELECT
@@ -185,10 +191,12 @@ exports.stationHistoryList = (req, res) => {
           ON Railways.companyCode = Companies.companyCode
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, name, len, off);
+      `).all(userId, name, dateFrom, dateTo, len, off);
     }else if(type === "company" && name !== ""){
       data = db.prepare(`
         SELECT
@@ -217,10 +225,12 @@ exports.stationHistoryList = (req, res) => {
             AND Companies.companyName = ?
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, name, len, off);
+      `).all(userId, name, dateFrom, dateTo, len, off);
     }else{
       data = db.prepare(`
         SELECT
@@ -248,10 +258,12 @@ exports.stationHistoryList = (req, res) => {
           ON Railways.companyCode = Companies.companyCode
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, len, off);
+      `).all(userId, dateFrom, dateTo, len, off);
     }
 
     data = data.map(station => insert_next_stations(station, station.stationCode));

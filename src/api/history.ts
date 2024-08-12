@@ -80,12 +80,14 @@ export const useLatestStationGroupHistory = (
 
 
 // 乗降/通過の履歴を区間取得
-export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string) => {
+export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string, dateFrom?: Date | null, dateTo?: Date | null) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationHistoryDetail[]>({
-    queryKey: ["StationHistoryList", offset, length, name, type],
+    queryKey: ["StationHistoryList", offset, length, name, type, dateFrom, dateTo],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistoryDetail[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`);
+      const { data } = await axios.get<StationHistoryDetail[]>(
+        `/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}&dateFrom=${convert_date(dateFrom ?? new Date(0))}&dateTo=${convert_date(dateTo ?? new Date("9999-12-31"))}`
+      );
       return data;
     },
     enabled: isAuthenticated,
@@ -94,12 +96,14 @@ export const useStationHistoryList = (offset: number, length: number, name?: str
 
 
 // 乗降/通過の履歴の個数を取得
-export const useStationHistoryCount = (name?: string, type?: string) => {
+export const useStationHistoryCount = (name?: string, type?: string, dateFrom?: Date | null, dateTo?: Date | null) => {
   const { isAuthenticated } = useAuth();
   return useQuery<number>({
-    queryKey: ["StationHistoryCount", name, type],
+    queryKey: ["StationHistoryCount", name, type, dateFrom, dateTo],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/stationHistoryCount?name=${name}&type=${type}`);
+      const { data } = await axios.get<number>(
+        `/api/stationHistoryCount?name=${name}&type=${type}&dateFrom=${convert_date(dateFrom ?? new Date(0))}&dateTo=${convert_date(dateTo ?? new Date(8.64e15))}`
+      );
       return data;
     },
     enabled: isAuthenticated,
