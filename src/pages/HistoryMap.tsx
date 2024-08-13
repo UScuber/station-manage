@@ -48,7 +48,9 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
   for(let i = 1; i < historyList.length; i++){
     const cur = historyList[i];
     const prev = historyList[i-1];
-    if(cur.railwayCode === prev.railwayCode && cur.date.getTime() - prev.date.getTime() < 1000*60*60*24 && cur.left.concat(cur.right).includes(prev.stationCode)){
+    if(cur.railwayCode === prev.railwayCode
+      && cur.date.getTime() - prev.date.getTime() < 1000*60*60*24
+      && cur.left.concat(cur.right).includes(prev.stationCode)){
       result[result.length-1].path.push([cur.latitude, cur.longitude]);
     }else{
       result.push({

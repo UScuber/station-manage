@@ -11,6 +11,7 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
@@ -18,7 +19,12 @@ import { Search as SearchIcon } from "@mui/icons-material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Dayjs } from "dayjs";
-import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail, RecordState } from "../api";
+import {
+  useStationHistoryList,
+  useStationHistoryCount,
+  StationHistoryDetail,
+  RecordState,
+} from "../api";
 import { useAuth } from "../auth";
 import { BinaryPagination, Collapser, CustomLink, RespStationName } from "../components";
 import getDateString from "../utils/getDateString";
@@ -33,25 +39,50 @@ const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
 const HistoryContent = (
   { history }
   :{
-    history: StationHistoryDetail
+    history: StationHistoryDetail | StationHistoryDetail[]
   }
 ): JSX.Element => {
+  if(!Array.isArray(history)){
+    return (
+      <Button
+        component={Link}
+        to={"/station/" + history.stationCode}
+        variant="outlined"
+        color="inherit"
+        sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
+      >
+        <Box sx={{ mb: 1 }}>
+          <RespStationName variant="h5">{history.stationName}</RespStationName>
+          <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history.kana}</RespStationName>
+        </Box>
+
+        <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
+          {stateNames[history.state]} {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}
+        </Typography>
+      </Button>
+    );
+  }
+  
   return (
     <Button
       component={Link}
-      to={"/station/" + history.stationCode}
+      to={"/station/" + history[0].stationCode}
       variant="outlined"
       color="inherit"
       sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
     >
       <Box sx={{ mb: 1 }}>
-        <RespStationName variant="h5">{history.stationName}</RespStationName>
-        <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history.kana}</RespStationName>
+        <RespStationName variant="h5">{history[0].stationName}</RespStationName>
+        <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history[0].kana}</RespStationName>
       </Box>
 
-      <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
-        {stateNames[history.state]} {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}
-      </Typography>
+      <Stack direction="column">
+        {history.map(hist => (
+          <Typography variant="h6" color="gray" sx={{ fontSize: 14 }} key={hist.date.toString()}>
+            {stateNames[hist.state]} {("0"+hist.date.getHours()).slice(-2)}:{("0"+hist.date.getMinutes()).slice(-2)}
+          </Typography>
+        ))}
+      </Stack>
     </Button>
   );
 };
@@ -298,11 +329,12 @@ const History = () => {
       <Box>
         {splitHistoryList(historyList.data).map((item, i, list) => {
           const date = item.date;
+          if(!i) console.log(list);
           const isSameDate = i && list[i-1].date.getTime() - date.getTime() < 1000*60*60*24;
           return (
             <Box key={`${date.toString()}|${item.stationCode}|${item.state}`}>
               {/* 省略 */}
-              {!!isSameDate && (<OmittedContents historyList={historyList.data.slice(list[i-1].idx+1, item.idx)}/>)}
+              {!!isSameDate && (<OmittedContents historyList={historyList.data.slice(list[i-1].idx+1, item.idx)} />)}
               {/* 日付 */}
               {!isSameDate && (
                 <Typography variant="h6" sx={{ mt: 1 }}>
@@ -343,8 +375,14 @@ const History = () => {
                   </Button>
                 </Box>
               )}
+              {/* (同じ駅での履歴が連続して3つ以上ある場合、一部表示されなくなる) */}
               <Box sx={{ ml: 2 }}>
-                <HistoryContent history={item}/>
+                {(i+1 < list.length && item.stationCode === list[i+1].stationCode &&
+                  date.getTime() - list[i+1].date.getTime() < 1000*60*60*24) ? (
+                  <HistoryContent history={[item, list[i+1]]}/>
+                ) : !(isSameDate && item.stationCode === list[i-1].stationCode) && (
+                  <HistoryContent history={item}/>
+                )}
               </Box>
             </Box>
           );
