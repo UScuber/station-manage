@@ -117,7 +117,6 @@ exports.stationHistoryList = (req, res) => {
   const type = req.query.type;
   const dateFrom = convert_date(req.query.dateFrom) ? convert_date(req.query.dateFrom).substr(0, 10) + " 00:00:00" : undefined;
   const dateTo = convert_date(req.query.dateTo) ? convert_date(req.query.dateTo).substr(0, 10) + " 23:59:59" : undefined;
-  console.log(dateFrom, dateTo);
 
   if(isNaN(off) || isNaN(len)){
     throw new InputError("Invalid input");
