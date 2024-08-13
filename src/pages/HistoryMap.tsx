@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
+  Button,
+  Checkbox,
   CircularProgress,
   Container,
   Typography,
@@ -11,6 +14,9 @@ import {
   Polyline,
   Popup,
 } from "react-leaflet";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Dayjs } from "dayjs";
 import { StationHistoryDetail, useStationHistoryListAndInfo } from "../api";
 import { useAuth } from "../auth";
 import { CustomLink, MapCustom } from "../components";
@@ -61,6 +67,10 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
 
 const HistoryMap = () => {
   const { isAuthenticated } = useAuth();
+  const [showPoint, setShowPoint] = useState(false);
+  const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
+  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
+
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
 
@@ -88,8 +98,59 @@ const HistoryMap = () => {
     );
   }
 
+  const filteredHistoryList = historyList.filter(
+    history => (dateFrom?.toDate() ?? new Date(0)) <= history.date
+      && new Date(history.date.getFullYear(), history.date.getMonth(), history.date.getDay()) <= (dateTo?.toDate() ?? new Date("9999-12-31"))
+  );
+
   return (
     <Container>
+      <Box sx={{ mb: 2 }}>
+        <LocalizationProvider
+          dateAdapter={AdapterDayjs}
+          adapterLocale="ja"
+          dateFormats={{ year: "YYYY", month: "M月" }}
+        >
+          <DatePicker
+            label="開始日"
+            value={dateFrom}
+            onChange={(dateFrom) => setFromDate(dateFrom)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120, ml: 3 }}
+            disableFuture
+          />
+          <DatePicker
+            label="終了日"
+            value={dateTo}
+            onChange={(dateTo) => setDateTo(dateTo)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120,  ml: 3 }}
+            disableFuture
+          />
+        </LocalizationProvider>
+
+        <Button
+          color="inherit"
+          onClick={() => setShowPoint(!showPoint)}
+          sx={{ margin: "auto", ml: 2, mt: 2 }}
+        >
+          <Typography variant="h6" sx={{ fontSize: 14, display: "inline-block" }}>点を表示</Typography>
+          <Checkbox
+          size="small"
+          checked={showPoint}
+          sx={{ padding: 0 }}
+        />
+        </Button>
+      </Box>
+
       <Box sx={{ mb: 2 }}>
         <CustomLink to="/history">
           <Typography variant="h6" sx={{ fontSize: 14 }}>履歴を見る</Typography>
@@ -97,17 +158,17 @@ const HistoryMap = () => {
       </Box>
 
       <MapCustom center={[36.265185, 138.126471]} zoom={6} style={{ height: "90vh" }}>
-        {splitHistoryList(historyList).map(item => (
-          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.key}>
+        {splitHistoryList(filteredHistoryList).map(item => (
+          <FeatureGroup pathOptions={{ color: "#" + item.railwayColor }} key={item.key}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/railway/" + item.railwayCode}>{item.railwayName}</Link>
               </Box>
             </Popup>
-            <Polyline weight={8} positions={item.path} />
+            <Polyline weight={5} positions={item.path} />
           </FeatureGroup>
         ))}
-        {historyList.map(info => (
+        {showPoint && filteredHistoryList.map(info => (
           <CircleMarker
             center={[info.latitude, info.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
