@@ -6,6 +6,10 @@ import {
   Checkbox,
   CircularProgress,
   Container,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Typography,
 } from "@mui/material";
 import {
@@ -17,7 +21,7 @@ import {
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Dayjs } from "dayjs";
-import { StationHistoryDetail, useStationHistoryListAndInfo } from "../api";
+import { StationHistoryDetail, useCompanyList, useStationHistoryListAndInfo } from "../api";
 import { useAuth } from "../auth";
 import { CustomLink, MapCustom } from "../components";
 import NotFound from "./NotFound";
@@ -72,9 +76,12 @@ const HistoryMap = () => {
   const [showPoint, setShowPoint] = useState(false);
   const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
   const [dateTo, setDateTo] = useState<Dayjs | null>(null);
+  const [selectCompany, setSelectCompany] = useState<number>();
 
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
+
+  const companyListQuery = useCompanyList();
 
 
   if(!isAuthenticated){
@@ -91,7 +98,7 @@ const HistoryMap = () => {
     );
   }
 
-  if(!historyList){
+  if(!historyList || !companyListQuery.data){
     return (
       <Container>
         Loading ...
@@ -100,10 +107,20 @@ const HistoryMap = () => {
     );
   }
 
-  const filteredHistoryList = historyList.filter(
-    history => (dateFrom?.toDate() ?? new Date(0)) <= history.date
-      && new Date(history.date.getFullYear(), history.date.getMonth(), history.date.getDay()) <= (dateTo?.toDate() ?? new Date("9999-12-31"))
-  );
+  const companyList = [{ companyCode: 0, companyName: "JR" }].concat(companyListQuery.data);
+
+  const filteredHistoryList = historyList
+    .filter(
+      history => (dateFrom?.toDate() ?? new Date(0)) <= history.date
+        && new Date(history.date.getFullYear(), history.date.getMonth(), history.date.getDay()) <= (dateTo?.toDate() ?? new Date("9999-12-31"))
+    )
+    .filter(
+      history => selectCompany ?
+        history.companyCode === companyList[+selectCompany].companyCode
+        : selectCompany !== undefined ?
+          history.companyCode <= 6 // JR
+          : true
+    );
 
   return (
     <Container>
@@ -138,6 +155,22 @@ const HistoryMap = () => {
             disableFuture
           />
         </LocalizationProvider>
+
+        <FormControl variant="standard" sx={{ minWidth: 100, ml: 3 }}>
+          <InputLabel id="filter-company-name-select">会社名</InputLabel>
+          <Select
+            id="filter-company-name-select"
+            value={selectCompany?.toString() ?? ""}
+            label="会社名"
+            variant="standard"
+            onChange={(e) => setSelectCompany(e.target.value !== "" ? +e.target.value : undefined)}
+          >
+            <MenuItem value="">None</MenuItem>
+            {companyList.map((company, idx) => (
+              <MenuItem value={idx} key={company.companyCode}>{company.companyName}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <Button
           color="inherit"
