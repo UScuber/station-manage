@@ -347,6 +347,7 @@ filtered_station_ekidata = filtered_station_ekidata.concat(result_json.shinkanse
     prefCode: info.prefCode,
     lat: info.lat,
     lng: info.lng,
+    subStationCode: sub_stationCode,
   };
 }));
 
@@ -382,6 +383,7 @@ const stations_db = Array.from(await Promise.all(filtered_station_ekidata.map(as
     prefCode: data.prefCode,
     lat: data.lat,
     lng: data.lng,
+    subStationCode: sub_stationCode,
     kana: kana,
   };
 }))).filter(data => data);

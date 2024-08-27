@@ -203,7 +203,15 @@ export const useSearchStationGroupList = (
   return useQuery<StationGroup[]>({
     queryKey: ["StationGroupList", offset, length, name],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchStationGroupList?off=${offset}&len=${length}&name=${name ?? ""}`);
+      const { data } = await axios.get<StationGroup[]>(
+        `/api/searchStationGroupList?`, {
+          params: {
+            off: offset,
+            len: length,
+            name: name,
+          },
+        }
+      );
       return data;
     },
   });
@@ -220,7 +228,11 @@ export const useSearchStationGroupCount = (
   return useQuery<number>({
     queryKey: ["StationGroupCount", name],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/searchStationGroupCount?name=${name ?? ""}`);
+      const { data } = await axios.get<number>(
+        "/api/searchStationGroupCount", {
+          params: { name: name },
+        }
+      );
       return data;
     },
   });
@@ -232,7 +244,15 @@ export const useSearchKNearestStationGroups = (pos: Coordinate | undefined, num?
   return useQuery<StationGroup[]>({
     queryKey: ["SearchKNearestStationGroups", pos, num ?? 0],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroup[]>(`/api/searchNearestStationGroup?lat=${pos?.lat}&lng=${pos?.lng}&num=${num ?? ""}`);
+      const { data } = await axios.get<StationGroup[]>(
+        "/api/searchNearestStationGroup", {
+          params: {
+            lat: pos?.lat,
+            lng: pos?.lng,
+            num: num,
+          },
+        }
+      );
       return data;
     },
     enabled: pos !== undefined,
@@ -321,7 +341,14 @@ export const useUpdateTimetableURLMutation = (
   return useMutation({
     mutationFn: async(req: { stationCode: number, direction: string, mode: string, url: string }) => {
       const { data } = await axios.get<string>(
-        `/api/updateTimetableURL?code=${req.stationCode}&direction=${encodeURIComponent(req.direction)}&mode=${req.mode}&url=${encodeURIComponent(req.url)}`
+        "/api/updateTimetableURL", {
+          params: {
+            code: req.stationCode,
+            direction: encodeURIComponent(req.direction),
+            mode: req.mode,
+            url: encodeURIComponent(req.url),
+          },
+        }
       );
       return data;
     },
@@ -343,7 +370,14 @@ export const useUpdateTrainPosURLMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: { stationCode: number, url: string }) => {
-      const { data } = await axios.get<string>(`/api/updateTrainPosURL?code=${req.stationCode}&url=${encodeURIComponent(req.url)}`);
+      const { data } = await axios.get<string>(
+        "/api/updateTrainPosURL", {
+          params: {
+            code: req.stationCode,
+            url: encodeURIComponent(req.url),
+          },
+        }
+      );
       return data;
     },
     onSuccess: (data: string, variant: { stationCode: number, url: string }) => {
