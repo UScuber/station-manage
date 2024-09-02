@@ -115,6 +115,9 @@ exports.stationHistoryList = (req, res) => {
   const len = +req.query.len;
   const name = req.query.name ?? "";
   const type = req.query.type;
+  const dateFrom = convert_date(req.query.dateFrom) ? convert_date(req.query.dateFrom).substr(0, 10) + " 00:00:00" : undefined;
+  const dateTo = convert_date(req.query.dateTo) ? convert_date(req.query.dateTo).substr(0, 10) + " 23:59:59" : undefined;
+
   if(isNaN(off) || isNaN(len)){
     throw new InputError("Invalid input");
   }
@@ -153,10 +156,12 @@ exports.stationHistoryList = (req, res) => {
           ON Railways.companyCode = Companies.companyCode
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, name, len, off);
+      `).all(userId, name, dateFrom, dateTo, len, off);
     }else if(type === "railway" && name !== ""){
       data = db.prepare(`
         SELECT
@@ -185,10 +190,12 @@ exports.stationHistoryList = (req, res) => {
           ON Railways.companyCode = Companies.companyCode
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, name, len, off);
+      `).all(userId, name, dateFrom, dateTo, len, off);
     }else if(type === "company" && name !== ""){
       data = db.prepare(`
         SELECT
@@ -217,10 +224,12 @@ exports.stationHistoryList = (req, res) => {
             AND Companies.companyName = ?
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY StationHistory.date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, name, len, off);
+      `).all(userId, name, dateFrom, dateTo, len, off);
     }else{
       data = db.prepare(`
         SELECT
@@ -248,10 +257,12 @@ exports.stationHistoryList = (req, res) => {
           ON Railways.companyCode = Companies.companyCode
         INNER JOIN Prefectures
           ON StationGroups.prefCode = Prefectures.code
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
         ORDER BY date DESC
         LIMIT ?
         OFFSET ?
-      `).all(userId, len, off);
+      `).all(userId, dateFrom, dateTo, len, off);
     }
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
@@ -267,6 +278,9 @@ exports.stationHistoryList = (req, res) => {
 exports.stationHistoryCount = (req, res) => {
   const name = req.query.name ?? "";
   const type = req.query.type;
+  const dateFrom = convert_date(req.query.dateFrom) ? convert_date(req.query.dateFrom).substr(0, 10) + " 00:00:00" : undefined;
+  const dateTo = convert_date(req.query.dateTo) ? convert_date(req.query.dateTo).substr(0, 10) + " 23:59:59" : undefined;
+
   const userId = usersManager.getUserData(req).userId;
   if(!userId){
     throw new AuthError("Unauthorized");
@@ -283,7 +297,9 @@ exports.stationHistoryCount = (req, res) => {
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
             AND StationGroups.stationName = ?
-      `).get(userId, name);
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
+      `).get(userId, name, dateFrom, dateTo);
     }else if(type === "railway" && name !== ""){
       data = db.prepare(`
         SELECT COUNT(*) AS count FROM StationHistory
@@ -293,7 +309,9 @@ exports.stationHistoryCount = (req, res) => {
         INNER JOIN Railways
           ON Stations.railwayCode = Railways.railwayCode
             AND Railways.railwayName = ?
-      `).get(userId, name);
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
+      `).get(userId, name, dateFrom, dateTo);
     }else if(type === "company" && name !== ""){
       data = db.prepare(`
         SELECT COUNT(*) AS count FROM StationHistory
@@ -305,12 +323,16 @@ exports.stationHistoryCount = (req, res) => {
         INNER JOIN Companies
           ON Railways.companyCode = Companies.companyCode
             AND Companies.companyName = ?
-      `).get(userId, name);
+        WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
+      `).get(userId, name, dateFrom, dateTo);
     }else{
       data = db.prepare(`
         SELECT COUNT(*) AS count FROM StationHistory
         WHERE StationHistory.userId = ?
-      `).get(userId);
+          AND StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
+          AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
+      `).get(userId, dateFrom, dateTo);
     }
   }catch(err){
     throw new ServerError("Server Error", err);

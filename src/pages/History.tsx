@@ -11,13 +11,22 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import { useStationHistoryList, useStationHistoryCount, StationHistoryDetail } from "../api";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Dayjs } from "dayjs";
+import {
+  useStationHistoryList,
+  useStationHistoryCount,
+  StationHistoryDetail,
+  RecordState,
+} from "../api";
 import { useAuth } from "../auth";
-import { BinaryPagination, CustomLink, RespStationName } from "../components";
+import { BinaryPagination, Collapser, CustomLink, RespStationName } from "../components";
 import getDateString from "../utils/getDateString";
 import NotFound from "./NotFound";
 import aroundDayName from "../utils/aroundDayName";
@@ -30,46 +39,130 @@ const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
 const HistoryContent = (
   { history }
   :{
-    history: StationHistoryDetail
+    history: StationHistoryDetail | StationHistoryDetail[]
   }
 ): JSX.Element => {
+  if(!Array.isArray(history)){
+    return (
+      <Button
+        component={Link}
+        to={"/station/" + history.stationCode}
+        variant="outlined"
+        color="inherit"
+        sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
+      >
+        <Box sx={{ mb: 1 }}>
+          <RespStationName variant="h5">{history.stationName}</RespStationName>
+          <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history.kana}</RespStationName>
+        </Box>
+
+        <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
+          {stateNames[history.state]} {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}
+        </Typography>
+      </Button>
+    );
+  }
+  
   return (
     <Button
       component={Link}
-      to={"/station/" + history.stationCode}
+      to={"/station/" + history[0].stationCode}
       variant="outlined"
       color="inherit"
       sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
     >
       <Box sx={{ mb: 1 }}>
-        <RespStationName variant="h5">{history.stationName}</RespStationName>
-        <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history.kana}</RespStationName>
+        <RespStationName variant="h5">{history[0].stationName}</RespStationName>
+        <RespStationName variant="h6" sx={{ lineHeight: 1 }}>{history[0].kana}</RespStationName>
       </Box>
 
-      <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
-        {stateNames[history.state]} {("0"+history.date.getHours()).slice(-2)}:{("0"+history.date.getMinutes()).slice(-2)}
-      </Typography>
+      <Stack direction="column">
+        {history.map(hist => (
+          <Typography variant="h6" color="gray" sx={{ fontSize: 14 }} key={hist.date.toString()}>
+            {stateNames[hist.state]} {("0"+hist.date.getHours()).slice(-2)}:{("0"+hist.date.getMinutes()).slice(-2)}
+          </Typography>
+        ))}
+      </Stack>
     </Button>
   );
+};
+
+
+const OmittedContents = (
+  { historyList }
+  :{
+    historyList: StationHistoryDetail[]
+  }
+) => {
+  if(historyList.length === 0){
+    return (
+      <></>
+    );
+  }
+
+  if(historyList.length === 1){
+    return (
+      <Box sx={{ ml: 2 }}>
+        <HistoryContent history={historyList[0]} />
+      </Box>
+    );
+  }
+
+  return (
+    <Collapser
+      buttonText={
+        <Typography variant="h6" sx={{ display: "inline" }}>
+          | {historyList.length}駅
+        </Typography>
+      }
+      sx={{ ml: 3 }}
+    >
+      {historyList.map(history => (
+        <Box sx={{ ml: 2 }} key={`${history.date}|${history.state}|${history.stationCode}`}>
+          <HistoryContent history={history} />
+        </Box>
+      ))}
+    </Collapser>
+  );
+};
+
+
+// 詳細で表示するものとそのまま表示するものを分ける
+// そのまま表示する要素のindexを返す
+const splitHistoryList = (historyList: StationHistoryDetail[]): (StationHistoryDetail & { idx: number })[] => {
+  if(historyList.length <= 3){
+    return historyList.map((history, idx) => ({ ...history, idx: idx }));
+  }
+
+  let res: (StationHistoryDetail & { idx: number })[] = [{ ...historyList[0], idx: 0 }];
+  for(let i = 1; i < historyList.length-1; i++){
+    const history = historyList[i];
+    if(history.state === RecordState.Get
+      || historyList[i-1].railwayCode !== history.railwayCode
+      || historyList[i+1].railwayCode !== history.railwayCode
+      || historyList[i-1].date.getTime() - history.date.getTime() >= 1000*60*60*24
+      || history.date.getTime() - historyList[i+1].date.getTime() >= 1000*60*60*24) res.push({ ...history, idx: i });
+  }
+  res.push({ ...historyList[historyList.length-1], idx: historyList.length - 1 });
+  return res;
 };
 
 
 const History = () => {
   const { isAuthenticated } = useAuth();
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
   const [searchType, setSearchType] = useState("station");
+  const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
+  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
 
-  const historyList = useStationHistoryList((page-1) * rowsPerPage, rowsPerPage, searchName, searchType);
+  const historyList = useStationHistoryList((page-1) * rowsPerPage, rowsPerPage, searchName, searchType, dateFrom?.toDate(), dateTo?.toDate());
 
-  const historyListCount = useStationHistoryCount(searchName, searchType);
+  const historyListCount = useStationHistoryCount(searchName, searchType, dateFrom?.toDate(), dateTo?.toDate());
 
-  const handleChangePage = (newPage: number) => {
-    setPage(newPage);
-  };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
     setRowsPerPage(+event.target.value);
     setPage(1);
@@ -88,9 +181,6 @@ const History = () => {
     );
   };
 
-  const handleChangeSearchType = (event: SelectChangeEvent) => {
-    setSearchType(event.target.value);
-  };
 
   const CustomPagination = (): JSX.Element => {
     return (
@@ -98,8 +188,8 @@ const History = () => {
         page={page}
         count={historyListCount.data!}
         rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={[10,25,50,100]}
-        onPageChange={handleChangePage}
+        rowsPerPageOptions={[20,50,100,200,1000]}
+        onPageChange={(newPage) => setPage(newPage)}
         onRowsPerPageChange={handleChangeRowsPerPage}
         sx={{ my: 1 }}
       />
@@ -146,7 +236,7 @@ const History = () => {
               labelId="history-search-type-label"
               id="history-search-type-label"
               value={searchType}
-              onChange={handleChangeSearchType}
+              onChange={(e) => setSearchType(e.target.value)}
               label="type"
             >
               <MenuItem value="station">駅名</MenuItem>
@@ -188,7 +278,7 @@ const History = () => {
             labelId="history-search-type-label"
             id="history-search-type-label"
             value={searchType}
-            onChange={handleChangeSearchType}
+            onChange={(e) => setSearchType(e.target.value)}
             label="type"
           >
             <MenuItem value="station">駅名</MenuItem>
@@ -196,6 +286,36 @@ const History = () => {
             <MenuItem value="company">会社名</MenuItem>
           </Select>
         </FormControl>
+        <LocalizationProvider
+          dateAdapter={AdapterDayjs}
+          adapterLocale="ja"
+          dateFormats={{ year: "YYYY", month: "M月" }}
+        >
+          <DatePicker
+            label="開始日"
+            value={dateFrom}
+            onChange={(dateFrom) => setFromDate(dateFrom)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120, ml: 3 }}
+            disableFuture
+          />
+          <DatePicker
+            label="終了日"
+            value={dateTo}
+            onChange={(dateTo) => setDateTo(dateTo)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120,  ml: 3 }}
+            disableFuture
+          />
+        </LocalizationProvider>
       </Box>
 
       <CustomPagination />
@@ -207,11 +327,14 @@ const History = () => {
       </Box>
 
       <Box>
-        {historyList.data.map((item, index, list) => {
+        {splitHistoryList(historyList.data).map((item, i, list) => {
           const date = item.date;
-          const isSameDate = index && list[index-1].date.getTime() - date.getTime() < 1000*60*60*24;
+          if(!i) console.log(list);
+          const isSameDate = i && list[i-1].date.getTime() - date.getTime() < 1000*60*60*24;
           return (
             <Box key={`${date.toString()}|${item.stationCode}|${item.state}`}>
+              {/* 省略 */}
+              {!!isSameDate && (<OmittedContents historyList={historyList.data.slice(list[i-1].idx+1, item.idx)} />)}
               {/* 日付 */}
               {!isSameDate && (
                 <Typography variant="h6" sx={{ mt: 1 }}>
@@ -220,7 +343,7 @@ const History = () => {
                 </Typography>
               )}
               {/* 路線名 */}
-              {(!isSameDate || item.railwayCode !== list[index-1].railwayCode) && (
+              {(!isSameDate || item.railwayCode !== list[i-1].railwayCode) && (
                 <Box sx={{ ml: 1 }}>
                   <Button
                     component={Link}
@@ -252,8 +375,14 @@ const History = () => {
                   </Button>
                 </Box>
               )}
+              {/* (同じ駅での履歴が連続して3つ以上ある場合、一部表示されなくなる) */}
               <Box sx={{ ml: 2 }}>
-                <HistoryContent history={item}/>
+                {(i+1 < list.length && item.stationCode === list[i+1].stationCode &&
+                  date.getTime() - list[i+1].date.getTime() < 1000*60*60*24) ? (
+                  <HistoryContent history={[item, list[i+1]]}/>
+                ) : !(isSameDate && item.stationCode === list[i-1].stationCode) && (
+                  <HistoryContent history={item}/>
+                )}
               </Box>
             </Box>
           );

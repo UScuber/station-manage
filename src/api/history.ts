@@ -80,12 +80,23 @@ export const useLatestStationGroupHistory = (
 
 
 // 乗降/通過の履歴を区間取得
-export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string) => {
+export const useStationHistoryList = (offset: number, length: number, name?: string, type?: string, dateFrom?: Date | null, dateTo?: Date | null) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationHistoryDetail[]>({
-    queryKey: ["StationHistoryList", offset, length, name, type],
+    queryKey: ["StationHistoryList", offset, length, name, type, dateFrom, dateTo],
     queryFn: async() => {
-      const { data } = await axios.get<StationHistoryDetail[]>(`/api/stationHistory?off=${offset}&len=${length}&name=${name}&type=${type}`);
+      const { data } = await axios.get<StationHistoryDetail[]>(
+        "/api/stationHistory", {
+          params: {
+            off: offset,
+            len: length,
+            name: name,
+            type: type,
+            dateFrom: dateFrom ? convert_date(dateFrom) : undefined,
+            dateTo: dateTo ? convert_date(dateTo) : undefined,
+          },
+        }
+      );
       return data;
     },
     enabled: isAuthenticated,
@@ -94,12 +105,21 @@ export const useStationHistoryList = (offset: number, length: number, name?: str
 
 
 // 乗降/通過の履歴の個数を取得
-export const useStationHistoryCount = (name?: string, type?: string) => {
+export const useStationHistoryCount = (name?: string, type?: string, dateFrom?: Date | null, dateTo?: Date | null) => {
   const { isAuthenticated } = useAuth();
   return useQuery<number>({
-    queryKey: ["StationHistoryCount", name, type],
+    queryKey: ["StationHistoryCount", name, type, dateFrom, dateTo],
     queryFn: async() => {
-      const { data } = await axios.get<number>(`/api/stationHistoryCount?name=${name}&type=${type}`);
+      const { data } = await axios.get<number>(
+        "/api/stationHistoryCount", {
+          params: {
+            name: name,
+            type: type,
+            dateFrom: dateFrom ? convert_date(dateFrom) : undefined,
+            dateTo: dateTo ? convert_date(dateTo) : undefined,
+          },
+        }
+      );
       return data;
     },
     enabled: isAuthenticated,
@@ -170,7 +190,15 @@ export const useSearchStationGroupListHistory = (
   return useQuery<StationGroupDate[]>({
     queryKey: ["LatestStationGroupHistoryList", offset, length, name],
     queryFn: async() => {
-      const { data } = await axios.get<StationGroupDate[]>(`/api/searchStationGroupListHistory?off=${offset}&len=${length}&name=${name}`);
+      const { data } = await axios.get<StationGroupDate[]>(
+        "/api/searchStationGroupListHistory", {
+          params: {
+            off: offset,
+            len: length,
+            name: name,
+          },
+        }
+      );
       return data;
     },
     enabled: isAuthenticated,
@@ -295,7 +323,15 @@ export const useSendStationStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`);
+      const { data } = await axios.get<string>(
+        "/api/postStationDate", {
+          params: {
+            code: req.stationCode,
+            state: req.state,
+            date: convert_date(req.date),
+          },
+        }
+      );
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
@@ -329,7 +365,14 @@ export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/postStationGroupDate?code=${req.stationGroupCode}&date=${convert_date(req.date)}`);
+      const { data } = await axios.get<string>(
+        "/api/postStationGroupDate", {
+          params: {
+            code: req.stationGroupCode,
+            date: convert_date(req.date),
+          },
+        }
+      );
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {
@@ -351,7 +394,15 @@ export const useDeleteStationHistoryMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationHistory) => {
-      const { data } = await axios.get<string>(`/api/deleteStationDate?code=${req.stationCode}&state=${req.state}&date=${convert_date(req.date)}`);
+      const { data } = await axios.get<string>(
+        "/api/deleteStationDate", {
+          params: {
+            code: req.stationCode,
+            state: req.state,
+            date: convert_date(req.date),
+          },
+        }
+      );
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
@@ -388,7 +439,14 @@ export const useDeleteStationGroupHistoryMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async(req: StationGroupHistory) => {
-      const { data } = await axios.get<string>(`/api/deleteStationGroupState?code=${req.stationGroupCode}&date=${convert_date(req.date)}`);
+      const { data } = await axios.get<string>(
+        "/api/deleteStationGroupState", {
+          params: {
+            code: req.stationGroupCode,
+            date: convert_date(req.date),
+          },
+        }
+      );
       return data;
     },
     onSuccess: (data: string, variables: StationGroupHistory) => {

@@ -1,8 +1,15 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
+  Button,
+  Checkbox,
   CircularProgress,
   Container,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Typography,
 } from "@mui/material";
 import {
@@ -11,7 +18,10 @@ import {
   Polyline,
   Popup,
 } from "react-leaflet";
-import { StationHistoryDetail, useStationHistoryListAndInfo } from "../api";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Dayjs } from "dayjs";
+import { StationHistoryDetail, useCompanyList, useStationHistoryListAndInfo } from "../api";
 import { useAuth } from "../auth";
 import { CustomLink, MapCustom } from "../components";
 import NotFound from "./NotFound";
@@ -42,7 +52,9 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
   for(let i = 1; i < historyList.length; i++){
     const cur = historyList[i];
     const prev = historyList[i-1];
-    if(cur.railwayCode === prev.railwayCode && cur.date.getTime() - prev.date.getTime() < 1000*60*60*24 && cur.left.concat(cur.right).includes(prev.stationCode)){
+    if(cur.railwayCode === prev.railwayCode
+      && cur.date.getTime() - prev.date.getTime() < 1000*60*60*24
+      && cur.left.concat(cur.right).includes(prev.stationCode)){
       result[result.length-1].path.push([cur.latitude, cur.longitude]);
     }else{
       result.push({
@@ -61,8 +73,15 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
 
 const HistoryMap = () => {
   const { isAuthenticated } = useAuth();
+  const [showPoint, setShowPoint] = useState(false);
+  const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
+  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
+  const [selectCompany, setSelectCompany] = useState<number>();
+
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
+
+  const companyListQuery = useCompanyList();
 
 
   if(!isAuthenticated){
@@ -79,7 +98,7 @@ const HistoryMap = () => {
     );
   }
 
-  if(!historyList){
+  if(!historyList || !companyListQuery.data){
     return (
       <Container>
         Loading ...
@@ -88,8 +107,85 @@ const HistoryMap = () => {
     );
   }
 
+  const companyList = [{ companyCode: 0, companyName: "JR" }].concat(companyListQuery.data);
+
+  const filteredHistoryList = historyList
+    .filter(
+      history => (dateFrom?.toDate() ?? new Date(0)) <= history.date
+        && new Date(history.date.getFullYear(), history.date.getMonth(), history.date.getDay()) <= (dateTo?.toDate() ?? new Date("9999-12-31"))
+    )
+    .filter(
+      history => selectCompany ?
+        history.companyCode === companyList[+selectCompany].companyCode
+        : selectCompany !== undefined ?
+          history.companyCode <= 6 // JR
+          : true
+    );
+
   return (
     <Container>
+      <Box sx={{ mb: 2 }}>
+        <LocalizationProvider
+          dateAdapter={AdapterDayjs}
+          adapterLocale="ja"
+          dateFormats={{ year: "YYYY", month: "M月" }}
+        >
+          <DatePicker
+            label="開始日"
+            value={dateFrom}
+            onChange={(dateFrom) => setFromDate(dateFrom)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120, ml: 3 }}
+            disableFuture
+          />
+          <DatePicker
+            label="終了日"
+            value={dateTo}
+            onChange={(dateTo) => setDateTo(dateTo)}
+            slotProps={{
+              textField: { variant: "standard" },
+              toolbar: { toolbarFormat: "YYYY年 M月" },
+            }}
+            format="YYYY-MM-DD"
+            sx={{ display: "inline-block", width: 120,  ml: 3 }}
+            disableFuture
+          />
+        </LocalizationProvider>
+
+        <FormControl variant="standard" sx={{ minWidth: 100, ml: 3 }}>
+          <InputLabel id="filter-company-name-select">会社名</InputLabel>
+          <Select
+            id="filter-company-name-select"
+            value={selectCompany?.toString() ?? ""}
+            label="会社名"
+            variant="standard"
+            onChange={(e) => setSelectCompany(e.target.value !== "" ? +e.target.value : undefined)}
+          >
+            <MenuItem value="">None</MenuItem>
+            {companyList.map((company, idx) => (
+              <MenuItem value={idx} key={company.companyCode}>{company.companyName}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Button
+          color="inherit"
+          onClick={() => setShowPoint(!showPoint)}
+          sx={{ margin: "auto", ml: 2, mt: 2 }}
+        >
+          <Typography variant="h6" sx={{ fontSize: 14, display: "inline-block" }}>点を表示</Typography>
+          <Checkbox
+          size="small"
+          checked={showPoint}
+          sx={{ padding: 0 }}
+        />
+        </Button>
+      </Box>
+
       <Box sx={{ mb: 2 }}>
         <CustomLink to="/history">
           <Typography variant="h6" sx={{ fontSize: 14 }}>履歴を見る</Typography>
@@ -97,17 +193,17 @@ const HistoryMap = () => {
       </Box>
 
       <MapCustom center={[36.265185, 138.126471]} zoom={6} style={{ height: "90vh" }}>
-        {splitHistoryList(historyList).map(item => (
-          <FeatureGroup pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }} key={item.key}>
+        {splitHistoryList(filteredHistoryList).map(item => (
+          <FeatureGroup pathOptions={{ color: "#" + item.railwayColor }} key={item.key}>
             <Popup>
               <Box sx={{ textAlign: "center" }}>
                 <Link to={"/railway/" + item.railwayCode}>{item.railwayName}</Link>
               </Box>
             </Popup>
-            <Polyline weight={8} positions={item.path} />
+            <Polyline weight={5} positions={item.path} />
           </FeatureGroup>
         ))}
-        {historyList.map(info => (
+        {showPoint && filteredHistoryList.map(info => (
           <CircleMarker
             center={[info.latitude, info.longitude]}
             pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}

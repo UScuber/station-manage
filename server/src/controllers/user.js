@@ -1,3 +1,4 @@
+const { Users } = require("../components/user");
 const { db, usersManager } = require("../components/db");
 const {
   AuthError,
@@ -38,7 +39,7 @@ exports.signup = (req, res) => {
     throw new ServerError("Server Error");
   }
   res.cookie("sessionId", sessionId, {
-    maxAge: usersManager.expirationTime,
+    maxAge: Users.expirationTime,
     httpOnly: true,
     secure: true,
     sameSite: "Lax",
@@ -74,7 +75,7 @@ exports.login = (req, res) => {
   }
 
   res.cookie("sessionId", sessionId, {
-    maxAge: usersManager.expirationTime,
+    maxAge: Users.expirationTime,
     httpOnly: true,
     secure: true,
     sameSite: "Lax",
@@ -89,7 +90,7 @@ exports.status = (req, res) => {
   const userData = usersManager.getUserData(req);
   if(userData.auth){
     res.cookie("sessionId", req.cookies.sessionId, {
-      maxAge: usersManager.expirationTime,
+      maxAge: Users.expirationTime,
       httpOnly: true,
       secure: true,
       sameSite: "Lax",
