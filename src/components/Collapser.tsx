@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Box, Collapse, IconButton, SxProps, Theme } from "@mui/material";
 import {
-  KeyboardArrowUp as KeyboardArrowUpIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
 } from "@mui/icons-material";
 
 
@@ -28,8 +28,8 @@ const Collapser = (
           color="inherit"
           sx={{ padding: 0 }}
         >
+          {open ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
           {buttonText && buttonText}
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
         <Collapse in={open} timeout="auto" sx={collapseSx} unmountOnExit>
           {children}
@@ -46,8 +46,8 @@ const Collapser = (
         color="inherit"
         sx={{ padding: 0 }}
       >
+        {open ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
         {buttonText && buttonText}
-        {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
       </IconButton>
       <Collapse in={open} timeout="auto" sx={collapseSx} unmountOnExit>
         {children}

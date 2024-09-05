@@ -112,7 +112,7 @@ const OmittedContents = (
     <Collapser
       buttonText={
         <Typography variant="h6" sx={{ display: "inline" }}>
-          | {historyList.length}駅
+          {historyList.length}駅
         </Typography>
       }
       sx={{ ml: 3 }}
