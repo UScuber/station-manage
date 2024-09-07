@@ -13,6 +13,7 @@ import {
   TableRow,
   TextField,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import {
@@ -40,6 +41,8 @@ const Row = (
     progress: StationProgress | undefined,
   }
 ) => {
+  const theme = useTheme();
+
   if(!progress){
     return (
       <TableRow>
@@ -53,9 +56,11 @@ const Row = (
     );
   }
 
+  const achieve_rate = progress.getOrPassStationNum / progress.stationNum * 100;
+
   return (
     <TableRow sx={{
-      bgcolor: (progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none")
+      background: `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)`
     }}>
       <TableCell>
         <CustomLink to={"/company/" + info.companyCode}>

@@ -6,6 +6,7 @@ import {
   Container,
   LinearProgress,
   Typography,
+  useTheme,
 } from "@mui/material";
 import {
   CircleMarker,
@@ -32,6 +33,9 @@ const RailwayItem = (
     progress: StationProgress | undefined,
   }
 ): JSX.Element => {
+  const theme = useTheme();
+  const achieve_rate = progress ? progress.getOrPassStationNum / progress.stationNum * 100 : undefined;
+
   return (
     <Button
       component={Link}
@@ -41,7 +45,7 @@ const RailwayItem = (
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (progress && progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none"),
+        background: achieve_rate ? `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)` : "none",
       }}
     >
       <Box sx={{ mb: 1 }}>
