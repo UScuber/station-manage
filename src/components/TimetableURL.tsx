@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Box, Button, CircularProgress, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, Divider, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 import { Add, Cancel, Delete, Directions, Edit, OpenInNew, Save } from "@mui/icons-material";
 import { Station, useTimetableURL, useUpdateTimetableURLMutation, useUpdateTrainPosURLMutation } from "../api";
 import { useAuth } from "../auth";
@@ -232,10 +232,10 @@ const EditableTable = (
 
 
 // 時刻表のリンクを表示
-const TimetableURL = ({ info }: { info: Station }) => {
+const TimetableURL = ({ info, visible }: { info: Station, visible: boolean }) => {
   const { isAdmin } = useAuth();
 
-  const timetableQuery = useTimetableURL(info.stationCode);
+  const timetableQuery = useTimetableURL(visible ? info.stationCode : undefined);
   const timetable = timetableQuery.data;
 
   const updateURLMutation = useUpdateTimetableURLMutation();
@@ -277,9 +277,8 @@ const TimetableURL = ({ info }: { info: Station }) => {
 
   return (
     <Box sx={{ mb: 2 }}>
-      <Typography variant="h6">リンク</Typography>
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>時刻表</Typography>
+        <Typography variant="h6" sx={{ fontSize: 18 }}>時刻表</Typography>
         {timetable.timetable.sort().map(row => (
           <Button
             component={Link}
@@ -287,7 +286,7 @@ const TimetableURL = ({ info }: { info: Station }) => {
             to={row.url}
             endIcon={<OpenInNew />}
             key={row.direction}
-            sx={{ mr: 1 }}
+            sx={{ mr: 1, ml: 1 }}
           >
             {row.direction}
           </Button>
@@ -300,15 +299,20 @@ const TimetableURL = ({ info }: { info: Station }) => {
           />}
       </Box>
       <Box>
-        {timetable.trainPos && 
-          <Button
-            component={Link}
-            target="__blank"
-            to={timetable.trainPos}
-            endIcon={<OpenInNew />}
-          >
-            列車走行位置
-          </Button>}
+        {timetable.trainPos &&
+          <Box>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="h6" sx={{ fontSize: 18 }}>列車走行位置</Typography>
+            <Button
+              component={Link}
+              target="__blank"
+              to={timetable.trainPos}
+              endIcon={<OpenInNew />}
+              sx={{ mr: 1, ml: 1 }}
+            >
+              列車走行位置
+            </Button>
+          </Box>}
         {isAdmin && <EditableText text={timetable.trainPos ?? ""} onChangeText={handleUpdateTrainPos} />}
       </Box>
     </Box>

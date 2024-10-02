@@ -16,7 +16,7 @@ import {
   useDeleteStationHistoryMutation,
   useStationAllHistory,
 } from "../api";
-import { Collapser, ConfirmDialog } from "../components";
+import { ConfirmDialog } from "../components";
 import getDateString from "../utils/getDateString";
 
 
@@ -24,12 +24,11 @@ const stateName = ["乗降", "通過"];
 
 
 // 履歴のテーブル(StationInfo.tsxで使用)
-const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
-  const [open, setOpen] = useState(false);
+const HistoryListTable = ({ stationCode, visible }: { stationCode: number, visible: boolean }) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
-  const stationHistoryQuery = useStationAllHistory(open ? stationCode : undefined, () => {
+  const stationHistoryQuery = useStationAllHistory(visible ? stationCode : undefined, () => {
     setDeleteLoading(false);
   });
   const stationHistory = stationHistoryQuery.data;
@@ -58,15 +57,9 @@ const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
 
 
   return (
-    <Collapser
-      buttonText={
-        <Typography variant="h6" sx={{ display: "inline" }}>
-          履歴 {stationHistory ? `(${stationHistory.length}件)` : ""}
-        </Typography>
-      }
-      open={open}
-      onClick={() => setOpen(!open)}
-    >
+    <Box>
+      {<Typography variant="h6" sx={{ fontSize: 18 }}>履歴 {stationHistory?.length ?? ""}件</Typography>}
+
       <Box sx={{ margin: 1 }}>
         {stationHistoryQuery.isError && <Typography variant="h6">Error</Typography>}
         {!stationHistoryQuery.isError && !stationHistory && <CircularProgress size={25} />}
@@ -108,7 +101,7 @@ const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
         title="データを削除しますか"
         descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
       />
-    </Collapser>
+    </Box>
   );
 };
 
