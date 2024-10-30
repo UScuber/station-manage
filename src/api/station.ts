@@ -344,9 +344,9 @@ export const useUpdateTimetableURLMutation = (
         "/api/updateTimetableURL", {
           params: {
             code: req.stationCode,
-            direction: encodeURIComponent(req.direction),
+            direction: req.direction,
             mode: req.mode,
-            url: encodeURIComponent(req.url),
+            url: req.url,
           },
         }
       );
@@ -374,7 +374,7 @@ export const useUpdateTrainPosURLMutation = (
         "/api/updateTrainPosURL", {
           params: {
             code: req.stationCode,
-            url: encodeURIComponent(req.url),
+            url: req.url,
           },
         }
       );
