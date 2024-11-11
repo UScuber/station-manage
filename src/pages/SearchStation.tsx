@@ -85,7 +85,7 @@ const StationGroupInfo = (
 
   return (
     <Box sx={{ mb: 4 }}>
-      <Box sx={{ mb: 0.5 }}>
+      <Box sx={{ mb: 0.5, display: "flex" }}>
         <Button
           component={Link}
           to={"/stationGroup/" + code}
@@ -95,11 +95,11 @@ const StationGroupInfo = (
           <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
           <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
         </Button>
+        {distance && (
+          <Typography variant="h6" sx={{ fontSize: 18, ml: 1 }}>{distance.toFixed(3)}[km]</Typography>
+        )}
       </Box>
 
-      {distance && (
-        <Typography variant="h6" sx={{ fontSize: 18 }}>{distance.toFixed(3)}[km]</Typography>
-      )}
       {infos.map(info => (
         <StationComponent info={info} key={info.stationCode} />
       ))}

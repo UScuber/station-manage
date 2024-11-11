@@ -46,7 +46,7 @@ const Row = (
   return (
     <>
       <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
-        <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0 }}>
+        <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0, width: "50%" }}>
           <CustomLink
             to={"/stationGroup/" + info.stationGroupCode}
           >
@@ -73,32 +73,32 @@ const Row = (
             </IconButton>
           </TableCell>
         </>)}
-        </TableRow>
-        {latestDate && (
-          <TableRow>
-            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-              <Collapse in={open} timeout="auto" unmountOnExit>
-                <Box sx={{ margin: 1 }}>
-                  <Typography variant="h6" gutterBottom component="div">History</Typography>
-                  <Table size="small" aria-label="purchases">
-                    <TableHead>
+      </TableRow>
+      {latestDate && (
+        <TableRow>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <Box sx={{ margin: 1 }}>
+                <Typography variant="h6" gutterBottom component="div">History</Typography>
+                <Table size="small" aria-label="purchases">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {latestDate?.date && (
                       <TableRow>
-                        <TableCell>Date</TableCell>
+                        <TableCell>{getDateString(latestDate.date)}</TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {latestDate?.date && (
-                        <TableRow>
-                          <TableCell>{getDateString(latestDate.date)}</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </Box>
-              </Collapse>
-            </TableCell>
-          </TableRow>
-        )}
+                    )}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Collapse>
+          </TableCell>
+        </TableRow>
+      )}
     </>
   );
 };
@@ -221,12 +221,23 @@ const StationList = () => {
       <TableContainer component={Paper}>
         <Table aria-label="collapsible table" size="medium">
           <TableHead>
-            <TableRow>
-              <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>駅名</TableCell>
-              <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>都道府県</TableCell>
-              {isAuthenticated && <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>立ち寄り</TableCell>}
-              {isAuthenticated && <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>詳細</TableCell>}
-            </TableRow>
+            {isAuthenticated ? (
+              <TableRow>
+                <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>駅名</TableCell>
+                <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>都道府県</TableCell>
+                <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>立ち寄り</TableCell>
+                <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>詳細</TableCell>
+                {/* <TableCell sx={{ flex: 1 }}>駅名</TableCell>
+                <TableCell sx={{ minWidth: 88 }}>都道府県</TableCell>
+                <TableCell sx={{ minWidth: 88 }}>立ち寄り</TableCell>
+                <TableCell sx={{ minWidth: 60 }}>詳細</TableCell> */}
+              </TableRow>
+            ) : (
+              <TableRow>
+                <TableCell sx={{ width: "70%" }}>駅名</TableCell>
+                <TableCell sx={{ width: "30%" }}>都道府県</TableCell>
+              </TableRow>
+            )}
           </TableHead>
           <TableBody>
             {stationGroupsInfo.map((item, idx) => (
