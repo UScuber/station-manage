@@ -125,7 +125,7 @@ const CustomTabPanel = (
 
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
@@ -210,6 +210,10 @@ const StationInfo = () => {
       document.removeEventListener("keyup", handleKeyUp);
     };
   }, [handleKeyDown, handleKeyUp]);
+
+  useEffect(() => {
+    if(!isAuthenticated) setTabValue(3);
+  }, [isLoading]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -341,9 +345,9 @@ const StationInfo = () => {
 
       <Box sx={{ mb: 2 }} />
 
-      <Box>
+      <Box sx={{ minHeight: 600 }}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} >
             <Tab label="リンク" disabled={!isAuthenticated} />
             <Tab label="履歴" disabled={!isAuthenticated} />
             <Tab label="カスタム" disabled={!isAuthenticated} />

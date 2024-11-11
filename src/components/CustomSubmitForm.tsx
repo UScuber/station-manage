@@ -8,6 +8,7 @@ import {
   Radio,
   FormControl,
   FormHelperText,
+  Box,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -51,11 +52,8 @@ export const CustomSubmitFormStation = (
   };
 
   return (
-    <Collapser
-      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
-      sx={{ mb: 2 }}
-      collapseSx={{ mx: 2 }}
-    >
+    <Box>
+      <Typography variant="h6" sx={{ fontSize: 16, mb: 2 }}>任意の時間を指定して登録できます</Typography>
       <form onSubmit={onSubmitForm}>
         <FormControl error={error} variant="standard" required>
           <LocalizationProvider
@@ -97,7 +95,7 @@ export const CustomSubmitFormStation = (
           <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
         </FormControl>
       </form>
-    </Collapser>
+    </Box>
   );
 };
 
