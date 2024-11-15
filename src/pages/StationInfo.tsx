@@ -212,7 +212,7 @@ const StationInfo = () => {
   }, [handleKeyDown, handleKeyUp]);
 
   useEffect(() => {
-    if(!isAuthenticated) setTabValue(3);
+    if(!isLoading && !isAuthenticated) setTabValue(3);
   }, [isLoading]);
 
   useEffect(() => {
