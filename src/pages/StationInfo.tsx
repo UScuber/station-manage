@@ -305,11 +305,11 @@ const StationInfo = () => {
           <Box sx={{ mx: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Typography variant="h6">乗降:&nbsp;</Typography>
-              <AroundTime date={latestDate?.getDate} invalidMsg="なし" />
+              <AroundTime date={latestDate?.getDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
             </Box>
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Typography variant="h6">通過:&nbsp;</Typography>
-              <AroundTime date={latestDate?.passDate} invalidMsg="なし" />
+              <AroundTime date={latestDate?.passDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
             </Box>
           </Box>
         </>)}

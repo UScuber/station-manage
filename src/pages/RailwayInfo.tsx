@@ -47,8 +47,12 @@ const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationD
       </Box>
 
       {isAuthenticated && (<>
-        <Typography variant="h6" sx={{ fontSize: 14 }}>乗降:<AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={14} /></Typography>
-        <Typography variant="h6" sx={{ fontSize: 14 }}>通過:<AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={14} /></Typography>
+        <Typography variant="h6" sx={{ fontSize: 14 }}>
+          乗降:<AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={14} isLoading={!latestDate} />
+        </Typography>
+        <Typography variant="h6" sx={{ fontSize: 14 }}>
+          通過:<AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={14} isLoading={!latestDate} />
+        </Typography>
       </>)}
     </Button>
   );

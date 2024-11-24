@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Typography } from "@mui/material";
+import { Button, CircularProgress, Typography } from "@mui/material";
 import getDateString from "../utils/getDateString";
 
 
@@ -28,12 +28,13 @@ const getAroundTime = (date: Date | undefined, invalidMsg: string): string => {
 };
 
 const AroundTime = (
-  { date, invalidMsg, disableMinute, fontSize }
+  { date, invalidMsg, disableMinute, fontSize, isLoading }
   :{
     date: Date | undefined,
     invalidMsg: string,
     disableMinute?: boolean,
     fontSize?: number | string,
+    isLoading?: boolean,
   }
 ): JSX.Element => {
   const [isDisplayDate, setIsDisplayDate] = useState(false);
@@ -48,9 +49,13 @@ const AroundTime = (
       onClick={() => setIsDisplayDate(true)}
       sx={{ display: "inline-block", minWidth: 40, padding: 0 }}
     >
-      <Typography variant="h6" sx={{ lineHeight: 1, fontSize: fontSize }}>
-        {isDisplayDate && date ? getDateString(date, disableMinute) : getAroundTime(date, invalidMsg)}
-      </Typography>
+      {isLoading ? (
+        <CircularProgress color="inherit" size={24} />
+      ) : (
+        <Typography variant="h6" sx={{ lineHeight: 1, fontSize: fontSize }}>
+          {isDisplayDate && date ? getDateString(date, disableMinute) : getAroundTime(date, invalidMsg)}
+        </Typography>
+      )}
     </Button>
   );
 };

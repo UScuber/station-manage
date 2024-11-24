@@ -61,7 +61,7 @@ const Row = (
         </TableCell>
         {latestDate && (<>
           <TableCell align="center" sx={{ paddingX: 0.5 }}>
-            <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14}/>
+            <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14} />
           </TableCell>
           <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>
             <IconButton

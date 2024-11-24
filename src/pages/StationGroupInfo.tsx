@@ -77,8 +77,12 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
       </Typography>
 
       {(latestDate || latestDateQuery.isLoading) && (<>
-        <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={latestDate?.getDate} invalidMsg="なし" /></Typography>
-        <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={latestDate?.passDate} invalidMsg="なし" /></Typography>
+        <Typography variant="h6" sx={{ fontSize: 18 }}>
+          乗降: <AroundTime date={latestDate?.getDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
+        </Typography>
+        <Typography variant="h6" sx={{ fontSize: 18 }}>
+          通過: <AroundTime date={latestDate?.passDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
+        </Typography>
       </>)}
     </Button>
   );
@@ -170,7 +174,7 @@ const StationGroupInfo = () => {
 
       {isAuthenticated && (<>
         <Typography variant="h6" sx={{ display: "inline-block" }}>
-          立ち寄り: <AroundTime date={latestDate?.date} invalidMsg="なし" />
+          立ち寄り: <AroundTime date={latestDate?.date} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
         </Typography>
 
         <AccessButton
