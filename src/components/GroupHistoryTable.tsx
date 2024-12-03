@@ -23,13 +23,12 @@ import getDateString from "../utils/getDateString";
 const stateName = ["乗降", "通過", "立ち寄り"];
 
 
-const GroupHistoryTable = ({ stationGroupCode }: { stationGroupCode: number }) => {
-  const [open, setOpen] = useState(false);
+const GroupHistoryTable = ({ stationGroupCode, visible }: { stationGroupCode: number, visible: boolean }) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
   
-  const stationGroupAllHistoryQuery = useStationGroupAllHistory(open ? stationGroupCode : undefined,
+  const stationGroupAllHistoryQuery = useStationGroupAllHistory(visible ? stationGroupCode : undefined,
     (data: StationHistoryData[]) => {
       setDeleteLoading(false);
     }
@@ -60,15 +59,8 @@ const GroupHistoryTable = ({ stationGroupCode }: { stationGroupCode: number }) =
 
 
   return (
-    <Collapser
-      buttonText={
-        <Typography variant="h6" sx={{ display: "inline" }}>
-          履歴 {stationGroupAllHistory ? `(${stationGroupAllHistory.length}件)` : ""}
-        </Typography>
-      }
-      open={open}
-      onClick={() => setOpen(!open)}
-    >
+    <Box>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>履歴 {stationGroupAllHistory?.length ?? ""}件</Typography>
       <Box sx={{ margin: 1 }}>
         <Typography variant="h6" component="div">History</Typography>
 
@@ -122,7 +114,7 @@ const GroupHistoryTable = ({ stationGroupCode }: { stationGroupCode: number }) =
         title="データを削除しますか"
         descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
       />
-    </Collapser>
+    </Box>
   );
 };
 

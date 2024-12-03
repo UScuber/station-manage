@@ -6,7 +6,8 @@ import {
   Checkbox,
   CircularProgress,
   Container,
-  Divider,
+  Tab,
+  Tabs,
   Typography,
 } from "@mui/material";
 import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
@@ -47,6 +48,28 @@ const ChangeMapCenter = ({ position }: { position: LatLng }) => {
   const map = useMap();
   map.panTo(position);
   return null;
+};
+
+
+const CustomTabPanel = (
+  { children, value, index, padding }
+  :{
+    children?: React.ReactNode,
+    index: number,
+    value: number,
+    padding?: number,
+  }
+) => {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`tabpanel-${index}`}
+      aria-labelledby={`tab-${index}`}
+    >
+      {value === index && <Box sx={{ p: padding ?? 2 }}>{children}</Box>}
+    </div>
+  );
 };
 
 
@@ -96,6 +119,7 @@ const StationGroupInfo = () => {
 
   const [loading, setLoading] = useState(false);
   const [disableTooltip, setDisableTooltip] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
 
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
@@ -108,7 +132,7 @@ const StationGroupInfo = () => {
   const latestDate = latestDateQuery.data;
 
   const nearStationsQuery = useSearchKNearestStationGroups(
-    groupStationData ? { lat: groupStationData.latitude, lng: groupStationData.longitude } : undefined,
+    (groupStationData && tabValue === 3) ? { lat: groupStationData.latitude, lng: groupStationData.longitude } : undefined,
     5
   );
   const nearStations = nearStationsQuery.data;
@@ -187,60 +211,71 @@ const StationGroupInfo = () => {
         />
       </>)}
 
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6">路線一覧</Typography>
-        <Divider sx={{ mb: 1 }} />
-
-        {stationList?.map(item => (
-          <StationItem info={item} key={item.stationCode} />
-        ))}
-      </Box>
-
-      <Typography variant="h5">詳細</Typography>
-      <Divider sx={{ mb: 1 }} />
-
-      {isAuthenticated && (
-        <Box sx={{ mb: 2 }}>
-          <GroupHistoryTable stationGroupCode={stationGroupCode} />
-
-          <CustomSubmitFormGroup onSubmit={handleSubmitCustomDate} />
+      <Box sx={{ minHeight: 600 }}>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} >
+            <Tab label="路線一覧" />
+            <Tab label="履歴" disabled={!isAuthenticated} />
+            <Tab label="カスタム" disabled={!isAuthenticated} />
+            <Tab label="マップ" />
+          </Tabs>
         </Box>
-      )}
 
-      <Box sx={{ textAlign: "right" }}>
-        <Button
-          color="inherit"
-          onClick={() => setDisableTooltip(!disableTooltip)}
-          sx={{ padding: 0, display: "inline-block" }}
-        >
-          <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
-          <Checkbox
-          size="small"
-          checked={disableTooltip}
-          sx={{ padding: 0 }}
-        />
-        </Button>
+        {/* 路線一覧 */}
+        <CustomTabPanel value={tabValue} index={0}>
+          {stationList?.map(item => (
+            <StationItem info={item} key={item.stationCode} />
+          ))}
+        </CustomTabPanel>
+
+        {/* 履歴 */}
+        <CustomTabPanel value={tabValue} index={1}>
+          <GroupHistoryTable stationGroupCode={stationGroupCode} visible={tabValue === 1} />
+        </CustomTabPanel>
+
+        {/* カスタム */}
+        <CustomTabPanel value={tabValue} index={2}>
+          <CustomSubmitFormGroup onSubmit={handleSubmitCustomDate} />
+        </CustomTabPanel>
+
+        {/* マップ */}
+        <CustomTabPanel value={tabValue} index={3}>
+          <Box sx={{ textAlign: "right" }}>
+            <Button
+              color="inherit"
+              onClick={() => setDisableTooltip(!disableTooltip)}
+              sx={{ padding: 0, display: "inline-block" }}
+            >
+              <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
+              <Checkbox
+              size="small"
+              checked={disableTooltip}
+              sx={{ padding: 0 }}
+            />
+            </Button>
+          </Box>
+
+          <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
+            <Marker position={position}>
+              <Popup>
+                <Box sx={{ textAlign: "center" }}>{groupStationData.stationName}</Box>
+              </Popup>
+              <Tooltip direction="bottom" opacity={1} permanent>{groupStationData.stationName}</Tooltip>
+            </Marker>
+            {nearStations && nearStations.filter((_,i) => i).map(item => (
+              <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
+                <Popup>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
+                  </Box>
+                </Popup>
+                {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
+              </Marker>
+            ))}
+            <ChangeMapCenter position={position} />
+          </MapCustom>
+        </CustomTabPanel>
       </Box>
-
-      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
-        <Marker position={position}>
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>{groupStationData?.stationName}</Box>
-          </Popup>
-          <Tooltip direction="bottom" opacity={1} permanent>{groupStationData?.stationName}</Tooltip>
-        </Marker>
-        {nearStations && nearStations.filter((_,i) => i).map(item => (
-          <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
-              </Box>
-            </Popup>
-            {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
-          </Marker>
-        ))}
-        <ChangeMapCenter position={position} />
-      </MapCustom>
     </Container>
   );
 };
