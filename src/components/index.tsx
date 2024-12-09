@@ -9,6 +9,7 @@ export * from "./CustomSubmitForm";
 export { default as GroupHistoryTable } from "./GroupHistoryTable";
 export { default as HistoryListTable } from "./HistoryListTable";
 export * from "./MapCustom";
+export { default as ProgressBar } from "./ProgressBar";
 export { default as RespStationName } from "./RespStationName";
 export { default as StationMapGeojson } from "./StationMapGeojson";
 export { default as TimetableURL } from "./TimetableURL";

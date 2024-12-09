@@ -4,7 +4,6 @@ import {
   Button,
   CircularProgress,
   Container,
-  LinearProgress,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -23,7 +22,7 @@ import {
   useRailwaysInfoByPrefCode,
   useStationsInfoByPrefCode,
 } from "../api";
-import { CustomLink, FitMapZoom, MapCustom } from "../components";
+import { CustomLink, FitMapZoom, MapCustom, ProgressBar } from "../components";
 
 
 const RailwayItem = (
@@ -157,24 +156,9 @@ const PrefectureInfo = () => {
           <Typography variant="h6" sx={{ fontSize: 14 }}>都道府県一覧</Typography>
         </CustomLink>
       </Box>
-      {prefProgress && (
-        <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{
-              fontSize: 14,
-              textAlign: "right",
-            }}
-          >
-            {`${prefProgress.getOrPassStationNum}/${prefProgress.stationNum}`}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={prefProgress.getOrPassStationNum / prefProgress.stationNum * 100}
-          />
-        </Box>
-      )}
+
+      {prefProgress && <ProgressBar progress={prefProgress} sx={{ mb: 2 }} />}
+
       {/* 路線のリスト */}
       <Box>
         {railwayList.map((item, idx) => (

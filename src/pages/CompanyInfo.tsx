@@ -4,7 +4,6 @@ import {
   Button,
   CircularProgress,
   Container,
-  LinearProgress,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -23,6 +22,7 @@ import {
   CustomLink,
   FitMapZoom,
   MapCustom,
+  ProgressBar,
   StationMapGeojson,
 } from "../components";
 
@@ -126,24 +126,7 @@ const CompanyInfo = () => {
         </CustomLink>
       </Box>
 
-      {companyProgress && (
-        <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{
-              fontSize: 14,
-              textAlign: "right",
-            }}
-          >
-            {`${companyProgress.getOrPassStationNum}/${companyProgress.stationNum}`}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={companyProgress.getOrPassStationNum / companyProgress.stationNum * 100}
-          />
-        </Box>
-      )}
+      {companyProgress && <ProgressBar progress={companyProgress} sx={{ mb: 2 }} />}
 
       <Box>
         {railwayList.map((item, idx) => (
