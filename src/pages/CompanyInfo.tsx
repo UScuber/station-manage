@@ -4,6 +4,7 @@ import {
   Button,
   CircularProgress,
   Container,
+  LinearProgress,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -11,6 +12,7 @@ import {
   Railway,
   StationProgress,
   useCompanyInfo,
+  useCompanyProgress,
   useRailPathByCompanyCode,
   useRailwayProgressListByCompanyCode,
   useRailwaysInfoByCompanyCode,
@@ -75,6 +77,8 @@ const CompanyInfo = () => {
 
   const railwayProgressQuery = useRailwayProgressListByCompanyCode(companyCode);
   const railwayProgress = railwayProgressQuery.data;
+  const companyProgressQuery = useCompanyProgress(companyCode);
+  const companyProgress = companyProgressQuery.data;
 
   const stationsQuery = useStationsInfoByCompanyCode(companyCode);
   const stationList = stationsQuery.data;
@@ -114,13 +118,33 @@ const CompanyInfo = () => {
 
   return (
     <Container>
-      <Box sx={{ mb: 2 }}>
+      <Box>
         <Typography variant="h3">{info.companyName}</Typography>
         <Typography variant="h6" sx={{ fontSize: 16, mb: 0.5 }}>{info.formalName}</Typography>
         <CustomLink to="/company">
           <Typography variant="h6" sx={{ fontSize: 14 }}>会社一覧</Typography>
         </CustomLink>
       </Box>
+
+      {companyProgress && (
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              fontSize: 14,
+              textAlign: "right",
+            }}
+          >
+            {`${companyProgress.getOrPassStationNum}/${companyProgress.stationNum}`}
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={companyProgress.getOrPassStationNum / companyProgress.stationNum * 100}
+          />
+        </Box>
+      )}
+
       <Box>
         {railwayList.map((item, idx) => (
           <RailwayItem
