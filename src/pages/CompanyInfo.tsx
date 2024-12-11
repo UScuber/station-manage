@@ -40,7 +40,12 @@ const RailwayItem = ({ info, progress }: { info: Railway, progress: StationProgr
       sx={{
         display: "block",
         mb: 0.5,
-        background: achieve_rate ? `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)` : "none",
+        background:
+          achieve_rate ?
+          `linear-gradient(to right, ${
+            achieve_rate !== 100 ? theme.palette.access.main : theme.palette.complete.main
+          } ${achieve_rate}%, transparent ${achieve_rate}%)`
+          : "none",
       }}
     >
       <Box sx={{ mb: 1 }}>

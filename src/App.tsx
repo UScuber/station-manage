@@ -27,10 +27,12 @@ import HistoryMap from "./pages/HistoryMap";
 declare module "@mui/material/styles" {
   interface Palette {
     access: Palette["primary"];
+    complete: Palette["primary"];
   }
 
   interface PaletteOptions {
     access?: PaletteOptions["primary"];
+    complete?: PaletteOptions["primary"];
   }
 }
 
@@ -54,10 +56,17 @@ theme = createTheme(theme, {
   palette: {
     access: theme.palette.augmentColor({
       color: {
-        // main: "#cfebd5",
         main: "#d1e3f5",
       },
       name: "access",
+    }),
+    complete: theme.palette.augmentColor({
+      color: {
+        main: "#d6ebdd",
+        light: "#dff0e3",
+        dark: "#cfebd5",
+      },
+      name: "complete",
     }),
   },
 });

@@ -70,7 +70,10 @@ const Row = (
 
   return (
     <TableRow sx={{
-      background: `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)`
+      background:
+        `linear-gradient(to right, ${
+          achieve_rate !== 100 ? theme.palette.access.main : theme.palette.complete.light
+        } ${achieve_rate}%, transparent ${achieve_rate}%)`
     }}>
       <TableCell>
         <CustomLink to={"/railway/" + info.railwayCode}>

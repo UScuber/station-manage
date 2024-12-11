@@ -26,6 +26,7 @@ const CircleProgress = (
         size={size}
         thickness={6}
         value={progress.getOrPassStationNum / progress.stationNum * 100}
+        color={progress.getOrPassStationNum === progress.stationNum ? "success" : "primary"}
         sx={{ position: "absolute", left: 0 }}
       />
       <Typography
