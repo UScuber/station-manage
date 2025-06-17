@@ -4,6 +4,8 @@ import {
   Button,
   CircularProgress,
   Container,
+  Tab,
+  Tabs,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -18,6 +20,7 @@ import {
   useStationsInfoByPrefCode,
 } from "../api";
 import { CustomLink, FitMapZoom, MapCustom, ProgressBar } from "../components";
+import { useState } from "react";
 
 const RailwayItem = ({
   info,
@@ -117,8 +120,33 @@ const RailwayItem = ({
   );
 };
 
+const CustomTabPanel = ({
+  children,
+  value,
+  index,
+  padding,
+}: {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+  padding?: number;
+}) => {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`tabpanel-${index}`}
+      aria-labelledby={`tab-${index}`}
+    >
+      {value === index && <Box sx={{ p: padding ?? 2 }}>{children}</Box>}
+    </div>
+  );
+};
+
 const PrefectureInfo = () => {
   const prefCode = Number(useParams<"prefCode">().prefCode);
+
+  const [tabValue, setTabValue] = useState(0);
 
   const railwaysQuery = useRailwaysInfoByPrefCode(prefCode);
   const railwayList = railwaysQuery.data;
@@ -181,69 +209,90 @@ const PrefectureInfo = () => {
 
       {prefProgress && <ProgressBar progress={prefProgress} sx={{ mb: 2 }} />}
 
-      {/* 路線のリスト */}
-      <Box>
-        {railwayList.map((item, idx) => (
-          <RailwayItem
-            info={item}
-            progress={progressList ? progressList[idx] : undefined}
-            key={item.railwayCode}
-          />
-        ))}
-      </Box>
+      <Box sx={{ mb: 2 }} />
 
-      <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-        {stationList.map((item) => (
-          <FeatureGroup
-            pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }}
-            key={item.stationCode}
+      <Box sx={{ minHeight: 600 }}>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs
+            value={tabValue}
+            onChange={(_, newValue) => setTabValue(newValue)}
           >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/railway/" + item.railwayCode}>
-                  {item.railwayName}
-                </Link>
-              </Box>
-            </Popup>
-            {item.left.map((code) => (
-              <Polyline
-                key={code}
-                weight={8}
-                positions={[
-                  stationsPositionMap[item.stationCode],
-                  stationsPositionMap[code],
-                ]}
-              />
+            <Tab label="路線一覧" />
+            <Tab label="マップ" />
+          </Tabs>
+        </Box>
+
+        {/* 路線一覧 */}
+        <CustomTabPanel value={tabValue} index={0}>
+          {railwayList.map((item, idx) => (
+            <RailwayItem
+              info={item}
+              progress={progressList ? progressList[idx] : undefined}
+              key={item.railwayCode}
+            />
+          ))}
+        </CustomTabPanel>
+
+        {/* マップ */}
+        <CustomTabPanel value={tabValue} index={1}>
+          <MapCustom
+            center={centerPosition}
+            zoom={10}
+            style={{ height: "80vh" }}
+          >
+            {stationList.map((item) => (
+              <FeatureGroup
+                pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }}
+                key={item.stationCode}
+              >
+                <Popup>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Link to={"/railway/" + item.railwayCode}>
+                      {item.railwayName}
+                    </Link>
+                  </Box>
+                </Popup>
+                {item.left.map((code) => (
+                  <Polyline
+                    key={code}
+                    weight={8}
+                    positions={[
+                      stationsPositionMap[item.stationCode],
+                      stationsPositionMap[code],
+                    ]}
+                  />
+                ))}
+              </FeatureGroup>
             ))}
-          </FeatureGroup>
-        ))}
-        {stationList.map((item) => (
-          <CircleMarker
-            center={[item.latitude, item.longitude]}
-            pathOptions={{
-              color: "black",
-              weight: 2,
-              fillColor: "white",
-              fillOpacity: 1,
-            }}
-            radius={6}
-            key={item.stationCode}
-          >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/station/" + item.stationCode}>
-                  {item.stationName}
-                </Link>
-              </Box>
-            </Popup>
-          </CircleMarker>
-        ))}
-        <FitMapZoom
-          positions={Object.keys(stationsPositionMap).map(
-            (key) => stationsPositionMap[Number(key)]
-          )}
-        />
-      </MapCustom>
+            {stationList.map((item) => (
+              <CircleMarker
+                center={[item.latitude, item.longitude]}
+                pathOptions={{
+                  color: "black",
+                  weight: 2,
+                  fillColor: "white",
+                  fillOpacity: 1,
+                }}
+                radius={6}
+                key={item.stationCode}
+              >
+                <Popup>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Link to={"/station/" + item.stationCode}>
+                      {item.stationName}
+                    </Link>
+                  </Box>
+                </Popup>
+              </CircleMarker>
+            ))}
+            <FitMapZoom
+              positions={Object.keys(stationsPositionMap).map(
+                (key) => stationsPositionMap[Number(key)]
+              )}
+            />
+          </MapCustom>
+        </CustomTabPanel>
+      </Box>
     </Container>
   );
 };
