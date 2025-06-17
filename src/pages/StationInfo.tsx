@@ -39,7 +39,6 @@ import {
   TimetableURL,
 } from "../components";
 
-
 const DefaultIcon = Leaflet.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
@@ -48,13 +47,11 @@ const DefaultIcon = Leaflet.icon({
 });
 Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
-
 const ChangeMapCenter = ({ position }: { position: LatLng }) => {
   const map = useMap();
   map.panTo(position);
   return null;
 };
-
 
 const NextStationName = styled(Typography)(({ theme }) => ({
   fontSize: 20,
@@ -74,7 +71,7 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
   const station = useStationInfo(code);
   const info = station.data;
 
-  if(!info){
+  if (!info) {
     return (
       <Box>
         <CircularProgress />
@@ -97,19 +94,17 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
   );
 };
 
-
-
-
-
-const CustomTabPanel = (
-  { children, value, index, padding }
-  :{
-    children?: React.ReactNode,
-    index: number,
-    value: number,
-    padding?: number,
-  }
-) => {
+const CustomTabPanel = ({
+  children,
+  value,
+  index,
+  padding,
+}: {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+  padding?: number;
+}) => {
   return (
     <div
       role="tabpanel"
@@ -122,7 +117,6 @@ const CustomTabPanel = (
   );
 };
 
-
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
   const { isAuthenticated, isLoading } = useAuth();
@@ -134,13 +128,16 @@ const StationInfo = () => {
 
   const station = useStationInfo(stationCode);
   const info = station.data;
-  const latestDateQuery = useLatestStationHistory(stationCode, (data: StationDate) => {
-    if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
-      setGetLoading(false);
-    }else{
-      setPassLoading(false);
+  const latestDateQuery = useLatestStationHistory(
+    stationCode,
+    (data: StationDate) => {
+      if ((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))) {
+        setGetLoading(false);
+      } else {
+        setPassLoading(false);
+      }
     }
-  });
+  );
   const latestDate = latestDateQuery.data;
 
   const nearStationsQuery = useSearchKNearestStationGroups(
@@ -151,7 +148,9 @@ const StationInfo = () => {
 
   const stationsListQuery = useStationsInfoByRailwayCode(info?.railwayCode);
   const stationList = stationsListQuery.data;
-  const railwayPathQuery = useRailPath(tabValue === 3 ? info?.railwayCode : undefined);
+  const railwayPathQuery = useRailPath(
+    tabValue === 3 ? info?.railwayCode : undefined
+  );
   const railwayPath = railwayPathQuery.data;
 
   const mutation = useSendStationStateMutation();
@@ -161,9 +160,9 @@ const StationInfo = () => {
   const leftKeyRef = useRef(false);
 
   const handleSubmit = (state: number) => {
-    if(!info) return;
+    if (!info) return;
 
-    if(state === RecordState.Get) setGetLoading(true);
+    if (state === RecordState.Get) setGetLoading(true);
     else setPassLoading(true);
 
     mutation.mutate({
@@ -175,31 +174,44 @@ const StationInfo = () => {
   };
 
   const handleSubmitCustomDate = (date: Date, state: RecordState) => {
-    if(!info) return;
+    if (!info) return;
 
     mutation.mutate({
       stationCode: stationCode,
       stationGroupCode: info.stationGroupCode,
       state: Number(state),
       date: date,
-    })
+    });
   };
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if(!info) return;
-    if(info.left.length >= 1 && !e.altKey && e.key === "ArrowLeft" && !leftKeyRef.current){
-      navigation("/station/" + info.left[0]);
-      leftKeyRef.current = true;
-    }
-    if(info.right.length >= 1 && !e.altKey && e.key === "ArrowRight" && !rightKeyRef.current){
-      navigation("/station/" + info.right[0]);
-      rightKeyRef.current = true;
-    }
-  }, [info, navigation]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!info) return;
+      if (
+        info.left.length >= 1 &&
+        !e.altKey &&
+        e.key === "ArrowLeft" &&
+        !leftKeyRef.current
+      ) {
+        navigation("/station/" + info.left[0]);
+        leftKeyRef.current = true;
+      }
+      if (
+        info.right.length >= 1 &&
+        !e.altKey &&
+        e.key === "ArrowRight" &&
+        !rightKeyRef.current
+      ) {
+        navigation("/station/" + info.right[0]);
+        rightKeyRef.current = true;
+      }
+    },
+    [info, navigation]
+  );
 
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    if(e.key === "ArrowLeft") leftKeyRef.current = false;
-    if(e.key === "ArrowRight") rightKeyRef.current = false;
+    if (e.key === "ArrowLeft") leftKeyRef.current = false;
+    if (e.key === "ArrowRight") rightKeyRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -212,15 +224,14 @@ const StationInfo = () => {
   }, [handleKeyDown, handleKeyUp]);
 
   useEffect(() => {
-    if(!isLoading && !isAuthenticated) setTabValue(3);
+    if (!isLoading && !isAuthenticated) setTabValue(3);
   }, [isLoading]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-
-  if(station.isError){
+  if (station.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -228,7 +239,7 @@ const StationInfo = () => {
     );
   }
 
-  if(!info){
+  if (!info) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -237,24 +248,36 @@ const StationInfo = () => {
     );
   }
 
-  const lastAccessTime = (latestDate && (latestDate.getDate ?? 0) > (latestDate.passDate ?? 0)) ? latestDate.getDate : latestDate?.passDate;
+  const lastAccessTime =
+    latestDate && (latestDate.getDate ?? 0) > (latestDate.passDate ?? 0)
+      ? latestDate.getDate
+      : latestDate?.passDate;
   const position = new LatLng(info.latitude, info.longitude);
 
   return (
     <Container>
       <Box maxWidth="sm" sx={{ margin: "auto" }}>
         <Box sx={{ textAlign: "center" }}>
-          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{info.stationName}</RespStationName>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>
+            {info.stationName}
+          </RespStationName>
           <RespStationName variant="h6">{info.kana}</RespStationName>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            mb: 2,
+            height: "120px",
+          }}
+        >
           <Box sx={{ textAlign: "left" }}>
-            {info.left.map(code => (
+            {info.left.map((code) => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
           <Box sx={{ textAlign: "right" }}>
-            {info.right.map(code => (
+            {info.right.map((code) => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
@@ -277,7 +300,12 @@ const StationInfo = () => {
             color="inherit"
             sx={{ padding: 0 }}
           >
-            <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
+            <Typography
+              variant="h6"
+              sx={{ fontSize: 15, display: "inline-block" }}
+            >
+              {info.railwayCompany}
+            </Typography>
           </Button>
           <Button
             component={Link}
@@ -300,19 +328,31 @@ const StationInfo = () => {
           </Button>
         </Box>
 
-        {isAuthenticated && (<>
-          <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
-          <Box sx={{ mx: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Typography variant="h6">乗降:&nbsp;</Typography>
-              <AroundTime date={latestDate?.getDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
+        {isAuthenticated && (
+          <>
+            <Typography variant="h6" sx={{ color: "gray" }}>
+              最終アクセス:
+            </Typography>
+            <Box sx={{ mx: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography variant="h6">乗降:&nbsp;</Typography>
+                <AroundTime
+                  date={latestDate?.getDate}
+                  invalidMsg="なし"
+                  isLoading={latestDateQuery.isLoading}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography variant="h6">通過:&nbsp;</Typography>
+                <AroundTime
+                  date={latestDate?.passDate}
+                  invalidMsg="なし"
+                  isLoading={latestDateQuery.isLoading}
+                />
+              </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Typography variant="h6">通過:&nbsp;</Typography>
-              <AroundTime date={latestDate?.passDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
-            </Box>
-          </Box>
-        </>)}
+          </>
+        )}
       </Box>
 
       <Box sx={{ mb: 2 }}>
@@ -321,14 +361,14 @@ const StationInfo = () => {
             <AccessButton
               text="乗降"
               loading={getLoading}
-              timeLimit={60*3}
+              timeLimit={60 * 3}
               accessedTime={lastAccessTime}
               onClick={() => handleSubmit(RecordState.Get)}
             />
             <AccessButton
               text="通過"
               loading={passLoading}
-              timeLimit={60*3}
+              timeLimit={60 * 3}
               accessedTime={lastAccessTime}
               onClick={() => handleSubmit(RecordState.Pass)}
             />
@@ -347,7 +387,10 @@ const StationInfo = () => {
 
       <Box sx={{ minHeight: 600 }}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} >
+          <Tabs
+            value={tabValue}
+            onChange={(_, newValue) => setTabValue(newValue)}
+          >
             <Tab label="リンク" disabled={!isAuthenticated} />
             <Tab label="履歴" disabled={!isAuthenticated} />
             <Tab label="カスタム" disabled={!isAuthenticated} />
@@ -357,17 +400,26 @@ const StationInfo = () => {
 
         {/* リンク */}
         <CustomTabPanel value={tabValue} index={0}>
-          {isAuthenticated && <TimetableURL info={info} visible={tabValue === 0} />}
+          {isAuthenticated && (
+            <TimetableURL info={info} visible={tabValue === 0} />
+          )}
         </CustomTabPanel>
 
         {/* 履歴 */}
         <CustomTabPanel value={tabValue} index={1}>
-          {isAuthenticated && <HistoryListTable stationCode={stationCode} visible={tabValue === 1} />}
+          {isAuthenticated && (
+            <HistoryListTable
+              stationCode={stationCode}
+              visible={tabValue === 1}
+            />
+          )}
         </CustomTabPanel>
 
         {/* カスタム */}
         <CustomTabPanel value={tabValue} index={2}>
-          {isAuthenticated && <CustomSubmitFormStation onSubmit={handleSubmitCustomDate} />}
+          {isAuthenticated && (
+            <CustomSubmitFormStation onSubmit={handleSubmitCustomDate} />
+          )}
         </CustomTabPanel>
 
         {/* マップ */}
@@ -378,7 +430,12 @@ const StationInfo = () => {
               onClick={() => setDisableTooltip(!disableTooltip)}
               sx={{ padding: 0, color: "gray", display: "inline-block" }}
             >
-              <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontSize: 12, display: "inline-block" }}
+              >
+                駅名を非表示
+              </Typography>
               <Checkbox
                 size="small"
                 checked={disableTooltip}
@@ -389,24 +446,41 @@ const StationInfo = () => {
 
           <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
             {stationList && railwayPath && (
-              <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
+              <StationMapGeojson
+                railwayPath={railwayPath}
+                stationList={stationList}
+              />
             )}
             <Marker position={position}>
               <Popup>
                 <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
               </Popup>
-              <Tooltip direction="bottom" opacity={1} permanent>{info.stationName}</Tooltip>
+              <Tooltip direction="bottom" opacity={1} permanent>
+                {info.stationName}
+              </Tooltip>
             </Marker>
-            {nearStations && nearStations.filter((_,i) => i).map(item => (
-              <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
-                <Popup>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
-                  </Box>
-                </Popup>
-                {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
-              </Marker>
-            ))}
+            {nearStations &&
+              nearStations
+                .filter((_, i) => i)
+                .map((item) => (
+                  <Marker
+                    position={[item.latitude, item.longitude]}
+                    key={item.stationGroupCode}
+                  >
+                    <Popup>
+                      <Box sx={{ textAlign: "center" }}>
+                        <Link to={"/stationGroup/" + item.stationGroupCode}>
+                          {item.stationName}
+                        </Link>
+                      </Box>
+                    </Popup>
+                    {!disableTooltip && (
+                      <Tooltip direction="bottom" opacity={1} permanent>
+                        {item.stationName}
+                      </Tooltip>
+                    )}
+                  </Marker>
+                ))}
             <ChangeMapCenter position={position} />
           </MapCustom>
         </CustomTabPanel>

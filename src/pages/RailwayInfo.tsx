@@ -25,8 +25,13 @@ import {
   StationMapGeojson,
 } from "../components";
 
-
-const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationDate | undefined }): JSX.Element => {
+const StationItem = ({
+  info,
+  latestDate,
+}: {
+  info: Station;
+  latestDate: StationDate | undefined;
+}): JSX.Element => {
   const { isAuthenticated } = useAuth();
 
   return (
@@ -38,26 +43,42 @@ const StationItem = ({ info, latestDate }: { info: Station, latestDate: StationD
       sx={{
         display: "block",
         mb: 0.5,
-        bgcolor: (latestDate?.getDate || latestDate?.passDate) ? "access.main" : "none",
+        bgcolor:
+          latestDate?.getDate || latestDate?.passDate ? "access.main" : "none",
       }}
     >
       <Box sx={{ mb: 1 }}>
         <Typography variant="h6">{info.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 10, lineHeight: 1 }}>{info.kana}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 10, lineHeight: 1 }}>
+          {info.kana}
+        </Typography>
       </Box>
 
-      {isAuthenticated && (<>
-        <Typography variant="h6" sx={{ fontSize: 14 }}>
-          乗降:<AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={14} isLoading={!latestDate} />
-        </Typography>
-        <Typography variant="h6" sx={{ fontSize: 14 }}>
-          通過:<AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={14} isLoading={!latestDate} />
-        </Typography>
-      </>)}
+      {isAuthenticated && (
+        <>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            乗降:
+            <AroundTime
+              date={latestDate?.getDate}
+              invalidMsg="なし"
+              fontSize={14}
+              isLoading={!latestDate}
+            />
+          </Typography>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            通過:
+            <AroundTime
+              date={latestDate?.passDate}
+              invalidMsg="なし"
+              fontSize={14}
+              isLoading={!latestDate}
+            />
+          </Typography>
+        </>
+      )}
     </Button>
   );
 };
-
 
 const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
@@ -67,7 +88,8 @@ const RailwayInfo = () => {
 
   const stationsQuery = useStationsInfoByRailwayCode(railwayCode);
   const stationList = stationsQuery.data;
-  const latestHistoryListQuery = useLatestStationHistoryListByRailwayCode(railwayCode);
+  const latestHistoryListQuery =
+    useLatestStationHistoryListByRailwayCode(railwayCode);
   const latestHistoryList = latestHistoryListQuery.data;
 
   const railwayProgressQuery = useRailwayProgress(railwayCode);
@@ -76,7 +98,7 @@ const RailwayInfo = () => {
   const railwayPathQuery = useRailPath(railwayCode);
   const railwayPath = railwayPathQuery.data;
 
-  if(railway.isError || stationsQuery.isError){
+  if (railway.isError || stationsQuery.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -84,7 +106,7 @@ const RailwayInfo = () => {
     );
   }
 
-  if(!info || !stationList){
+  if (!info || !stationList) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -93,14 +115,17 @@ const RailwayInfo = () => {
     );
   }
 
-  const centerPosition = stationList.reduce((totPos, item) => ({
-    lat: totPos.lat + item.latitude / stationList.length,
-    lng: totPos.lng + item.longitude / stationList.length,
-  }), { lat: 0, lng: 0 });
+  const centerPosition = stationList.reduce(
+    (totPos, item) => ({
+      lat: totPos.lat + item.latitude / stationList.length,
+      lng: totPos.lng + item.longitude / stationList.length,
+    }),
+    { lat: 0, lng: 0 }
+  );
 
   const stationsPositionMap = (() => {
-    let codeMap: { [key: number]: { lat: number, lng: number } } = {};
-    stationList?.forEach(item => {
+    let codeMap: { [key: number]: { lat: number; lng: number } } = {};
+    stationList?.forEach((item) => {
       codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
     });
     return codeMap;
@@ -120,7 +145,9 @@ const RailwayInfo = () => {
         >
           {info.railwayName}
         </Typography>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>{info.railwayKana}</Typography>
+        <Typography variant="h6" sx={{ fontSize: 16 }}>
+          {info.railwayKana}
+        </Typography>
 
         <Button
           component={Link}
@@ -132,11 +159,15 @@ const RailwayInfo = () => {
         </Button>
 
         <CustomLink to="/railway">
-          <Typography variant="h6" sx={{ fontSize: 14 }}>路線一覧</Typography>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            路線一覧
+          </Typography>
         </CustomLink>
       </Box>
 
-      {railwayProgress && <ProgressBar progress={railwayProgress} sx={{ mb: 2 }} />}
+      {railwayProgress && (
+        <ProgressBar progress={railwayProgress} sx={{ mb: 2 }} />
+      )}
 
       <Box>
         {stationList.map((item, idx) => (
@@ -148,17 +179,21 @@ const RailwayInfo = () => {
         ))}
       </Box>
 
-
       <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
         {railwayPath && (
-          <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
+          <StationMapGeojson
+            railwayPath={railwayPath}
+            stationList={stationList}
+          />
         )}
         <FitMapZoom
-          positions={Object.keys(stationsPositionMap).map(key => stationsPositionMap[Number(key)])}
+          positions={Object.keys(stationsPositionMap).map(
+            (key) => stationsPositionMap[Number(key)]
+          )}
         />
       </MapCustom>
     </Container>
-  )
+  );
 };
 
 export default RailwayInfo;

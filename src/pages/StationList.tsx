@@ -33,53 +33,68 @@ import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import getDateString from "../utils/getDateString";
 
-
-const Row = (
-  { info, latestDate }
-  :{
-    info: StationGroup,
-    latestDate: StationGroupDate | undefined,
-  }
-): JSX.Element => {
+const Row = ({
+  info,
+  latestDate,
+}: {
+  info: StationGroup;
+  latestDate: StationGroupDate | undefined;
+}): JSX.Element => {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
         <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0, width: "50%" }}>
-          <CustomLink
-            to={"/stationGroup/" + info.stationGroupCode}
-          >
-            <Typography variant="h6" sx={{ fontSize: 15, lineHeight: 1.3 }}>{info.stationName}</Typography>
-            <Typography variant="h6" sx={{ fontSize: 9, lineHeight: 1 }}>{info.kana}</Typography>
+          <CustomLink to={"/stationGroup/" + info.stationGroupCode}>
+            <Typography variant="h6" sx={{ fontSize: 15, lineHeight: 1.3 }}>
+              {info.stationName}
+            </Typography>
+            <Typography variant="h6" sx={{ fontSize: 9, lineHeight: 1 }}>
+              {info.kana}
+            </Typography>
           </CustomLink>
         </TableCell>
         <TableCell align="center" sx={{ paddingX: 0.5 }}>
           <CustomLink color="inherit" to={"/pref/" + info.prefCode}>
-            <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
+            <Typography sx={{ fontSize: 12, maxWidth: 50 }}>
+              {info.prefName}
+            </Typography>
           </CustomLink>
         </TableCell>
-        {latestDate && (<>
-          <TableCell align="center" sx={{ paddingX: 0.5 }}>
-            <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14} />
-          </TableCell>
-          <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>
-            <IconButton
-              aria-label="expand row"
-              size="small"
-              onClick={() => setOpen(!open)}
+        {latestDate && (
+          <>
+            <TableCell align="center" sx={{ paddingX: 0.5 }}>
+              <AroundTime
+                date={latestDate?.date}
+                invalidMsg=""
+                disableMinute
+                fontSize={14}
+              />
+            </TableCell>
+            <TableCell
+              align="center"
+              sx={{ paddingLeft: 0, paddingRight: 1.5 }}
             >
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-          </TableCell>
-        </>)}
+              <IconButton
+                aria-label="expand row"
+                size="small"
+                onClick={() => setOpen(!open)}
+              >
+                {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              </IconButton>
+            </TableCell>
+          </>
+        )}
       </TableRow>
       {latestDate && (
         <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={open} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
-                <Typography variant="h6" gutterBottom component="div">History</Typography>
+                <Typography variant="h6" gutterBottom component="div">
+                  History
+                </Typography>
                 <Table size="small" aria-label="purchases">
                   <TableHead>
                     <TableRow>
@@ -115,15 +130,21 @@ const StationList = () => {
   const stationGroupCount = useSearchStationGroupCount({ name: searchName });
 
   const stationGroupList = useSearchStationGroupList({
-    offset: (page-1) * rowsPerPage,
-    length: Math.min(rowsPerPage, (stationGroupCount.data ?? 1e9) - (page-1) * rowsPerPage),
+    offset: (page - 1) * rowsPerPage,
+    length: Math.min(
+      rowsPerPage,
+      (stationGroupCount.data ?? 1e9) - (page - 1) * rowsPerPage
+    ),
     name: searchName,
   });
   const stationGroupsInfo = stationGroupList.data;
 
   const latestHistoryListQuery = useSearchStationGroupListHistory({
-    offset: (page-1) * rowsPerPage,
-    length: Math.min(rowsPerPage, (stationGroupCount.data ?? 1e9) - (page-1) * rowsPerPage),
+    offset: (page - 1) * rowsPerPage,
+    length: Math.min(
+      rowsPerPage,
+      (stationGroupCount.data ?? 1e9) - (page - 1) * rowsPerPage
+    ),
     name: searchName,
   });
   const latestHistoryList = latestHistoryListQuery.data;
@@ -155,7 +176,7 @@ const StationList = () => {
         page={page}
         count={stationGroupCount.data!}
         rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={[10,25,50,100,200]}
+        rowsPerPageOptions={[10, 25, 50, 100, 200]}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         sx={{ my: 1 }}
@@ -163,8 +184,7 @@ const StationList = () => {
     );
   };
 
-
-  if(stationGroupList.isError || stationGroupCount.isError){
+  if (stationGroupList.isError || stationGroupCount.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -172,7 +192,7 @@ const StationList = () => {
     );
   }
 
-  if(!stationGroupsInfo || stationGroupCount.data === undefined){
+  if (!stationGroupsInfo || stationGroupCount.data === undefined) {
     return (
       <Container>
         <TextField
@@ -217,16 +237,27 @@ const StationList = () => {
         }}
       />
       <CustomPagination />
-      
+
       <TableContainer component={Paper}>
         <Table aria-label="collapsible table" size="medium">
           <TableHead>
             {isAuthenticated ? (
               <TableRow>
-                <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>駅名</TableCell>
-                <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>都道府県</TableCell>
-                <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>立ち寄り</TableCell>
-                <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>詳細</TableCell>
+                <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>
+                  駅名
+                </TableCell>
+                <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>
+                  都道府県
+                </TableCell>
+                <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>
+                  立ち寄り
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{ paddingLeft: 0, paddingRight: 1.5 }}
+                >
+                  詳細
+                </TableCell>
                 {/* <TableCell sx={{ flex: 1 }}>駅名</TableCell>
                 <TableCell sx={{ minWidth: 88 }}>都道府県</TableCell>
                 <TableCell sx={{ minWidth: 88 }}>立ち寄り</TableCell>
@@ -243,7 +274,9 @@ const StationList = () => {
             {stationGroupsInfo.map((item, idx) => (
               <Row
                 info={item}
-                latestDate={latestHistoryList ? latestHistoryList[idx] : undefined}
+                latestDate={
+                  latestHistoryList ? latestHistoryList[idx] : undefined
+                }
                 key={item.stationGroupCode}
               />
             ))}

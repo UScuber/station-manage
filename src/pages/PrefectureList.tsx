@@ -19,22 +19,23 @@ import {
 } from "../api";
 import { CircleProgress, CustomLink } from "../components";
 
-
-const Row = (
-  { info, progress }
-  :{
-    info: Prefecture,
-    progress: StationProgress | undefined,
-  }
-) => {
+const Row = ({
+  info,
+  progress,
+}: {
+  info: Prefecture;
+  progress: StationProgress | undefined;
+}) => {
   const theme = useTheme();
 
-  if(!progress){
+  if (!progress) {
     return (
       <TableRow>
         <TableCell>
           <CustomLink to={"/pref/" + info.prefCode}>
-            <Typography variant="h6" sx={{ fontSize: 14 }}>{info.prefName}</Typography>
+            <Typography variant="h6" sx={{ fontSize: 14 }}>
+              {info.prefName}
+            </Typography>
           </CustomLink>
         </TableCell>
         <TableCell />
@@ -42,15 +43,20 @@ const Row = (
     );
   }
 
-  const achieve_rate = progress.getOrPassStationNum / progress.stationNum * 100;
+  const achieve_rate =
+    (progress.getOrPassStationNum / progress.stationNum) * 100;
 
   return (
-    <TableRow sx={{
-      background: `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)`
-    }}>
+    <TableRow
+      sx={{
+        background: `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)`,
+      }}
+    >
       <TableCell>
         <CustomLink to={"/pref/" + info.prefCode}>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>{info.prefName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            {info.prefName}
+          </Typography>
         </CustomLink>
       </TableCell>
       <TableCell>
@@ -67,8 +73,7 @@ const PrefectureList = () => {
   const progressListQuery = usePrefProgressList();
   const progressList = progressListQuery.data;
 
-
-  if(prefListQuery.isError){
+  if (prefListQuery.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -76,7 +81,7 @@ const PrefectureList = () => {
     );
   }
 
-  if(!prefList){
+  if (!prefList) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>

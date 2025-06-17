@@ -1,9 +1,8 @@
 import { Typography, styled } from "@mui/material";
 
-
 const RespStationName = styled(Typography)(({ theme, variant }) => {
   // 大きい駅名
-  if(variant === "h3"){
+  if (variant === "h3") {
     return {
       fontSize: 45,
       fontWeight: 500,
@@ -14,7 +13,7 @@ const RespStationName = styled(Typography)(({ theme, variant }) => {
     };
   }
   // 駅名
-  if(variant === "h5"){
+  if (variant === "h5") {
     return {
       fontSize: 22,
       [theme.breakpoints.down("md")]: {
@@ -23,7 +22,7 @@ const RespStationName = styled(Typography)(({ theme, variant }) => {
     };
   }
   // 読み仮名
-  if(variant === "h6"){
+  if (variant === "h6") {
     return {
       fontSize: 13,
       [theme.breakpoints.down("md")]: {

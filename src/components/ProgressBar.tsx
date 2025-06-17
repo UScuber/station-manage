@@ -1,14 +1,13 @@
 import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
 import { StationProgress } from "../api";
-import { DeviceThermostatRounded } from "@mui/icons-material";
 
-
-const ProgressBar = (
-  { progress, ...others }: {
-    progress: StationProgress,
-    [key: string]: unknown,
-  }
-) => {
+const ProgressBar = ({
+  progress,
+  ...others
+}: {
+  progress: StationProgress;
+  [key: string]: unknown;
+}) => {
   const theme = useTheme();
   return (
     <Box {...others}>
@@ -24,8 +23,12 @@ const ProgressBar = (
       </Typography>
       <LinearProgress
         variant="determinate"
-        value={progress.getOrPassStationNum / progress.stationNum * 100}
-        color={progress.getOrPassStationNum === progress.stationNum ? "success" : "primary"}
+        value={(progress.getOrPassStationNum / progress.stationNum) * 100}
+        color={
+          progress.getOrPassStationNum === progress.stationNum
+            ? "success"
+            : "primary"
+        }
       />
     </Box>
   );

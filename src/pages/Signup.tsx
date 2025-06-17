@@ -15,10 +15,9 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useAuth } from "../auth";
 
-
 const Signup = () => {
   const [showPass, setShowPass] = useState(false);
-  const handleClickShowPass = () => setShowPass(show => !show);
+  const handleClickShowPass = () => setShowPass((show) => !show);
   const [helperText, setHelperText] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -33,56 +32,72 @@ const Signup = () => {
 
   const navigation = useNavigate();
   const { signup, isAuthenticated } = useAuth();
-  const signupMutation = signup(
-    (authorized) => {
-      if(authorized){
-        navigation("/", { state: { message: "サインアップに成功しました", url: "/" }, replace: true });
-      }else{
-        setHelperText("サインアップに失敗しました");
-      }
-      setLoading(false);
+  const signupMutation = signup((authorized) => {
+    if (authorized) {
+      navigation("/", {
+        state: { message: "サインアップに成功しました", url: "/" },
+        replace: true,
+      });
+    } else {
+      setHelperText("サインアップに失敗しました");
     }
-  );
+    setLoading(false);
+  });
 
   const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if(!emailRef.current || !nameRef.current || !passRef.current || !pass2Ref.current) return;
+    if (
+      !emailRef.current ||
+      !nameRef.current ||
+      !passRef.current ||
+      !pass2Ref.current
+    )
+      return;
 
     let count = 0;
 
     const name = nameRef.current.value;
-    if(name === "") setNameHelperText("ユーザー名を入力してください");
-    else{
+    if (name === "") setNameHelperText("ユーザー名を入力してください");
+    else {
       setNameHelperText("");
       count++;
     }
 
     const email = emailRef.current.value;
-    if(/^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/.test(email)){
+    if (
+      /^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/.test(
+        email
+      )
+    ) {
       setEmailHelperText("");
       count++;
-    }else if(email === "") setEmailHelperText("メールアドレスを入力してください");
+    } else if (email === "")
+      setEmailHelperText("メールアドレスを入力してください");
     else setEmailHelperText("正しいメールアドレスを入力してください");
 
     const pass = passRef.current.value;
-    if(pass === "") setPassHelperText("パスワードを入力してください");
-    else if(pass.length < 8 || pass.length > 1024) setPassHelperText("パスワードは8文字以上1024文字以内です");
-    else if(!/[a-zA-Z0-9!;:@'"\+\{\}\[\]~\|\^\-=\(\)_\?\.,<>#\$%&`\*]+/.test(pass)) setEmailHelperText("使用できるのは英大小文字、半角数字、記号のみです");
-    else{
+    if (pass === "") setPassHelperText("パスワードを入力してください");
+    else if (pass.length < 8 || pass.length > 1024)
+      setPassHelperText("パスワードは8文字以上1024文字以内です");
+    else if (
+      !/[a-zA-Z0-9!;:@'"\+\{\}\[\]~\|\^\-=\(\)_\?\.,<>#\$%&`\*]+/.test(pass)
+    )
+      setEmailHelperText("使用できるのは英大小文字、半角数字、記号のみです");
+    else {
       setPassHelperText("");
       count++;
     }
 
     const pass2 = pass2Ref.current.value;
-    if(pass2 === "") setPass2HelperText("パスワードを入力してください");
-    else if(pass !== pass2) setPass2HelperText("パスワードが一致しません");
-    else{
+    if (pass2 === "") setPass2HelperText("パスワードを入力してください");
+    else if (pass !== pass2) setPass2HelperText("パスワードが一致しません");
+    else {
       setPass2HelperText("");
       count++;
     }
 
     // submit
-    if(count === 4){
+    if (count === 4) {
       setLoading(true);
       signupMutation.mutate({
         userName: name,
@@ -93,7 +108,7 @@ const Signup = () => {
   };
 
   useEffect(() => {
-    if(isAuthenticated){
+    if (isAuthenticated) {
       navigation("/");
     }
   }, [isAuthenticated]);
@@ -144,7 +159,7 @@ const Signup = () => {
                     {showPass ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
-              )
+              ),
             }}
           />
           <TextField
@@ -167,7 +182,7 @@ const Signup = () => {
                     {showPass ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
-              )
+              ),
             }}
           />
           <Button
@@ -176,11 +191,13 @@ const Signup = () => {
             disabled={loading}
             sx={{ mt: 2.5 }}
           >
-            {loading ?
-              <CircularProgress color="inherit" size={30}/>
-              :
-              <Typography variant="h6" sx={{ fontSize: 18 }}>Sign up</Typography>
-            }
+            {loading ? (
+              <CircularProgress color="inherit" size={30} />
+            ) : (
+              <Typography variant="h6" sx={{ fontSize: 18 }}>
+                Sign up
+              </Typography>
+            )}
           </Button>
           <FormHelperText>{helperText}</FormHelperText>
         </FormControl>

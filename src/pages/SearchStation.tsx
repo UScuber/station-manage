@@ -17,7 +17,6 @@ import {
 } from "../api";
 import { AroundTime } from "../components";
 
-
 const StationComponent = ({ info }: { info: Station }): JSX.Element => {
   const latestDateQuery = useLatestStationHistory(info.stationCode);
   const latestDate = latestDateQuery.data;
@@ -31,7 +30,9 @@ const StationComponent = ({ info }: { info: Station }): JSX.Element => {
       key={info.stationCode}
       sx={{ display: "block", mb: 1, ml: 1 }}
     >
-      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>
+        {info.railwayCompany}
+      </Typography>
       <Typography
         variant="h6"
         sx={{
@@ -44,38 +45,50 @@ const StationComponent = ({ info }: { info: Station }): JSX.Element => {
       >
         {info.railwayName}
       </Typography>
-      
-      {(latestDate || latestDateQuery.isLoading) && (<>
-        <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
-          <Typography variant="h6" sx={{ fontSize: 16 }}>乗降:&nbsp;</Typography>
-          <AroundTime date={latestDate?.getDate} invalidMsg="なし" fontSize={16} />
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
-          <Typography variant="h6" sx={{ fontSize: 16 }}>通過:&nbsp;</Typography>
-          <AroundTime date={latestDate?.passDate} invalidMsg="なし" fontSize={16} />
-        </Box>
-      </>)}
+
+      {(latestDate || latestDateQuery.isLoading) && (
+        <>
+          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+            <Typography variant="h6" sx={{ fontSize: 16 }}>
+              乗降:&nbsp;
+            </Typography>
+            <AroundTime
+              date={latestDate?.getDate}
+              invalidMsg="なし"
+              fontSize={16}
+            />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+            <Typography variant="h6" sx={{ fontSize: 16 }}>
+              通過:&nbsp;
+            </Typography>
+            <AroundTime
+              date={latestDate?.passDate}
+              invalidMsg="なし"
+              fontSize={16}
+            />
+          </Box>
+        </>
+      )}
     </Button>
   );
 };
 
-const StationGroupInfo = (
-  { code, distance }
-  :{
-    code: number,
-    distance: number | undefined,
-  }
-): JSX.Element => {
+const StationGroupInfo = ({
+  code,
+  distance,
+}: {
+  code: number;
+  distance: number | undefined;
+}): JSX.Element => {
   const stations = useStationsInfoByGroupCode(code);
   const infos = stations.data;
 
-  if(stations.isError){
-    return (
-      <Typography variant="h5">Error</Typography>
-    );
+  if (stations.isError) {
+    return <Typography variant="h5">Error</Typography>;
   }
 
-  if(!infos){
+  if (!infos) {
     return (
       <Box sx={{ mb: 2 }}>
         <CircularProgress />
@@ -92,15 +105,21 @@ const StationGroupInfo = (
           color="inherit"
           sx={{ display: "inline-block", padding: 0 }}
         >
-          <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>{infos[0].stationName}</Typography>
-          <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>{infos[0].kana}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 22, lineHeight: 1.3 }}>
+            {infos[0].stationName}
+          </Typography>
+          <Typography variant="h6" sx={{ fontSize: 12, lineHeight: 1 }}>
+            {infos[0].kana}
+          </Typography>
         </Button>
         {distance && (
-          <Typography variant="h6" sx={{ fontSize: 18, ml: 1 }}>{distance.toFixed(3)}[km]</Typography>
+          <Typography variant="h6" sx={{ fontSize: 18, ml: 1 }}>
+            {distance.toFixed(3)}[km]
+          </Typography>
         )}
       </Box>
 
-      {infos.map(info => (
+      {infos.map((info) => (
         <StationComponent info={info} key={info.stationCode} />
       ))}
     </Box>
@@ -116,17 +135,21 @@ const SearchStation = () => {
   const groupStations = nearestStationGroups.data;
 
   const getCurrentPosition = () => {
-    navigator.geolocation.getCurrentPosition(position => {
-      const { latitude, longitude } = position.coords;
-      setPosition({ lat: latitude, lng: longitude });
-    }, undefined, { timeout: 3000 });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setPosition({ lat: latitude, lng: longitude });
+      },
+      undefined,
+      { timeout: 3000 }
+    );
   };
 
   const handlePosSearchButton = () => {
     getCurrentPosition();
     // watch
     const watchId = navigator.geolocation.watchPosition(
-      position => {
+      (position) => {
         const { latitude, longitude } = position.coords;
         setPosition({ lat: latitude, lng: longitude });
       },
@@ -138,14 +161,13 @@ const SearchStation = () => {
 
   useEffect(() => {
     isFirstRef.current = false;
-    if("geolocation" in navigator){
+    if ("geolocation" in navigator) {
       getCurrentPosition();
       setAvailable(true);
     }
   }, []);
 
-
-  if(nearestStationGroups.isError){
+  if (nearestStationGroups.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -153,7 +175,7 @@ const SearchStation = () => {
     );
   }
 
-  if(isFirstRef.current || !groupStations){
+  if (isFirstRef.current || !groupStations) {
     return (
       <Container>
         Loading...
@@ -167,15 +189,21 @@ const SearchStation = () => {
       {!isAvailable && <p>Geolocation is not available.</p>}
       {isAvailable && (
         <Box sx={{ mb: 1 }}>
-          <Button variant="outlined" onClick={handlePosSearchButton}>Search</Button>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>緯度: {position?.lat}</Typography>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>経度: {position?.lng}</Typography>
+          <Button variant="outlined" onClick={handlePosSearchButton}>
+            Search
+          </Button>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            緯度: {position?.lat}
+          </Typography>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            経度: {position?.lng}
+          </Typography>
         </Box>
       )}
 
       <Typography variant="h6">List</Typography>
       <Divider sx={{ mb: 1 }} />
-      {groupStations.map(item => (
+      {groupStations.map((item) => (
         <StationGroupInfo
           key={item.stationGroupCode}
           code={item.stationGroupCode}

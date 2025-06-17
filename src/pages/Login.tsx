@@ -15,10 +15,9 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useAuth } from "../auth";
 
-
 const Login = () => {
   const [showPass, setShowPass] = useState(false);
-  const handleClickShowPass = () => setShowPass(show => !show);
+  const handleClickShowPass = () => setShowPass((show) => !show);
   const [helperText, setHelperText] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,41 +28,51 @@ const Login = () => {
 
   const navigation = useNavigate();
   const { login, isAuthenticated } = useAuth();
-  const loginMutation = login(
-    (authorized) => {
-      if(authorized){
-        navigation("/", { state: { message: "ログインに成功しました", url: "/" }, replace: true });
-      }else{
-        setHelperText("ログインに失敗しました");
-      }
-      setLoading(false);
+  const loginMutation = login((authorized) => {
+    if (authorized) {
+      navigation("/", {
+        state: { message: "ログインに成功しました", url: "/" },
+        replace: true,
+      });
+    } else {
+      setHelperText("ログインに失敗しました");
     }
-  );
+    setLoading(false);
+  });
 
   const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if(!emailRef.current || !passRef.current) return;
+    if (!emailRef.current || !passRef.current) return;
 
     let count = 0;
 
     const email = emailRef.current.value;
-    if(/^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/.test(email)){
+    if (
+      /^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/.test(
+        email
+      )
+    ) {
       setEmailHelperText("");
       count++;
-    }else if(email === "") setEmailHelperText("メールアドレスを入力してください");
+    } else if (email === "")
+      setEmailHelperText("メールアドレスを入力してください");
     else setEmailHelperText("正しいメールアドレスを入力してください");
 
     const pass = passRef.current.value;
-    if(pass === "") setPassHelperText("パスワードを入力してください");
-    else if(pass.length < 8 || pass.length > 1024) setPassHelperText("パスワードは8文字以上1024文字以内です");
-    else if(!/[a-zA-Z0-9!;:@'"\+\{\}\[\]~\|\^\-=\(\)_\?\.,<>#\$%&`\*]+/.test(pass)) setEmailHelperText("使用できるのは英大小文字、半角数字、記号のみです");
-    else{
+    if (pass === "") setPassHelperText("パスワードを入力してください");
+    else if (pass.length < 8 || pass.length > 1024)
+      setPassHelperText("パスワードは8文字以上1024文字以内です");
+    else if (
+      !/[a-zA-Z0-9!;:@'"\+\{\}\[\]~\|\^\-=\(\)_\?\.,<>#\$%&`\*]+/.test(pass)
+    )
+      setEmailHelperText("使用できるのは英大小文字、半角数字、記号のみです");
+    else {
       setPassHelperText("");
       count++;
     }
 
     // submit
-    if(count === 2){
+    if (count === 2) {
       setLoading(true);
       loginMutation.mutate({
         userName: "",
@@ -74,7 +83,7 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if(isAuthenticated){
+    if (isAuthenticated) {
       navigation("/");
     }
   }, [isAuthenticated]);
@@ -115,7 +124,7 @@ const Login = () => {
                     {showPass ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
-              )
+              ),
             }}
           />
           <Button
@@ -124,11 +133,13 @@ const Login = () => {
             disabled={loading}
             sx={{ mt: 2.5 }}
           >
-            {loading ?
-              <CircularProgress color="inherit" size={30}/>
-              :
-              <Typography variant="h6" sx={{ fontSize: 18 }}>Log in</Typography>
-            }
+            {loading ? (
+              <CircularProgress color="inherit" size={30} />
+            ) : (
+              <Typography variant="h6" sx={{ fontSize: 18 }}>
+                Log in
+              </Typography>
+            )}
           </Button>
           <FormHelperText>{helperText}</FormHelperText>
         </FormControl>

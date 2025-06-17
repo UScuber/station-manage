@@ -26,29 +26,31 @@ import { BinaryPagination, CircleProgress, CustomLink } from "../components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
-  if(name === input) return 0;
+  if (name === input) return 0;
   const pos = name.indexOf(input);
-  if(pos === -1) return 4;
-  if(pos === 0) return 1;
-  if(pos === name.length - input.length) return 2;
+  if (pos === -1) return 4;
+  if (pos === 0) return 1;
+  if (pos === name.length - input.length) return 2;
   return 3;
 };
 
-const Row = (
-  { info, progress }
-  :{
-    info: Company,
-    progress: StationProgress | undefined,
-  }
-) => {
+const Row = ({
+  info,
+  progress,
+}: {
+  info: Company;
+  progress: StationProgress | undefined;
+}) => {
   const theme = useTheme();
 
-  if(!progress){
+  if (!progress) {
     return (
       <TableRow>
         <TableCell>
           <CustomLink to={"/company/" + info.companyCode}>
-            <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+            <Typography variant="h6" sx={{ fontSize: 14 }}>
+              {info.companyName}
+            </Typography>
           </CustomLink>
         </TableCell>
         <TableCell />
@@ -56,18 +58,24 @@ const Row = (
     );
   }
 
-  const achieve_rate = progress.getOrPassStationNum / progress.stationNum * 100;
+  const achieve_rate =
+    (progress.getOrPassStationNum / progress.stationNum) * 100;
 
   return (
-    <TableRow sx={{
-      background:
-        `linear-gradient(to right, ${
-          achieve_rate !== 100 ? theme.palette.access.main : theme.palette.complete.light
-        } ${achieve_rate}%, transparent ${achieve_rate}%)`
-    }}>
+    <TableRow
+      sx={{
+        background: `linear-gradient(to right, ${
+          achieve_rate !== 100
+            ? theme.palette.access.main
+            : theme.palette.complete.light
+        } ${achieve_rate}%, transparent ${achieve_rate}%)`,
+      }}
+    >
       <TableCell>
         <CustomLink to={"/company/" + info.companyCode}>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>{info.companyName}</Typography>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            {info.companyName}
+          </Typography>
         </CustomLink>
       </TableCell>
       <TableCell>
@@ -87,7 +95,6 @@ const CompanyList = () => {
   const companyProgressListQuery = useCompanyProgressList();
   const companyProgressList = companyProgressListQuery.data;
 
-
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
   };
@@ -100,7 +107,7 @@ const CompanyList = () => {
     setPage(1);
   };
 
-  if(companyListQuery.isError){
+  if (companyListQuery.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -108,7 +115,7 @@ const CompanyList = () => {
     );
   }
 
-  if(!companyList){
+  if (!companyList) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -117,23 +124,25 @@ const CompanyList = () => {
     );
   }
 
-  const filteredCompanies =
-    companyList
-      .map((comp, idx) => ({
-        ...comp,
-        ord: nameSimilarity(comp.companyName, inputName),
-        idx: idx,
-      }))
-      .filter(comp => comp.ord < 4)
-      .sort((a, b) => a.ord - b.ord);
-  const dividedCompanies = filteredCompanies.slice((page-1)*rowsPerPage, page*rowsPerPage);
+  const filteredCompanies = companyList
+    .map((comp, idx) => ({
+      ...comp,
+      ord: nameSimilarity(comp.companyName, inputName),
+      idx: idx,
+    }))
+    .filter((comp) => comp.ord < 4)
+    .sort((a, b) => a.ord - b.ord);
+  const dividedCompanies = filteredCompanies.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
       page={page}
       count={filteredCompanies.length}
       rowsPerPage={rowsPerPage}
-      rowsPerPageOptions={[10,25,50,100,200]}
+      rowsPerPageOptions={[10, 25, 50, 100, 200]}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
       sx={{ my: 1 }}
@@ -168,10 +177,14 @@ const CompanyList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {dividedCompanies.map(item => (
+            {dividedCompanies.map((item) => (
               <Row
                 info={item}
-                progress={companyProgressList ? companyProgressList[item.idx] : undefined}
+                progress={
+                  companyProgressList
+                    ? companyProgressList[item.idx]
+                    : undefined
+                }
                 key={item.companyCode}
               />
             ))}

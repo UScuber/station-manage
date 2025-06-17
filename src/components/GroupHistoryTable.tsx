@@ -16,19 +16,25 @@ import {
   useDeleteStationHistoryMutation,
   useStationGroupAllHistory,
 } from "../api";
-import { Collapser, ConfirmDialog } from "../components";
+import { ConfirmDialog } from "../components";
 import getDateString from "../utils/getDateString";
-
 
 const stateName = ["乗降", "通過", "立ち寄り"];
 
-
-const GroupHistoryTable = ({ stationGroupCode, visible }: { stationGroupCode: number, visible: boolean }) => {
+const GroupHistoryTable = ({
+  stationGroupCode,
+  visible,
+}: {
+  stationGroupCode: number;
+  visible: boolean;
+}) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
-  
-  const stationGroupAllHistoryQuery = useStationGroupAllHistory(visible ? stationGroupCode : undefined,
+  const [deleteHistoryItem, setDeleteHistoryItem] =
+    useState<StationHistoryData>();
+
+  const stationGroupAllHistoryQuery = useStationGroupAllHistory(
+    visible ? stationGroupCode : undefined,
     (data: StationHistoryData[]) => {
       setDeleteLoading(false);
     }
@@ -49,7 +55,7 @@ const GroupHistoryTable = ({ stationGroupCode, visible }: { stationGroupCode: nu
 
   const handleDialogClose = (value: StationHistoryData | undefined) => {
     setDialogOpen(false);
-    if(value) handleDeleteHistory(value);
+    if (value) handleDeleteHistory(value);
   };
 
   const handleClickDeleteButton = (value: StationHistoryData) => {
@@ -57,15 +63,22 @@ const GroupHistoryTable = ({ stationGroupCode, visible }: { stationGroupCode: nu
     setDeleteHistoryItem(value);
   };
 
-
   return (
     <Box>
-      <Typography variant="h6" sx={{ fontSize: 18 }}>履歴 {stationGroupAllHistory?.length ?? ""}件</Typography>
+      <Typography variant="h6" sx={{ fontSize: 18 }}>
+        履歴 {stationGroupAllHistory?.length ?? ""}件
+      </Typography>
       <Box sx={{ margin: 1 }}>
-        <Typography variant="h6" component="div">History</Typography>
+        <Typography variant="h6" component="div">
+          History
+        </Typography>
 
-        {stationGroupAllHistoryQuery.isError && <Typography variant="h6">Error</Typography>}
-        {!stationGroupAllHistoryQuery.isError && !stationGroupAllHistory && <CircularProgress size={25} />}
+        {stationGroupAllHistoryQuery.isError && (
+          <Typography variant="h6">Error</Typography>
+        )}
+        {!stationGroupAllHistoryQuery.isError && !stationGroupAllHistory && (
+          <CircularProgress size={25} />
+        )}
 
         {stationGroupAllHistory && (
           <Table size="small" aria-label="dates">
@@ -78,7 +91,7 @@ const GroupHistoryTable = ({ stationGroupCode, visible }: { stationGroupCode: nu
               </TableRow>
             </TableHead>
             <TableBody>
-              {stationGroupAllHistory.map(history => (
+              {stationGroupAllHistory.map((history) => (
                 <TableRow key={`${history.date}|${history.state}`}>
                   <TableCell>{getDateString(history.date)}</TableCell>
                   <TableCell>{stateName[history.state]}</TableCell>
@@ -112,7 +125,11 @@ const GroupHistoryTable = ({ stationGroupCode, visible }: { stationGroupCode: nu
         selectedValue={deleteHistoryItem}
         onClose={handleDialogClose}
         title="データを削除しますか"
-        descriptionFn={value => `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${stateName[value.state]}`}
+        descriptionFn={(value) =>
+          `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${
+            stateName[value.state]
+          }`
+        }
       />
     </Box>
   );

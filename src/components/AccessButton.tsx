@@ -7,14 +7,13 @@ import {
   Theme,
 } from "@mui/material";
 
-
 type Props = {
-  text: string,
-  loading: boolean,
-  timeLimit: number, // [sec]最終アクセスから一定時間制限する
-  accessedTime: Date | undefined,
-  onClick: () => unknown,
-  sx?: SxProps<Theme>,
+  text: string;
+  loading: boolean;
+  timeLimit: number; // [sec]最終アクセスから一定時間制限する
+  accessedTime: Date | undefined;
+  onClick: () => unknown;
+  sx?: SxProps<Theme>;
 };
 
 const AccessButton = (props: Props): JSX.Element => {
@@ -22,8 +21,10 @@ const AccessButton = (props: Props): JSX.Element => {
   const [disabled, setDisabled] = useState(true);
 
   useEffect(() => {
-    const waitTime = timeLimit*1000 - (new Date().getTime() - new Date(accessedTime ?? 0).getTime());
-    if(waitTime <= 0){
+    const waitTime =
+      timeLimit * 1000 -
+      (new Date().getTime() - new Date(accessedTime ?? 0).getTime());
+    if (waitTime <= 0) {
       setDisabled(false);
       return;
     }
@@ -42,11 +43,11 @@ const AccessButton = (props: Props): JSX.Element => {
       disabled={disabled || loading}
       sx={sx}
     >
-      {loading ?
-        <CircularProgress color="inherit" size={30}/>
-        :
+      {loading ? (
+        <CircularProgress color="inherit" size={30} />
+      ) : (
         <ListItemText primary={text} />
-      }
+      )}
     </Button>
   );
 };

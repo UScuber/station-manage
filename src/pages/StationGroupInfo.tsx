@@ -34,7 +34,6 @@ import {
   RespStationName,
 } from "../components";
 
-
 const DefaultIcon = Leaflet.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
@@ -43,23 +42,23 @@ const DefaultIcon = Leaflet.icon({
 });
 Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
-
 const ChangeMapCenter = ({ position }: { position: LatLng }) => {
   const map = useMap();
   map.panTo(position);
   return null;
 };
 
-
-const CustomTabPanel = (
-  { children, value, index, padding }
-  :{
-    children?: React.ReactNode,
-    index: number,
-    value: number,
-    padding?: number,
-  }
-) => {
+const CustomTabPanel = ({
+  children,
+  value,
+  index,
+  padding,
+}: {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+  padding?: number;
+}) => {
   return (
     <div
       role="tabpanel"
@@ -71,7 +70,6 @@ const CustomTabPanel = (
     </div>
   );
 };
-
 
 const StationItem = ({ info }: { info: Station }): JSX.Element => {
   const latestDateQuery = useLatestStationHistory(info.stationCode);
@@ -85,7 +83,9 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
       color="inherit"
       sx={{ display: "block", mb: 0.5 }}
     >
-      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>
+        {info.railwayCompany}
+      </Typography>
       <Typography
         variant="h6"
         sx={{
@@ -99,22 +99,34 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
         {info.railwayName}
       </Typography>
 
-      {(latestDate || latestDateQuery.isLoading) && (<>
-        <Typography variant="h6" sx={{ fontSize: 18 }}>
-          乗降: <AroundTime date={latestDate?.getDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
-        </Typography>
-        <Typography variant="h6" sx={{ fontSize: 18 }}>
-          通過: <AroundTime date={latestDate?.passDate} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
-        </Typography>
-      </>)}
+      {(latestDate || latestDateQuery.isLoading) && (
+        <>
+          <Typography variant="h6" sx={{ fontSize: 18 }}>
+            乗降:{" "}
+            <AroundTime
+              date={latestDate?.getDate}
+              invalidMsg="なし"
+              isLoading={latestDateQuery.isLoading}
+            />
+          </Typography>
+          <Typography variant="h6" sx={{ fontSize: 18 }}>
+            通過:{" "}
+            <AroundTime
+              date={latestDate?.passDate}
+              invalidMsg="なし"
+              isLoading={latestDateQuery.isLoading}
+            />
+          </Typography>
+        </>
+      )}
     </Button>
   );
 };
 
-
-
 const StationGroupInfo = () => {
-  const stationGroupCode = Number(useParams<"stationGroupCode">().stationGroupCode);
+  const stationGroupCode = Number(
+    useParams<"stationGroupCode">().stationGroupCode
+  );
   const { isAuthenticated } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -126,13 +138,18 @@ const StationGroupInfo = () => {
 
   const groupStationQuery = useStationGroupInfo(stationGroupCode);
   const groupStationData = groupStationQuery.data;
-  const latestDateQuery = useLatestStationGroupHistory(stationGroupCode, (data: StationGroupDate) => {
-    setLoading(false);
-  });
+  const latestDateQuery = useLatestStationGroupHistory(
+    stationGroupCode,
+    (data: StationGroupDate) => {
+      setLoading(false);
+    }
+  );
   const latestDate = latestDateQuery.data;
 
   const nearStationsQuery = useSearchKNearestStationGroups(
-    (groupStationData && tabValue === 3) ? { lat: groupStationData.latitude, lng: groupStationData.longitude } : undefined,
+    groupStationData && tabValue === 3
+      ? { lat: groupStationData.latitude, lng: groupStationData.longitude }
+      : undefined,
     5
   );
   const nearStations = nearStationsQuery.data;
@@ -152,15 +169,14 @@ const StationGroupInfo = () => {
     sendMutation.mutate({
       stationGroupCode: stationGroupCode,
       date: date,
-    })
+    });
   };
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [stationGroupCode]);
 
-
-  if(groupStations.isError || groupStationQuery.isError){
+  if (groupStations.isError || groupStationQuery.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -168,7 +184,7 @@ const StationGroupInfo = () => {
     );
   }
 
-  if(!stationList || !groupStationData){
+  if (!stationList || !groupStationData) {
     return (
       <Container>
         Loading...
@@ -177,14 +193,21 @@ const StationGroupInfo = () => {
     );
   }
 
-  const position = new LatLng(groupStationData.latitude, groupStationData.longitude);
+  const position = new LatLng(
+    groupStationData.latitude,
+    groupStationData.longitude
+  );
 
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ textAlign: "center", mb: 2 }}>
-          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{groupStationData.stationName}</RespStationName>
-          <RespStationName variant="h6" sx={{ fontSize: 16 }}>{groupStationData.kana}</RespStationName>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>
+            {groupStationData.stationName}
+          </RespStationName>
+          <RespStationName variant="h6" sx={{ fontSize: 16 }}>
+            {groupStationData.kana}
+          </RespStationName>
         </Box>
         <Button
           component={Link}
@@ -196,24 +219,34 @@ const StationGroupInfo = () => {
         </Button>
       </Box>
 
-      {isAuthenticated && (<>
-        <Typography variant="h6" sx={{ display: "inline-block" }}>
-          立ち寄り: <AroundTime date={latestDate?.date} invalidMsg="なし" isLoading={latestDateQuery.isLoading} />
-        </Typography>
+      {isAuthenticated && (
+        <>
+          <Typography variant="h6" sx={{ display: "inline-block" }}>
+            立ち寄り:{" "}
+            <AroundTime
+              date={latestDate?.date}
+              invalidMsg="なし"
+              isLoading={latestDateQuery.isLoading}
+            />
+          </Typography>
 
-        <AccessButton
-          text="立ち寄り"
-          loading={loading}
-          timeLimit={60*3}
-          accessedTime={latestDate?.date}
-          onClick={handleSubmit}
-          sx={{ mb: 2, display: "block" }}
-        />
-      </>)}
+          <AccessButton
+            text="立ち寄り"
+            loading={loading}
+            timeLimit={60 * 3}
+            accessedTime={latestDate?.date}
+            onClick={handleSubmit}
+            sx={{ mb: 2, display: "block" }}
+          />
+        </>
+      )}
 
       <Box sx={{ minHeight: 600 }}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} >
+          <Tabs
+            value={tabValue}
+            onChange={(_, newValue) => setTabValue(newValue)}
+          >
             <Tab label="路線一覧" />
             <Tab label="履歴" disabled={!isAuthenticated} />
             <Tab label="カスタム" disabled={!isAuthenticated} />
@@ -223,14 +256,17 @@ const StationGroupInfo = () => {
 
         {/* 路線一覧 */}
         <CustomTabPanel value={tabValue} index={0}>
-          {stationList?.map(item => (
+          {stationList?.map((item) => (
             <StationItem info={item} key={item.stationCode} />
           ))}
         </CustomTabPanel>
 
         {/* 履歴 */}
         <CustomTabPanel value={tabValue} index={1}>
-          <GroupHistoryTable stationGroupCode={stationGroupCode} visible={tabValue === 1} />
+          <GroupHistoryTable
+            stationGroupCode={stationGroupCode}
+            visible={tabValue === 1}
+          />
         </CustomTabPanel>
 
         {/* カスタム */}
@@ -246,32 +282,53 @@ const StationGroupInfo = () => {
               onClick={() => setDisableTooltip(!disableTooltip)}
               sx={{ padding: 0, display: "inline-block" }}
             >
-              <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontSize: 12, display: "inline-block" }}
+              >
+                駅名を非表示
+              </Typography>
               <Checkbox
-              size="small"
-              checked={disableTooltip}
-              sx={{ padding: 0 }}
-            />
+                size="small"
+                checked={disableTooltip}
+                sx={{ padding: 0 }}
+              />
             </Button>
           </Box>
 
           <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
             <Marker position={position}>
               <Popup>
-                <Box sx={{ textAlign: "center" }}>{groupStationData.stationName}</Box>
+                <Box sx={{ textAlign: "center" }}>
+                  {groupStationData.stationName}
+                </Box>
               </Popup>
-              <Tooltip direction="bottom" opacity={1} permanent>{groupStationData.stationName}</Tooltip>
+              <Tooltip direction="bottom" opacity={1} permanent>
+                {groupStationData.stationName}
+              </Tooltip>
             </Marker>
-            {nearStations && nearStations.filter((_,i) => i).map(item => (
-              <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
-                <Popup>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
-                  </Box>
-                </Popup>
-                {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
-              </Marker>
-            ))}
+            {nearStations &&
+              nearStations
+                .filter((_, i) => i)
+                .map((item) => (
+                  <Marker
+                    position={[item.latitude, item.longitude]}
+                    key={item.stationGroupCode}
+                  >
+                    <Popup>
+                      <Box sx={{ textAlign: "center" }}>
+                        <Link to={"/stationGroup/" + item.stationGroupCode}>
+                          {item.stationName}
+                        </Link>
+                      </Box>
+                    </Popup>
+                    {!disableTooltip && (
+                      <Tooltip direction="bottom" opacity={1} permanent>
+                        {item.stationName}
+                      </Tooltip>
+                    )}
+                  </Marker>
+                ))}
             <ChangeMapCenter position={position} />
           </MapCustom>
         </CustomTabPanel>

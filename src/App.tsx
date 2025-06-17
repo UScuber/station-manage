@@ -1,7 +1,13 @@
 import { memo } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Alert, Box, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import {
+  Alert,
+  Box,
+  CssBaseline,
+  ThemeProvider,
+  createTheme,
+} from "@mui/material";
 import { AuthProvider, getAuth } from "./auth/auth";
 import Header from "./components/Header";
 import Signup from "./pages/Signup";
@@ -22,7 +28,6 @@ import CompanyInfo from "./pages/CompanyInfo";
 import PrefectureInfo from "./pages/PrefectureInfo";
 import PrefectureList from "./pages/PrefectureList";
 import HistoryMap from "./pages/HistoryMap";
-
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -80,21 +85,24 @@ theme.typography.h3 = {
   },
 };
 
-
 const Notification = memo(() => {
   const location = useLocation();
   const state = location.state;
 
-  if(!state || !state.message || !state.url || state.url !== location.pathname){
-    return (
-      <Box sx={{ mt: 8 }}></Box>
-    );
+  if (
+    !state ||
+    !state.message ||
+    !state.url ||
+    state.url !== location.pathname
+  ) {
+    return <Box sx={{ mt: 8 }}></Box>;
   }
   return (
-    <Alert severity="success" sx={{ mt: 1.3, mb: 0.7 }}>{state.message}</Alert>
+    <Alert severity="success" sx={{ mt: 1.3, mb: 0.7 }}>
+      {state.message}
+    </Alert>
   );
 });
-
 
 const AppChild = () => {
   const auth = getAuth();
@@ -113,7 +121,10 @@ const AppChild = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/stationList" element={<StationList />} />
             <Route path="/station/:stationCode" element={<StationInfo />} />
-            <Route path="/stationGroup/:stationGroupCode" element={<StationGroupInfo />} />
+            <Route
+              path="/stationGroup/:stationGroupCode"
+              element={<StationGroupInfo />}
+            />
             <Route path="/railway" element={<RailwayList />} />
             <Route path="/railway/:railwayCode" element={<RailwayInfo />} />
             <Route path="/company" element={<CompanyList />} />
@@ -131,7 +142,6 @@ const AppChild = () => {
     </AuthProvider>
   );
 };
-
 
 const App = () => {
   const queryClient = new QueryClient();

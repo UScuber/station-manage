@@ -5,19 +5,22 @@ import {
   KeyboardArrowRight as KeyboardArrowRightIcon,
 } from "@mui/icons-material";
 
-
-const Collapser = (
-  { buttonText, open, onClick, children, sx, collapseSx }
-  :{
-    buttonText?: JSX.Element,
-    open?: boolean,
-    onClick?: () => unknown,
-    children: React.ReactNode,
-    sx?: SxProps<Theme>,
-    collapseSx?: SxProps<Theme>,
-  }
-) => {
-  if(open === undefined || onClick === undefined){
+const Collapser = ({
+  buttonText,
+  open,
+  onClick,
+  children,
+  sx,
+  collapseSx,
+}: {
+  buttonText?: JSX.Element;
+  open?: boolean;
+  onClick?: () => unknown;
+  children: React.ReactNode;
+  sx?: SxProps<Theme>;
+  collapseSx?: SxProps<Theme>;
+}) => {
+  if (open === undefined || onClick === undefined) {
     const [open, setOpen] = useState(false);
 
     return (

@@ -19,18 +19,26 @@ import {
 import { ConfirmDialog } from "../components";
 import getDateString from "../utils/getDateString";
 
-
 const stateName = ["乗降", "通過"];
 
-
 // 履歴のテーブル(StationInfo.tsxで使用)
-const HistoryListTable = ({ stationCode, visible }: { stationCode: number, visible: boolean }) => {
+const HistoryListTable = ({
+  stationCode,
+  visible,
+}: {
+  stationCode: number;
+  visible: boolean;
+}) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteHistoryItem, setDeleteHistoryItem] = useState<StationHistoryData>();
-  const stationHistoryQuery = useStationAllHistory(visible ? stationCode : undefined, () => {
-    setDeleteLoading(false);
-  });
+  const [deleteHistoryItem, setDeleteHistoryItem] =
+    useState<StationHistoryData>();
+  const stationHistoryQuery = useStationAllHistory(
+    visible ? stationCode : undefined,
+    () => {
+      setDeleteLoading(false);
+    }
+  );
   const stationHistory = stationHistoryQuery.data;
 
   const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
@@ -47,7 +55,7 @@ const HistoryListTable = ({ stationCode, visible }: { stationCode: number, visib
 
   const handleDialogClose = (value: StationHistoryData | undefined) => {
     setDialogOpen(false);
-    if(value) handleDeleteHistory(value);
+    if (value) handleDeleteHistory(value);
   };
 
   const handleClickDeleteButton = (value: StationHistoryData) => {
@@ -55,14 +63,21 @@ const HistoryListTable = ({ stationCode, visible }: { stationCode: number, visib
     setDeleteHistoryItem(value);
   };
 
-
   return (
     <Box>
-      {<Typography variant="h6" sx={{ fontSize: 18 }}>履歴 {stationHistory?.length ?? ""}件</Typography>}
+      {
+        <Typography variant="h6" sx={{ fontSize: 18 }}>
+          履歴 {stationHistory?.length ?? ""}件
+        </Typography>
+      }
 
       <Box sx={{ margin: 1 }}>
-        {stationHistoryQuery.isError && <Typography variant="h6">Error</Typography>}
-        {!stationHistoryQuery.isError && !stationHistory && <CircularProgress size={25} />}
+        {stationHistoryQuery.isError && (
+          <Typography variant="h6">Error</Typography>
+        )}
+        {!stationHistoryQuery.isError && !stationHistory && (
+          <CircularProgress size={25} />
+        )}
 
         {stationHistory && (
           <Table size="small" aria-label="dates">
@@ -74,7 +89,7 @@ const HistoryListTable = ({ stationCode, visible }: { stationCode: number, visib
               </TableRow>
             </TableHead>
             <TableBody>
-              {stationHistory.map(history => (
+              {stationHistory.map((history) => (
                 <TableRow key={`${history.date}|${history.state}`}>
                   <TableCell>{getDateString(history.date)}</TableCell>
                   <TableCell>{stateName[history.state]}</TableCell>
@@ -99,7 +114,9 @@ const HistoryListTable = ({ stationCode, visible }: { stationCode: number, visib
         selectedValue={deleteHistoryItem}
         onClose={handleDialogClose}
         title="データを削除しますか"
-        descriptionFn={value => `${getDateString(value.date)}  ${stateName[value.state]}`}
+        descriptionFn={(value) =>
+          `${getDateString(value.date)}  ${stateName[value.state]}`
+        }
       />
     </Box>
   );

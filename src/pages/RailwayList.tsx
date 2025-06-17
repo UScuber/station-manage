@@ -24,28 +24,26 @@ import {
 } from "../api";
 import { BinaryPagination, CircleProgress, CustomLink } from "../components";
 
-
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
-  if(name === input) return 0;
+  if (name === input) return 0;
   const pos = name.indexOf(input);
-  if(pos === -1) return 4;
-  if(pos === 0) return 1;
-  if(pos === name.length - input.length) return 2;
+  if (pos === -1) return 4;
+  if (pos === 0) return 1;
+  if (pos === name.length - input.length) return 2;
   return 3;
 };
 
-
-const Row = (
-  { info, progress }
-  :{
-    info: Railway,
-    progress: StationProgress | undefined,
-  }
-) => {
+const Row = ({
+  info,
+  progress,
+}: {
+  info: Railway;
+  progress: StationProgress | undefined;
+}) => {
   const theme = useTheme();
 
-  if(!progress){
+  if (!progress) {
     return (
       <TableRow>
         <TableCell>
@@ -58,7 +56,9 @@ const Row = (
                 textDecorationColor: "#" + info.railwayColor,
                 textDecorationThickness: 2,
               }}
-            >{info.railwayName}</Typography>
+            >
+              {info.railwayName}
+            </Typography>
           </CustomLink>
         </TableCell>
         <TableCell />
@@ -66,15 +66,19 @@ const Row = (
     );
   }
 
-  const achieve_rate = progress.getOrPassStationNum / progress.stationNum * 100;
+  const achieve_rate =
+    (progress.getOrPassStationNum / progress.stationNum) * 100;
 
   return (
-    <TableRow sx={{
-      background:
-        `linear-gradient(to right, ${
-          achieve_rate !== 100 ? theme.palette.access.main : theme.palette.complete.light
-        } ${achieve_rate}%, transparent ${achieve_rate}%)`
-    }}>
+    <TableRow
+      sx={{
+        background: `linear-gradient(to right, ${
+          achieve_rate !== 100
+            ? theme.palette.access.main
+            : theme.palette.complete.light
+        } ${achieve_rate}%, transparent ${achieve_rate}%)`,
+      }}
+    >
       <TableCell>
         <CustomLink to={"/railway/" + info.railwayCode}>
           <Typography
@@ -85,7 +89,9 @@ const Row = (
               textDecorationColor: "#" + info.railwayColor,
               textDecorationThickness: 2,
             }}
-          >{info.railwayName}</Typography>
+          >
+            {info.railwayName}
+          </Typography>
         </CustomLink>
       </TableCell>
       <TableCell>
@@ -117,7 +123,7 @@ const RailwayList = () => {
     setPage(1);
   };
 
-  if(railwayListQuery.isError){
+  if (railwayListQuery.isError) {
     return (
       <Container>
         <Typography variant="h5">Error</Typography>
@@ -125,7 +131,7 @@ const RailwayList = () => {
     );
   }
 
-  if(!railwayList){
+  if (!railwayList) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -134,23 +140,25 @@ const RailwayList = () => {
     );
   }
 
-  const filteredRailways =
-    railwayList
-      .map((rail, idx) => ({
-        ...rail,
-        ord: nameSimilarity(rail.railwayName, inputName),
-        idx: idx,
-      }))
-      .filter(rail => rail.ord < 4)
-      .sort((a, b) => a.ord - b.ord);
-  const dividedRailways = filteredRailways.slice((page-1)*rowsPerPage, page*rowsPerPage);
+  const filteredRailways = railwayList
+    .map((rail, idx) => ({
+      ...rail,
+      ord: nameSimilarity(rail.railwayName, inputName),
+      idx: idx,
+    }))
+    .filter((rail) => rail.ord < 4)
+    .sort((a, b) => a.ord - b.ord);
+  const dividedRailways = filteredRailways.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
       page={page}
       count={filteredRailways.length}
       rowsPerPage={rowsPerPage}
-      rowsPerPageOptions={[10,25,50,100,200]}
+      rowsPerPageOptions={[10, 25, 50, 100, 200]}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
       sx={{ my: 1 }}
@@ -185,10 +193,14 @@ const RailwayList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {dividedRailways.map(item => (
+            {dividedRailways.map((item) => (
               <Row
                 info={item}
-                progress={railwayProgressList ? railwayProgressList[item.idx] : undefined}
+                progress={
+                  railwayProgressList
+                    ? railwayProgressList[item.idx]
+                    : undefined
+                }
                 key={item.railwayCode}
               />
             ))}
