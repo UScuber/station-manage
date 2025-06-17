@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 
+// 0ページの時は1ページ目を開いている状態にして、内容は空にする
 const BinaryPagination = ({
   count,
   page,
@@ -20,14 +21,14 @@ const BinaryPagination = ({
   sx,
 }: {
   count: number;
-  page: number;
+  page: number; // 1-indexed
   rowsPerPage: number;
   rowsPerPageOptions: Array<number>;
   onPageChange: (page: number) => unknown;
   onRowsPerPageChange: (event: SelectChangeEvent) => unknown;
   sx?: SxProps<Theme>;
 }): JSX.Element => {
-  const pageNum = Math.ceil(count / rowsPerPage);
+  const pageNum = Math.max(Math.ceil(count / rowsPerPage), 1);
   const rightKeyRef = useRef(false);
   const leftKeyRef = useRef(false);
 
@@ -50,6 +51,7 @@ const BinaryPagination = ({
     if (e.key === "ArrowRight") rightKeyRef.current = false;
   }, []);
 
+  // キー操作によるページ移動
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
@@ -59,13 +61,12 @@ const BinaryPagination = ({
     };
   }, [handleKeyDown, handleKeyUp]);
 
-  if (!count) {
-    return (
-      <Box sx={sx}>
-        <Box sx={{ height: 20 }}></Box>
-      </Box>
-    );
-  }
+  useEffect(() => {
+    // ページ数が変わったときに現在のページが範囲外ならば、最後のページに移動
+    if (page > pageNum) {
+      onPageChange(pageNum);
+    }
+  }, [page, pageNum, onPageChange]);
 
   const pages = Array.from(
     new Set(
@@ -76,9 +77,11 @@ const BinaryPagination = ({
           )
         )
         .concat(
-          [...Array(Math.floor(Math.log2(pageNum - page + 1)) + 1).keys()].map(
-            (v) => page + (1 << v) - 1
-          )
+          [
+            ...Array(
+              Math.floor(Math.log2(Math.max(1, pageNum - page + 1))) + 1
+            ).keys(),
+          ].map((v) => page + (1 << v) - 1)
         )
         .sort((a, b) => a - b)
     )
