@@ -236,8 +236,10 @@ const StationGroupInfo = () => {
             timeLimit={60 * 3}
             accessedTime={latestDate?.date}
             onClick={handleSubmit}
-            sx={{ mb: 2, display: "block" }}
+            sx={{ display: "inline-block" }}
           />
+
+          <Box sx={{ my: 1 }} />
         </>
       )}
 

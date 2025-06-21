@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Box,
   Button,
   CircularProgress,
   ListItemText,
@@ -18,12 +19,21 @@ type Props = {
 
 const AccessButton = (props: Props): JSX.Element => {
   const { text, loading, timeLimit, accessedTime, onClick, sx } = props;
-  const [disabled, setDisabled] = useState(true);
-
-  useEffect(() => {
+  const [disabled, setDisabled] = useState(() => {
     const waitTime =
       timeLimit * 1000 -
       (new Date().getTime() - new Date(accessedTime ?? 0).getTime());
+    return waitTime > 0;
+  });
+
+  useEffect(() => {
+    if (!accessedTime) {
+      setDisabled(false);
+      return;
+    }
+    const waitTime =
+      timeLimit * 1000 -
+      (new Date().getTime() - new Date(accessedTime).getTime());
     if (waitTime <= 0) {
       setDisabled(false);
       return;
@@ -37,18 +47,31 @@ const AccessButton = (props: Props): JSX.Element => {
   }, [accessedTime, timeLimit]);
 
   return (
-    <Button
-      variant="outlined"
-      onClick={onClick}
-      disabled={disabled || loading}
-      sx={sx}
-    >
-      {loading ? (
-        <CircularProgress color="inherit" size={30} />
-      ) : (
-        <ListItemText primary={text} />
-      )}
-    </Button>
+    <Box sx={{ m: 1 }}>
+      <Box sx={{ position: "relative", display: "inline-flex" }}>
+        <Button
+          variant="outlined"
+          onClick={onClick}
+          disabled={disabled || loading}
+          sx={sx}
+        >
+          {text}
+        </Button>
+        {loading && (
+          <CircularProgress
+            size={30}
+            sx={{
+              position: "absolute",
+              color: (theme) => theme.palette.action.disabled,
+              top: "50%",
+              left: "50%",
+              marginTop: "-15px",
+              marginLeft: "-15px",
+            }}
+          />
+        )}
+      </Box>
+    </Box>
   );
 };
 
