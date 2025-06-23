@@ -47,19 +47,36 @@ const Row = ({
     (progress.getOrPassStationNum / progress.stationNum) * 100;
 
   return (
-    <TableRow
-      sx={{
-        background: `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)`,
-      }}
-    >
-      <TableCell>
+    <TableRow>
+      <TableCell
+        sx={{
+          width: "50%",
+          background: `linear-gradient(to right, ${
+            theme.palette.access.main
+          } ${Math.min(achieve_rate * 2, 100)}%, transparent ${Math.min(
+            achieve_rate * 2,
+            100
+          )}%)`,
+        }}
+      >
         <CustomLink to={"/pref/" + info.prefCode}>
           <Typography variant="h6" sx={{ fontSize: 14 }}>
             {info.prefName}
           </Typography>
         </CustomLink>
       </TableCell>
-      <TableCell>
+      <TableCell
+        sx={{
+          backgroundColor: "transparent",
+          width: "50%",
+          background: `linear-gradient(to right, ${
+            theme.palette.access.main
+          } ${Math.max(achieve_rate * 2 - 100, 0)}%, transparent ${Math.max(
+            achieve_rate * 2 - 100,
+            0
+          )}%)`,
+        }}
+      >
         <CircleProgress size={25} progress={progress} />
       </TableCell>
     </TableRow>
@@ -97,6 +114,7 @@ const PrefectureList = () => {
           <TableHead>
             <TableRow>
               <TableCell>Prefecture</TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
