@@ -1,29 +1,44 @@
 import { useEffect, useState } from "react";
 import { Button, CircularProgress, Typography } from "@mui/material";
 import getDateString from "../utils/getDateString";
+import {
+  differenceInYears,
+  differenceInMonths,
+  differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
+  differenceInSeconds,
+} from "date-fns";
 
 // 現在時刻からの大まかな時間差を求める
-const getAroundTime = (date: Date | undefined, invalidMsg: string): string => {
+const getRelativeTime = (
+  date: Date | undefined,
+  invalidMsg: string
+): string => {
   if (!date) return invalidMsg;
 
-  const diff = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-  if (diff < 60) {
-    if (diff === 0) return "現在";
-    return diff + "秒前";
+  const now = new Date();
+
+  const seconds = differenceInSeconds(now, date);
+  if (seconds < 60) {
+    if (seconds === 0) return "現在";
+    return seconds + "秒前";
   }
-  if (diff < 60 * 60) {
-    return Math.floor(diff / 60) + "分前";
-  }
-  if (diff < 60 * 60 * 24) {
-    return Math.floor(diff / (60 * 60)) + "時間前";
-  }
-  if (diff < 60 * 60 * 24 * 30) {
-    return Math.floor(diff / (60 * 60 * 24)) + "日前";
-  }
-  if (diff < 60 * 60 * 24 * 30 * 12) {
-    return Math.floor(diff / (60 * 60 * 24 * 30)) + "ヶ月前";
-  }
-  return Math.floor(diff / (60 * 60 * 24 * 30 * 12)) + "年前";
+
+  const minutes = differenceInMinutes(now, date);
+  if (minutes < 60) return minutes + "分前";
+
+  const hours = differenceInHours(now, date);
+  if (hours < 24) return hours + "時間前";
+
+  const days = differenceInDays(now, date);
+  if (days < 30) return days + "日前";
+
+  const months = differenceInMonths(now, date);
+  if (months < 12) return months + "ヶ月前";
+
+  const years = differenceInYears(now, date);
+  return years + "年前";
 };
 
 const AroundTime = ({
@@ -36,7 +51,7 @@ const AroundTime = ({
   date: Date | undefined;
   invalidMsg: string;
   disableMinute?: boolean;
-  fontSize?: number | string;
+  fontSize?: number;
   isLoading?: boolean;
 }): JSX.Element => {
   const [isDisplayDate, setIsDisplayDate] = useState(false);
@@ -52,12 +67,12 @@ const AroundTime = ({
       sx={{ display: "inline-block", minWidth: 40, padding: 0 }}
     >
       {isLoading ? (
-        <CircularProgress color="inherit" size={24} />
+        <CircularProgress color="inherit" size={fontSize ?? 24} />
       ) : (
         <Typography variant="h6" sx={{ lineHeight: 1, fontSize: fontSize }}>
           {isDisplayDate && date
             ? getDateString(date, disableMinute)
-            : getAroundTime(date, invalidMsg)}
+            : getRelativeTime(date, invalidMsg)}
         </Typography>
       )}
     </Button>

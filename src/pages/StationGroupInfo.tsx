@@ -101,22 +101,28 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
 
       {(latestDate || latestDateQuery.isLoading) && (
         <>
-          <Typography variant="h6" sx={{ fontSize: 18 }}>
-            乗降:{" "}
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ fontSize: 18 }}>
+              乗降:&nbsp;
+            </Typography>
             <AroundTime
               date={latestDate?.getDate}
               invalidMsg="なし"
               isLoading={latestDateQuery.isLoading}
+              fontSize={18}
             />
-          </Typography>
-          <Typography variant="h6" sx={{ fontSize: 18 }}>
-            通過:{" "}
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ fontSize: 18 }}>
+              通過:&nbsp;
+            </Typography>
             <AroundTime
               date={latestDate?.passDate}
               invalidMsg="なし"
               isLoading={latestDateQuery.isLoading}
+              fontSize={18}
             />
-          </Typography>
+          </Box>
         </>
       )}
     </Button>
@@ -221,14 +227,14 @@ const StationGroupInfo = () => {
 
       {isAuthenticated && (
         <>
-          <Typography variant="h6" sx={{ display: "inline-block" }}>
-            立ち寄り:{" "}
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6">立ち寄り:&nbsp;</Typography>
             <AroundTime
               date={latestDate?.date}
               invalidMsg="なし"
               isLoading={latestDateQuery.isLoading}
             />
-          </Typography>
+          </Box>
 
           <AccessButton
             text="立ち寄り"
