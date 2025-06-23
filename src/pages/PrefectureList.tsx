@@ -47,35 +47,22 @@ const Row = ({
     (progress.getOrPassStationNum / progress.stationNum) * 100;
 
   return (
-    <>
-      <TableRow sx={{ position: "relative" }}>
-        {/* 左のTableCellに背景を適用し、width100%にして固定 */}
-        <TableCell
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)`,
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        >
-          <CustomLink to={"/pref/" + info.prefCode}>
-            <Typography variant="h6" sx={{ fontSize: 14 }}>
-              {info.prefName}
-            </Typography>
-          </CustomLink>
-        </TableCell>
-        {/* 背景を透明にして左の背景を見えるようにしている */}
-        <TableCell
-          sx={{ position: "relative", background: "transparent", zIndex: 1 }}
-        >
-          <CircleProgress size={25} progress={progress} />
-        </TableCell>
-      </TableRow>
-    </>
+    <TableRow
+      sx={{
+        background: `linear-gradient(to right, ${theme.palette.access.main} ${achieve_rate}%, transparent ${achieve_rate}%)`,
+      }}
+    >
+      <TableCell>
+        <CustomLink to={"/pref/" + info.prefCode}>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            {info.prefName}
+          </Typography>
+        </CustomLink>
+      </TableCell>
+      <TableCell>
+        <CircleProgress size={25} progress={progress} />
+      </TableCell>
+    </TableRow>
   );
 };
 
