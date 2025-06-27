@@ -85,7 +85,9 @@ const StationGroupInfo = ({
   const infos = stations.data;
 
   if (stations.isError) {
-    return <Typography variant="h5">Error</Typography>;
+    return (
+      <Typography variant="h5">Error: {stations.error.message}</Typography>
+    );
   }
 
   if (!infos) {
@@ -140,7 +142,7 @@ const SearchStation = () => {
         const { latitude, longitude } = position.coords;
         setPosition({ lat: latitude, lng: longitude });
       },
-      undefined,
+      () => setAvailable(false),
       { timeout: 3000 }
     );
   };
@@ -170,7 +172,23 @@ const SearchStation = () => {
   if (nearestStationGroups.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {nearestStationGroups.error.message}
+        </Typography>
+      </Container>
+    );
+  }
+
+  if (!isAvailable) {
+    return (
+      <Container>
+        <Typography variant="h5">
+          このブラウザでは位置情報機能が利用できません
+        </Typography>
+        <Box sx={{ mb: 2 }} />
+        <Button component={Link} to="/" variant="outlined">
+          トップページへ戻る
+        </Button>
       </Container>
     );
   }
@@ -186,20 +204,17 @@ const SearchStation = () => {
 
   return (
     <Container>
-      {!isAvailable && <p>Geolocation is not available.</p>}
-      {isAvailable && (
-        <Box sx={{ mb: 1 }}>
-          <Button variant="outlined" onClick={handlePosSearchButton}>
-            Search
-          </Button>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>
-            緯度: {position?.lat}
-          </Typography>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>
-            経度: {position?.lng}
-          </Typography>
-        </Box>
-      )}
+      <Box sx={{ mb: 1 }}>
+        <Button variant="outlined" onClick={handlePosSearchButton}>
+          Search
+        </Button>
+        <Typography variant="h6" sx={{ fontSize: 14 }}>
+          緯度: {position?.lat}
+        </Typography>
+        <Typography variant="h6" sx={{ fontSize: 14 }}>
+          経度: {position?.lng}
+        </Typography>
+      </Box>
 
       <Typography variant="h6">List</Typography>
       <Divider sx={{ mb: 1 }} />

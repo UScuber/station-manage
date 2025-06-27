@@ -187,7 +187,10 @@ const StationList = () => {
   if (stationGroupList.isError || stationGroupCount.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error:{" "}
+          {stationGroupList.error?.message || stationGroupCount.error?.message}
+        </Typography>
       </Container>
     );
   }
@@ -202,12 +205,14 @@ const StationList = () => {
           value={inputName}
           sx={{ maxWidth: "50%" }}
           onChange={handleChangeText}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
           }}
         />
         {stationGroupCount.data !== undefined && <CustomPagination />}

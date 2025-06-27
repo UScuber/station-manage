@@ -74,7 +74,9 @@ const GroupHistoryTable = ({
         </Typography>
 
         {stationGroupAllHistoryQuery.isError && (
-          <Typography variant="h6">Error</Typography>
+          <Typography variant="h6">
+            Error: {stationGroupAllHistoryQuery.error.message}
+          </Typography>
         )}
         {!stationGroupAllHistoryQuery.isError && !stationGroupAllHistory && (
           <CircularProgress size={25} />

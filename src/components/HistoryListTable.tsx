@@ -73,7 +73,9 @@ const HistoryListTable = ({
 
       <Box sx={{ margin: 1 }}>
         {stationHistoryQuery.isError && (
-          <Typography variant="h6">Error</Typography>
+          <Typography variant="h6">
+            Error: {stationHistoryQuery.error.message}
+          </Typography>
         )}
         {!stationHistoryQuery.isError && !stationHistory && (
           <CircularProgress size={25} />

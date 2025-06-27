@@ -129,7 +129,9 @@ const RailwayList = () => {
   if (railwayListQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {railwayListQuery.error.message}
+        </Typography>
       </Container>
     );
   }

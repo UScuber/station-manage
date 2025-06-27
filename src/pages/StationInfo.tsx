@@ -234,7 +234,7 @@ const StationInfo = () => {
   if (station.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">Error: {station.error.message}</Typography>
       </Container>
     );
   }

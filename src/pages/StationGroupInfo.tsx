@@ -185,7 +185,10 @@ const StationGroupInfo = () => {
   if (groupStations.isError || groupStationQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error:{" "}
+          {groupStations.error?.message || groupStationQuery.error?.message}
+        </Typography>
       </Container>
     );
   }

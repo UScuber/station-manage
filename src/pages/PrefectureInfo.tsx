@@ -170,7 +170,12 @@ const PrefectureInfo = () => {
   if (railwaysQuery.isError || stationsQuery.isError || prefQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error:{" "}
+          {railwaysQuery.error?.message ||
+            stationsQuery.error?.message ||
+            prefQuery.error?.message}
+        </Typography>
       </Container>
     );
   }

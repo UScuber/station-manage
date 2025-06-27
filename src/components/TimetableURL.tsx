@@ -62,7 +62,7 @@ const EditableText = ({
             size="small"
             onChange={(e) => setNewText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSaveClick()}
-            inputProps={{ style: { fontSize: 14 } }}
+            slotProps={{ input: { style: { fontSize: 14 } } }}
             inputRef={(input) => input && input.focus()}
             sx={{ width: "100%" }}
           />
@@ -185,7 +185,7 @@ const EditableTable = ({
                     size="small"
                     value={editURL}
                     onKeyDown={(e) => e.key === "Enter" && handleSaveClick()}
-                    inputProps={{ style: { fontSize: 14 } }}
+                    slotProps={{ input: { style: { fontSize: 14 } } }}
                     onChange={(e) => setEditURL(e.target.value)}
                     placeholder="時刻表のURL"
                     fullWidth
@@ -225,7 +225,7 @@ const EditableTable = ({
                 size="small"
                 value={addingDirection}
                 onKeyDown={(e) => e.key === "Enter" && handleAddClick()}
-                inputProps={{ style: { fontSize: 14 } }}
+                slotProps={{ input: { style: { fontSize: 14 } } }}
                 onChange={(e) => setAddingDirection(e.target.value)}
                 onFocus={handleCancelClick}
                 placeholder="～方面/～方向"
@@ -237,7 +237,7 @@ const EditableTable = ({
                 size="small"
                 value={addingDirection ? editURL : ""}
                 onKeyDown={(e) => e.key === "Enter" && handleAddClick()}
-                inputProps={{ style: { fontSize: 14 } }}
+                slotProps={{ input: { style: { fontSize: 14 } } }}
                 onChange={(e) => setEditURL(e.target.value)}
                 placeholder="時刻表のURL(先に方面を入力)"
                 disabled={!addingDirection}

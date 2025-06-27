@@ -81,7 +81,9 @@ const PrefectureList = () => {
   if (prefListQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {prefListQuery.error.message}
+        </Typography>
       </Container>
     );
   }

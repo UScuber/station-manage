@@ -129,7 +129,9 @@ const RailwayInfo = () => {
   if (railway.isError || stationsQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {railway.error?.message || stationsQuery.error?.message}
+        </Typography>
       </Container>
     );
   }

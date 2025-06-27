@@ -89,7 +89,9 @@ const HistoryMap = () => {
   if (historyListQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {historyListQuery.error.message}
+        </Typography>
       </Container>
     );
   }
@@ -97,7 +99,7 @@ const HistoryMap = () => {
   if (!historyList || !companyListQuery.data) {
     return (
       <Container>
-        Loading ...
+        Loading...
         <CircularProgress />
       </Container>
     );

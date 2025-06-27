@@ -112,19 +112,21 @@ const Login = () => {
             inputRef={passRef}
             helperText={passHelperText || " "}
             error={!!passHelperText}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleClickShowPass}
-                    edge="end"
-                    tabIndex={-1}
-                  >
-                    {showPass ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPass}
+                      edge="end"
+                      tabIndex={-1}
+                    >
+                      {showPass ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
           />
           <Button

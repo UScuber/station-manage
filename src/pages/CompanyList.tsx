@@ -73,24 +73,6 @@ const Row = ({
         } ${achieve_rate}%, transparent ${achieve_rate}%)`,
       }}
     >
-      {/* <HalfTableCell
-        achieve_rate={achieve_rate}
-        direction="left"
-        widthPercent={70}
-      >
-        <CustomLink to={"/company/" + info.companyCode}>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>
-            {info.companyName}
-          </Typography>
-        </CustomLink>
-      </HalfTableCell>
-      <HalfTableCell
-        achieve_rate={achieve_rate}
-        direction="right"
-        widthPercent={30}
-      >
-        <CircleProgress size={25} progress={progress} />
-      </HalfTableCell> */}
       <TableCell>
         <CustomLink to={"/company/" + info.companyCode}>
           <Typography variant="h6" sx={{ fontSize: 14 }}>
@@ -130,7 +112,9 @@ const CompanyList = () => {
   if (companyListQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {companyListQuery.error.message}
+        </Typography>
       </Container>
     );
   }

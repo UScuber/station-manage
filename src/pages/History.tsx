@@ -237,7 +237,9 @@ const History = () => {
   if (historyList.isError || historyListCount.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {historyList.error?.message || historyListCount.error?.message}
+        </Typography>
       </Container>
     );
   }
@@ -253,12 +255,14 @@ const History = () => {
             value={inputName}
             sx={{ maxWidth: "50%", mr: 3 }}
             onChange={handleChangeText}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              },
             }}
           />
           <FormControl variant="standard">
@@ -295,12 +299,14 @@ const History = () => {
           value={inputName}
           sx={{ maxWidth: "50%", mr: 3 }}
           onChange={handleChangeText}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
           }}
         />
         <FormControl variant="standard">

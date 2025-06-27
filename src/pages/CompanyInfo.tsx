@@ -137,7 +137,12 @@ const CompanyInfo = () => {
   if (companyQuery.isError || railwaysQuery.isError || stationsQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error:{" "}
+          {companyQuery.error?.message ||
+            railwaysQuery.error?.message ||
+            stationsQuery.error?.message}
+        </Typography>
       </Container>
     );
   }
