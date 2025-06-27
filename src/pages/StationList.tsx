@@ -223,17 +223,19 @@ const StationList = () => {
     <Container>
       <TextField
         id="stationName"
-        label="station name"
+        label="駅名"
         variant="standard"
         value={inputName}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          },
         }}
       />
       <CustomPagination />
@@ -258,10 +260,6 @@ const StationList = () => {
                 >
                   詳細
                 </TableCell>
-                {/* <TableCell sx={{ flex: 1 }}>駅名</TableCell>
-                <TableCell sx={{ minWidth: 88 }}>都道府県</TableCell>
-                <TableCell sx={{ minWidth: 88 }}>立ち寄り</TableCell>
-                <TableCell sx={{ minWidth: 60 }}>詳細</TableCell> */}
               </TableRow>
             ) : (
               <TableRow>

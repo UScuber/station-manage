@@ -3,14 +3,7 @@ import {
   CircularProgress,
   Container,
   InputAdornment,
-  Paper,
   SelectChangeEvent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
   useTheme,
@@ -22,7 +15,16 @@ import {
   useCompanyList,
   useCompanyProgressList,
 } from "../api";
-import { BinaryPagination, CircleProgress, CustomLink } from "../components";
+import {
+  BinaryPagination,
+  CircleProgress,
+  CustomLink,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "../components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -71,6 +73,24 @@ const Row = ({
         } ${achieve_rate}%, transparent ${achieve_rate}%)`,
       }}
     >
+      {/* <HalfTableCell
+        achieve_rate={achieve_rate}
+        direction="left"
+        widthPercent={70}
+      >
+        <CustomLink to={"/company/" + info.companyCode}>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            {info.companyName}
+          </Typography>
+        </CustomLink>
+      </HalfTableCell>
+      <HalfTableCell
+        achieve_rate={achieve_rate}
+        direction="right"
+        widthPercent={30}
+      >
+        <CircleProgress size={25} progress={progress} />
+      </HalfTableCell> */}
       <TableCell>
         <CustomLink to={"/company/" + info.companyCode}>
           <Typography variant="h6" sx={{ fontSize: 14 }}>
@@ -153,44 +173,41 @@ const CompanyList = () => {
     <Container>
       <TextField
         id="company name"
-        label="company name"
+        label="会社名"
         variant="standard"
         value={inputName}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          },
         }}
       />
       <CustomPagination />
-
-      <TableContainer component={Paper}>
-        <Table aria-label="company table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Company</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {dividedCompanies.map((item) => (
-              <Row
-                info={item}
-                progress={
-                  companyProgressList
-                    ? companyProgressList[item.idx]
-                    : undefined
-                }
-                key={item.companyCode}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Table aria-label="company table">
+        <TableHead>
+          <TableRow sx={{ fontSize: 14 }}>
+            <TableCell>会社名</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {dividedCompanies.map((item) => (
+            <Row
+              info={item}
+              progress={
+                companyProgressList ? companyProgressList[item.idx] : undefined
+              }
+              key={item.companyCode}
+            />
+          ))}
+        </TableBody>
+      </Table>
 
       <CustomPagination />
     </Container>

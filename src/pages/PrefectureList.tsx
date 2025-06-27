@@ -1,13 +1,6 @@
 import {
   CircularProgress,
   Container,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -17,7 +10,15 @@ import {
   usePrefList,
   usePrefProgressList,
 } from "../api";
-import { CircleProgress, CustomLink } from "../components";
+import {
+  CircleProgress,
+  CustomLink,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "../components";
 
 const Row = ({
   info,
@@ -47,36 +48,23 @@ const Row = ({
     (progress.getOrPassStationNum / progress.stationNum) * 100;
 
   return (
-    <TableRow>
-      <TableCell
-        sx={{
-          width: "50%",
-          background: `linear-gradient(to right, ${
-            theme.palette.access.main
-          } ${Math.min(achieve_rate * 2, 100)}%, transparent ${Math.min(
-            achieve_rate * 2,
-            100
-          )}%)`,
-        }}
-      >
+    <TableRow
+      sx={{
+        background: `linear-gradient(to right, ${
+          achieve_rate !== 100
+            ? theme.palette.access.main
+            : theme.palette.complete.light
+        } ${achieve_rate}%, transparent ${achieve_rate}%)`,
+      }}
+    >
+      <TableCell>
         <CustomLink to={"/pref/" + info.prefCode}>
           <Typography variant="h6" sx={{ fontSize: 14 }}>
             {info.prefName}
           </Typography>
         </CustomLink>
       </TableCell>
-      <TableCell
-        sx={{
-          backgroundColor: "transparent",
-          width: "50%",
-          background: `linear-gradient(to right, ${
-            theme.palette.access.main
-          } ${Math.max(achieve_rate * 2 - 100, 0)}%, transparent ${Math.max(
-            achieve_rate * 2 - 100,
-            0
-          )}%)`,
-        }}
-      >
+      <TableCell>
         <CircleProgress size={25} progress={progress} />
       </TableCell>
     </TableRow>
@@ -109,25 +97,23 @@ const PrefectureList = () => {
 
   return (
     <Container>
-      <TableContainer component={Paper}>
-        <Table aria-label="prefecture table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Prefecture</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {prefList.map((item, idx) => (
-              <Row
-                info={item}
-                progress={progressList ? progressList[idx] : undefined}
-                key={item.prefCode}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Table aria-label="prefecture table">
+        <TableHead>
+          <TableRow>
+            <TableCell>都道府県</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {prefList.map((item, idx) => (
+            <Row
+              info={item}
+              progress={progressList ? progressList[idx] : undefined}
+              key={item.prefCode}
+            />
+          ))}
+        </TableBody>
+      </Table>
     </Container>
   );
 };

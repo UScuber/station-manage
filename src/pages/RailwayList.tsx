@@ -5,12 +5,6 @@ import {
   InputAdornment,
   Paper,
   SelectChangeEvent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
   useTheme,
@@ -22,7 +16,16 @@ import {
   useRailwayList,
   useRailwayProgressList,
 } from "../api";
-import { BinaryPagination, CircleProgress, CustomLink } from "../components";
+import {
+  BinaryPagination,
+  CircleProgress,
+  CustomLink,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "../components";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -169,44 +172,42 @@ const RailwayList = () => {
     <Container>
       <TextField
         id="railway name"
-        label="railway name"
+        label="路線名"
         variant="standard"
         value={inputName}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          },
         }}
       />
       <CustomPagination />
 
-      <TableContainer component={Paper}>
-        <Table aria-label="railway table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Railway</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {dividedRailways.map((item) => (
-              <Row
-                info={item}
-                progress={
-                  railwayProgressList
-                    ? railwayProgressList[item.idx]
-                    : undefined
-                }
-                key={item.railwayCode}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Table aria-label="railway table">
+        <TableHead>
+          <TableRow>
+            <TableCell>路線名</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {dividedRailways.map((item) => (
+            <Row
+              info={item}
+              progress={
+                railwayProgressList ? railwayProgressList[item.idx] : undefined
+              }
+              key={item.railwayCode}
+            />
+          ))}
+        </TableBody>
+      </Table>
 
       <CustomPagination />
     </Container>
