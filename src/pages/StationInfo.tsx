@@ -6,12 +6,12 @@ import {
   CircularProgress,
   Container,
   Typography,
-  ListItemText,
   Stack,
   styled,
   Checkbox,
   Tabs,
   Tab,
+  FormHelperText,
 } from "@mui/material";
 import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import Leaflet, { LatLng } from "leaflet";
@@ -20,6 +20,7 @@ import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import {
   RecordState,
   StationDate,
+  StationHistory,
   useLatestStationHistory,
   useRailPath,
   useSearchKNearestStationGroups,
@@ -123,6 +124,7 @@ const StationInfo = () => {
 
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
+  const [buttonErrorMsg, setButtonErrorMsg] = useState("");
   const [disableTooltip, setDisableTooltip] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 
@@ -153,7 +155,21 @@ const StationInfo = () => {
   );
   const railwayPath = railwayPathQuery.data;
 
-  const mutation = useSendStationStateMutation();
+  const handleSubmitError = (err: Error, variables: StationHistory) => {
+    if (variables.state === RecordState.Get) {
+      setGetLoading(false);
+      setButtonErrorMsg(
+        `${info?.stationName}駅 乗降記録の送信に失敗しました(Error: ${err.message})`
+      );
+    } else if (variables.state === RecordState.Pass) {
+      setPassLoading(false);
+      setButtonErrorMsg(
+        `${info?.stationName}駅 通過記録の送信に失敗しました(Error: ${err.message})`
+      );
+    }
+  };
+
+  const mutation = useSendStationStateMutation(handleSubmitError);
 
   const navigation = useNavigate();
   const rightKeyRef = useRef(false);
@@ -356,30 +372,37 @@ const StationInfo = () => {
       </Box>
 
       <Box sx={{ mb: 2 }}>
+        {/* 乗降/通過ボタン */}
         {isAuthenticated && (
-          <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
-            <AccessButton
-              text="乗降"
-              loading={getLoading}
-              timeLimit={60 * 3}
-              accessedTime={lastAccessTime}
-              onClick={() => handleSubmit(RecordState.Get)}
-            />
-            <AccessButton
-              text="通過"
-              loading={passLoading}
-              timeLimit={60 * 3}
-              accessedTime={lastAccessTime}
-              onClick={() => handleSubmit(RecordState.Pass)}
-            />
-          </Stack>
+          <>
+            <Stack spacing={2} direction="row" sx={{ mb: 0 }}>
+              <AccessButton
+                text="乗降"
+                loading={getLoading}
+                timeLimit={60 * 3}
+                accessedTime={lastAccessTime}
+                onClick={() => handleSubmit(RecordState.Get)}
+              />
+              <AccessButton
+                text="通過"
+                loading={passLoading}
+                timeLimit={60 * 3}
+                accessedTime={lastAccessTime}
+                onClick={() => handleSubmit(RecordState.Pass)}
+              />
+            </Stack>
+            <FormHelperText error sx={{ m: 0 }}>
+              {buttonErrorMsg || " "}
+            </FormHelperText>
+          </>
         )}
+
         <Button
           component={Link}
           to={"/stationGroup/" + info.stationGroupCode}
           variant="outlined"
         >
-          <ListItemText primary="駅グループ" />
+          駅グループ
         </Button>
       </Box>
 

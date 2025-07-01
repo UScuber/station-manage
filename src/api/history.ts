@@ -349,7 +349,9 @@ export const usePrefProgressList = () => {
 };
 
 // 乗降/通過の情報を追加
-export const useSendStationStateMutation = () => {
+export const useSendStationStateMutation = (
+  onErrorFn?: (err: Error, variables: StationHistory) => any
+) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (req: StationHistory) => {
@@ -393,7 +395,8 @@ export const useSendStationStateMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
       queryClient.invalidateQueries({ queryKey: ["PrefProgressList"] });
     },
-    onError: (err: Error) => {
+    onError: (err: Error, variables: StationHistory) => {
+      onErrorFn && onErrorFn(err, variables);
       console.error(err);
     },
   });
