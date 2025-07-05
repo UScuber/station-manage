@@ -22,23 +22,14 @@ import getDateString from "../utils/getDateString";
 const stateName = ["乗降", "通過"];
 
 // 履歴のテーブル(StationInfo.tsxで使用)
-const HistoryListTable = ({
-  stationCode,
-  visible,
-}: {
-  stationCode: number;
-  visible: boolean;
-}) => {
+const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] =
     useState<StationHistoryData>();
-  const stationHistoryQuery = useStationAllHistory(
-    visible ? stationCode : undefined,
-    () => {
-      setDeleteLoading(false);
-    }
-  );
+  const stationHistoryQuery = useStationAllHistory(stationCode, () => {
+    setDeleteLoading(false);
+  });
   const stationHistory = stationHistoryQuery.data;
 
   const deleteStationHistoryMutation = useDeleteStationHistoryMutation();

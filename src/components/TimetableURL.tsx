@@ -264,18 +264,10 @@ const EditableTable = ({
 };
 
 // 時刻表のリンクを表示
-const TimetableURL = ({
-  info,
-  visible,
-}: {
-  info: Station;
-  visible: boolean;
-}) => {
+const TimetableURL = ({ info }: { info: Station }) => {
   const { isAdmin } = useAuth();
 
-  const timetableQuery = useTimetableURL(
-    visible ? info.stationCode : undefined
-  );
+  const timetableQuery = useTimetableURL(info.stationCode);
   const timetable = timetableQuery.data;
 
   const updateURLMutation = useUpdateTimetableURLMutation();

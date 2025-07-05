@@ -2,8 +2,10 @@ import { Link, useParams } from "react-router-dom";
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Container,
+  Stack,
   Tab,
   Tabs,
   Typography,
@@ -24,6 +26,7 @@ import {
   FitMapZoom,
   MapCustom,
   ProgressBar,
+  RespStationName,
   StationMapGeojson,
 } from "../components";
 import { useState } from "react";
@@ -44,22 +47,23 @@ const StationItem = ({
       variant="outlined"
       color="inherit"
       sx={{
-        display: "block",
+        display: "flex",
+        justifyContent: "space-between",
         mb: 0.5,
         bgcolor:
           latestDate?.getDate || latestDate?.passDate ? "access.main" : "none",
       }}
     >
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h6">{info.stationName}</Typography>
-        <Typography variant="h6" sx={{ fontSize: 10, lineHeight: 1 }}>
+        <RespStationName variant="h5">{info.stationName}</RespStationName>
+        <RespStationName variant="h6" sx={{ lineHeight: 1 }}>
           {info.kana}
-        </Typography>
+        </RespStationName>
       </Box>
 
       {isAuthenticated && (
-        <>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>
+        <Stack direction="column">
+          <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
             乗降:
             <AroundTime
               date={latestDate?.getDate}
@@ -68,7 +72,7 @@ const StationItem = ({
               isLoading={!latestDate}
             />
           </Typography>
-          <Typography variant="h6" sx={{ fontSize: 14 }}>
+          <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
             通過:
             <AroundTime
               date={latestDate?.passDate}
@@ -77,9 +81,79 @@ const StationItem = ({
               isLoading={!latestDate}
             />
           </Typography>
-        </>
+        </Stack>
       )}
     </Button>
+  );
+};
+
+// stationListを始点があればそこから順に表示する(環状の場合、stationCodeの最小値)
+const StationList = ({
+  stationList,
+  latestHistoryList,
+}: {
+  stationList: Station[];
+  latestHistoryList: StationDate[] | undefined;
+}) => {
+  const indices = Object.fromEntries(
+    stationList.map((station, idx) => [station.stationCode, idx])
+  );
+
+  const startIndex =
+    indices[
+      stationList.reduce((minSta, station) => {
+        if (
+          station.left.length + station.right.length !=
+          minSta.left.length + minSta.right.length
+        ) {
+          return station.left.length + station.right.length <
+            minSta.left.length + minSta.right.length
+            ? station
+            : minSta;
+        }
+        return station.stationCode < minSta.stationCode ? station : minSta;
+      }, stationList[0]).stationCode
+    ];
+
+  let sorted_indexList: number[] = [];
+  let used_indices = new Set();
+  const dfs = (index: number, prev: number) => {
+    if (used_indices.has(index)) return;
+
+    used_indices.add(index);
+    sorted_indexList.push(index);
+
+    let once_called = false;
+    stationList[index].left
+      .concat(stationList[index].right)
+      .sort((a, b) => a - b)
+      .forEach((stationCode) => {
+        if (prev == indices[stationCode]) return;
+
+        if (once_called) sorted_indexList.push(-1); // 分岐する際はスペースを空ける
+
+        dfs(indices[stationCode], index);
+        once_called = true;
+      });
+  };
+  dfs(startIndex, -1);
+
+  return (
+    <>
+      {sorted_indexList.map((index) =>
+        index === -1 ? (
+          <Box sx={{ mb: 2 }} />
+        ) : (
+          <StationItem
+            info={stationList[index]}
+            latestDate={
+              latestHistoryList ? latestHistoryList[index] : undefined
+            }
+            key={stationList[index].stationCode}
+          />
+        )
+      )}
+    </>
   );
 };
 
@@ -106,6 +180,49 @@ const CustomTabPanel = ({
   );
 };
 
+const RailwayMap = ({
+  railwayCode,
+  stationList,
+}: {
+  railwayCode: number;
+  stationList: Station[];
+}) => {
+  const railwayPathQuery = useRailPath(railwayCode);
+  const railwayPath = railwayPathQuery.data;
+
+  const centerPosition = stationList.reduce(
+    (totPos, item) => ({
+      lat: totPos.lat + item.latitude / stationList.length,
+      lng: totPos.lng + item.longitude / stationList.length,
+    }),
+    { lat: 0, lng: 0 }
+  );
+
+  const stationsPositionMap = (() => {
+    let codeMap: { [key: number]: { lat: number; lng: number } } = {};
+    stationList?.forEach((item) => {
+      codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
+    });
+    return codeMap;
+  })();
+
+  return (
+    <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
+      {railwayPath && (
+        <StationMapGeojson
+          railwayPath={railwayPath}
+          stationList={stationList}
+        />
+      )}
+      <FitMapZoom
+        positions={Object.keys(stationsPositionMap).map(
+          (key) => stationsPositionMap[Number(key)]
+        )}
+      />
+    </MapCustom>
+  );
+};
+
 const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
 
@@ -122,9 +239,6 @@ const RailwayInfo = () => {
 
   const railwayProgressQuery = useRailwayProgress(railwayCode);
   const railwayProgress = railwayProgressQuery.data;
-
-  const railwayPathQuery = useRailPath(railwayCode);
-  const railwayPath = railwayPathQuery.data;
 
   if (railway.isError || stationsQuery.isError) {
     return (
@@ -144,22 +258,6 @@ const RailwayInfo = () => {
       </Container>
     );
   }
-
-  const centerPosition = stationList.reduce(
-    (totPos, item) => ({
-      lat: totPos.lat + item.latitude / stationList.length,
-      lng: totPos.lng + item.longitude / stationList.length,
-    }),
-    { lat: 0, lng: 0 }
-  );
-
-  const stationsPositionMap = (() => {
-    let codeMap: { [key: number]: { lat: number; lng: number } } = {};
-    stationList?.forEach((item) => {
-      codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
-    });
-    return codeMap;
-  })();
 
   return (
     <Container>
@@ -214,7 +312,7 @@ const RailwayInfo = () => {
 
         {/* 駅一覧 */}
         <CustomTabPanel value={tabValue} index={0}>
-          {stationList.map((item, idx) => (
+          {/* {stationList.map((item, idx) => (
             <StationItem
               info={item}
               latestDate={
@@ -222,28 +320,16 @@ const RailwayInfo = () => {
               }
               key={item.stationCode}
             />
-          ))}
+          ))} */}
+          <StationList
+            stationList={stationList}
+            latestHistoryList={latestHistoryList}
+          />
         </CustomTabPanel>
 
         {/* マップ */}
         <CustomTabPanel value={tabValue} index={1}>
-          <MapCustom
-            center={centerPosition}
-            zoom={10}
-            style={{ height: "80vh" }}
-          >
-            {railwayPath && (
-              <StationMapGeojson
-                railwayPath={railwayPath}
-                stationList={stationList}
-              />
-            )}
-            <FitMapZoom
-              positions={Object.keys(stationsPositionMap).map(
-                (key) => stationsPositionMap[Number(key)]
-              )}
-            />
-          </MapCustom>
+          <RailwayMap railwayCode={railwayCode} stationList={stationList} />
         </CustomTabPanel>
       </Box>
     </Container>

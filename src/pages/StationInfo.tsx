@@ -19,6 +19,7 @@ import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import {
   RecordState,
+  Station,
   StationDate,
   StationHistory,
   useLatestStationHistory,
@@ -118,6 +119,92 @@ const CustomTabPanel = ({
   );
 };
 
+const StationMap = ({ info }: { info: Station | undefined }) => {
+  const [disableTooltip, setDisableTooltip] = useState(false);
+
+  const nearStationsQuery = useSearchKNearestStationGroups(
+    info ? { lat: info.latitude, lng: info.longitude } : undefined,
+    5
+  );
+  const nearStations = nearStationsQuery.data;
+
+  const stationsListQuery = useStationsInfoByRailwayCode(info?.railwayCode);
+  const stationList = stationsListQuery.data;
+  const railwayPathQuery = useRailPath(info?.railwayCode);
+  const railwayPath = railwayPathQuery.data;
+
+  if (!info) {
+    return (
+      <Box>
+        <Typography variant="h6">Loading...</Typography>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const position = new LatLng(info.latitude, info.longitude);
+
+  return (
+    <>
+      <Box sx={{ textAlign: "right", mt: 1 }}>
+        <Button
+          color="inherit"
+          onClick={() => setDisableTooltip(!disableTooltip)}
+          sx={{ padding: 0, color: "gray", display: "inline-block" }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ fontSize: 12, display: "inline-block" }}
+          >
+            駅名を非表示
+          </Typography>
+          <Checkbox size="small" checked={disableTooltip} sx={{ padding: 0 }} />
+        </Button>
+      </Box>
+
+      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
+        {stationList && railwayPath && (
+          <StationMapGeojson
+            railwayPath={railwayPath}
+            stationList={stationList}
+          />
+        )}
+        <Marker position={position}>
+          <Popup>
+            <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
+          </Popup>
+          <Tooltip direction="bottom" opacity={1} permanent>
+            {info.stationName}
+          </Tooltip>
+        </Marker>
+        {nearStations &&
+          nearStations
+            .filter((_, i) => i)
+            .map((item) => (
+              <Marker
+                position={[item.latitude, item.longitude]}
+                key={item.stationGroupCode}
+              >
+                <Popup>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Link to={"/stationGroup/" + item.stationGroupCode}>
+                      {item.stationName}
+                    </Link>
+                  </Box>
+                </Popup>
+                {!disableTooltip && (
+                  <Tooltip direction="bottom" opacity={1} permanent>
+                    {item.stationName}
+                  </Tooltip>
+                )}
+              </Marker>
+            ))}
+        <ChangeMapCenter position={position} />
+      </MapCustom>
+    </>
+  );
+};
+
 const StationInfo = () => {
   const stationCode = Number(useParams<"stationCode">().stationCode);
   const { isAuthenticated, isLoading } = useAuth();
@@ -125,7 +212,6 @@ const StationInfo = () => {
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
   const [buttonErrorMsg, setButtonErrorMsg] = useState("");
-  const [disableTooltip, setDisableTooltip] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 
   const station = useStationInfo(stationCode);
@@ -141,19 +227,6 @@ const StationInfo = () => {
     }
   );
   const latestDate = latestDateQuery.data;
-
-  const nearStationsQuery = useSearchKNearestStationGroups(
-    info ? { lat: info.latitude, lng: info.longitude } : undefined,
-    5
-  );
-  const nearStations = nearStationsQuery.data;
-
-  const stationsListQuery = useStationsInfoByRailwayCode(info?.railwayCode);
-  const stationList = stationsListQuery.data;
-  const railwayPathQuery = useRailPath(
-    tabValue === 3 ? info?.railwayCode : undefined
-  );
-  const railwayPath = railwayPathQuery.data;
 
   const handleSubmitError = (err: Error, variables: StationHistory) => {
     if (variables.state === RecordState.Get) {
@@ -268,7 +341,6 @@ const StationInfo = () => {
     latestDate && (latestDate.getDate ?? 0) > (latestDate.passDate ?? 0)
       ? latestDate.getDate
       : latestDate?.passDate;
-  const position = new LatLng(info.latitude, info.longitude);
 
   return (
     <Container>
@@ -423,19 +495,12 @@ const StationInfo = () => {
 
         {/* リンク */}
         <CustomTabPanel value={tabValue} index={0}>
-          {isAuthenticated && (
-            <TimetableURL info={info} visible={tabValue === 0} />
-          )}
+          {isAuthenticated && <TimetableURL info={info} />}
         </CustomTabPanel>
 
         {/* 履歴 */}
         <CustomTabPanel value={tabValue} index={1}>
-          {isAuthenticated && (
-            <HistoryListTable
-              stationCode={stationCode}
-              visible={tabValue === 1}
-            />
-          )}
+          {isAuthenticated && <HistoryListTable stationCode={stationCode} />}
         </CustomTabPanel>
 
         {/* カスタム */}
@@ -447,65 +512,7 @@ const StationInfo = () => {
 
         {/* マップ */}
         <CustomTabPanel value={tabValue} index={3} padding={0}>
-          <Box sx={{ textAlign: "right", mt: 1 }}>
-            <Button
-              color="inherit"
-              onClick={() => setDisableTooltip(!disableTooltip)}
-              sx={{ padding: 0, color: "gray", display: "inline-block" }}
-            >
-              <Typography
-                variant="h6"
-                sx={{ fontSize: 12, display: "inline-block" }}
-              >
-                駅名を非表示
-              </Typography>
-              <Checkbox
-                size="small"
-                checked={disableTooltip}
-                sx={{ padding: 0 }}
-              />
-            </Button>
-          </Box>
-
-          <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
-            {stationList && railwayPath && (
-              <StationMapGeojson
-                railwayPath={railwayPath}
-                stationList={stationList}
-              />
-            )}
-            <Marker position={position}>
-              <Popup>
-                <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
-              </Popup>
-              <Tooltip direction="bottom" opacity={1} permanent>
-                {info.stationName}
-              </Tooltip>
-            </Marker>
-            {nearStations &&
-              nearStations
-                .filter((_, i) => i)
-                .map((item) => (
-                  <Marker
-                    position={[item.latitude, item.longitude]}
-                    key={item.stationGroupCode}
-                  >
-                    <Popup>
-                      <Box sx={{ textAlign: "center" }}>
-                        <Link to={"/stationGroup/" + item.stationGroupCode}>
-                          {item.stationName}
-                        </Link>
-                      </Box>
-                    </Popup>
-                    {!disableTooltip && (
-                      <Tooltip direction="bottom" opacity={1} permanent>
-                        {item.stationName}
-                      </Tooltip>
-                    )}
-                  </Marker>
-                ))}
-            <ChangeMapCenter position={position} />
-          </MapCustom>
+          <StationMap info={info} />
         </CustomTabPanel>
       </Box>
     </Container>
