@@ -2,12 +2,9 @@ import { Link, useParams } from "react-router-dom";
 import {
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   Container,
   Stack,
-  Tab,
-  Tabs,
   Typography,
 } from "@mui/material";
 import {
@@ -28,8 +25,9 @@ import {
   ProgressBar,
   RespStationName,
   StationMapGeojson,
+  TabNavigation,
+  TabPanel,
 } from "../components";
-import { useState } from "react";
 
 const StationItem = ({
   info,
@@ -157,29 +155,6 @@ const StationList = ({
   );
 };
 
-const CustomTabPanel = ({
-  children,
-  value,
-  index,
-  padding,
-}: {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-  padding?: number;
-}) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-    >
-      {value === index && <Box sx={{ p: padding ?? 2 }}>{children}</Box>}
-    </div>
-  );
-};
-
 const RailwayMap = ({
   railwayCode,
   stationList,
@@ -225,8 +200,6 @@ const RailwayMap = ({
 
 const RailwayInfo = () => {
   const railwayCode = Number(useParams<"railwayCode">().railwayCode);
-
-  const [tabValue, setTabValue] = useState(0);
 
   const railway = useRailwayInfo(railwayCode);
   const info = railway.data;
@@ -299,39 +272,18 @@ const RailwayInfo = () => {
 
       <Box sx={{ mb: 2 }} />
 
-      <Box sx={{ minHeight: 600 }}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs
-            value={tabValue}
-            onChange={(_, newValue) => setTabValue(newValue)}
-          >
-            <Tab label="駅一覧" />
-            <Tab label="マップ" />
-          </Tabs>
-        </Box>
-
-        {/* 駅一覧 */}
-        <CustomTabPanel value={tabValue} index={0}>
-          {/* {stationList.map((item, idx) => (
-            <StationItem
-              info={item}
-              latestDate={
-                latestHistoryList ? latestHistoryList[idx] : undefined
-              }
-              key={item.stationCode}
-            />
-          ))} */}
+      <TabNavigation>
+        <TabPanel label="駅一覧">
           <StationList
             stationList={stationList}
             latestHistoryList={latestHistoryList}
           />
-        </CustomTabPanel>
+        </TabPanel>
 
-        {/* マップ */}
-        <CustomTabPanel value={tabValue} index={1}>
+        <TabPanel label="マップ">
           <RailwayMap railwayCode={railwayCode} stationList={stationList} />
-        </CustomTabPanel>
-      </Box>
+        </TabPanel>
+      </TabNavigation>
     </Container>
   );
 };

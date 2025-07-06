@@ -4,13 +4,12 @@ import {
   Button,
   CircularProgress,
   Container,
-  Tab,
-  Tabs,
   Typography,
   useTheme,
 } from "@mui/material";
 import {
   Railway,
+  Station,
   StationProgress,
   useCompanyInfo,
   useCompanyProgress,
@@ -26,8 +25,52 @@ import {
   MapCustom,
   ProgressBar,
   StationMapGeojson,
+  TabNavigation,
+  TabPanel,
 } from "../components";
-import React, { useState } from "react";
+
+const CompanyStationMap = ({
+  companyCode,
+  stationList,
+}: {
+  companyCode: number;
+  stationList: Station[];
+}) => {
+  const railwayPathQuery = useRailPathByCompanyCode(companyCode);
+  const railwayPath = railwayPathQuery.data;
+
+  const centerPosition = stationList.reduce(
+    (totPos, item) => ({
+      lat: totPos.lat + item.latitude / stationList.length,
+      lng: totPos.lng + item.longitude / stationList.length,
+    }),
+    { lat: 0, lng: 0 }
+  );
+
+  const stationsPositionMap = (() => {
+    let codeMap: { [key: number]: { lat: number; lng: number } } = {};
+    stationList.forEach((item) => {
+      codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
+    });
+    return codeMap;
+  })();
+
+  return (
+    <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
+      {railwayPath && (
+        <StationMapGeojson
+          railwayPath={railwayPath}
+          stationList={stationList}
+        />
+      )}
+      <FitMapZoom
+        positions={Object.keys(stationsPositionMap).map(
+          (key) => stationsPositionMap[Number(key)]
+        )}
+      />
+    </MapCustom>
+  );
+};
 
 const RailwayItem = ({
   info,
@@ -89,33 +132,8 @@ const RailwayItem = ({
   );
 };
 
-const CustomTabPanel = ({
-  children,
-  value,
-  index,
-  padding,
-}: {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-  padding?: number;
-}) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-    >
-      {value === index && <Box sx={{ p: padding ?? 2 }}>{children}</Box>}
-    </div>
-  );
-};
-
 const CompanyInfo = () => {
   const companyCode = Number(useParams<"companyCode">().companyCode);
-
-  const [tabValue, setTabValue] = useState(0);
 
   const companyQuery = useCompanyInfo(companyCode);
   const info = companyQuery.data;
@@ -130,9 +148,6 @@ const CompanyInfo = () => {
 
   const stationsQuery = useStationsInfoByCompanyCode(companyCode);
   const stationList = stationsQuery.data;
-
-  const railwayPathQuery = useRailPathByCompanyCode(companyCode);
-  const railwayPath = railwayPathQuery.data;
 
   if (companyQuery.isError || railwaysQuery.isError || stationsQuery.isError) {
     return (
@@ -156,22 +171,6 @@ const CompanyInfo = () => {
     );
   }
 
-  const centerPosition = stationList.reduce(
-    (totPos, item) => ({
-      lat: totPos.lat + item.latitude / stationList.length,
-      lng: totPos.lng + item.longitude / stationList.length,
-    }),
-    { lat: 0, lng: 0 }
-  );
-
-  const stationsPositionMap = (() => {
-    let codeMap: { [key: number]: { lat: number; lng: number } } = {};
-    stationList.forEach((item) => {
-      codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
-    });
-    return codeMap;
-  })();
-
   return (
     <Container>
       <Box>
@@ -192,19 +191,8 @@ const CompanyInfo = () => {
 
       <Box sx={{ mb: 2 }} />
 
-      <Box sx={{ minHeight: 600 }}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs
-            value={tabValue}
-            onChange={(_, newValue) => setTabValue(newValue)}
-          >
-            <Tab label="路線一覧" />
-            <Tab label="マップ" />
-          </Tabs>
-        </Box>
-
-        {/* 路線一覧 */}
-        <CustomTabPanel value={tabValue} index={0}>
+      <TabNavigation>
+        <TabPanel label="路線一覧">
           {railwayList.map((item, idx) => (
             <RailwayItem
               info={item}
@@ -212,29 +200,15 @@ const CompanyInfo = () => {
               key={item.railwayCode}
             />
           ))}
-        </CustomTabPanel>
+        </TabPanel>
 
-        {/* マップ */}
-        <CustomTabPanel value={tabValue} index={1}>
-          <MapCustom
-            center={centerPosition}
-            zoom={10}
-            style={{ height: "80vh" }}
-          >
-            {railwayPath && (
-              <StationMapGeojson
-                railwayPath={railwayPath}
-                stationList={stationList}
-              />
-            )}
-            <FitMapZoom
-              positions={Object.keys(stationsPositionMap).map(
-                (key) => stationsPositionMap[Number(key)]
-              )}
-            />
-          </MapCustom>
-        </CustomTabPanel>
-      </Box>
+        <TabPanel label="マップ">
+          <CompanyStationMap
+            companyCode={companyCode}
+            stationList={stationList}
+          />
+        </TabPanel>
+      </TabNavigation>
     </Container>
   );
 };

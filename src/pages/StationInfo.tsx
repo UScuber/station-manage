@@ -9,8 +9,6 @@ import {
   Stack,
   styled,
   Checkbox,
-  Tabs,
-  Tab,
   FormHelperText,
 } from "@mui/material";
 import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
@@ -39,6 +37,8 @@ import {
   StationMapGeojson,
   RespStationName,
   TimetableURL,
+  TabNavigation,
+  TabPanel,
 } from "../components";
 
 const DefaultIcon = Leaflet.icon({
@@ -93,29 +93,6 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
         <NextStationKana variant="h6">{info.kana}</NextStationKana>
       </Button>
     </Stack>
-  );
-};
-
-const CustomTabPanel = ({
-  children,
-  value,
-  index,
-  padding,
-}: {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-  padding?: number;
-}) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-    >
-      {value === index && <Box sx={{ p: padding ?? 2 }}>{children}</Box>}
-    </div>
   );
 };
 
@@ -212,7 +189,6 @@ const StationInfo = () => {
   const [getLoading, setGetLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
   const [buttonErrorMsg, setButtonErrorMsg] = useState("");
-  const [tabValue, setTabValue] = useState(0);
 
   const station = useStationInfo(stationCode);
   const info = station.data;
@@ -311,10 +287,6 @@ const StationInfo = () => {
       document.removeEventListener("keyup", handleKeyUp);
     };
   }, [handleKeyDown, handleKeyUp]);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) setTabValue(3);
-  }, [isLoading]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -480,41 +452,23 @@ const StationInfo = () => {
 
       <Box sx={{ mb: 2 }} />
 
-      <Box sx={{ minHeight: 600 }}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs
-            value={tabValue}
-            onChange={(_, newValue) => setTabValue(newValue)}
-          >
-            <Tab label="リンク" disabled={!isAuthenticated} />
-            <Tab label="履歴" disabled={!isAuthenticated} />
-            <Tab label="カスタム" disabled={!isAuthenticated} />
-            <Tab label="マップ" />
-          </Tabs>
-        </Box>
+      <TabNavigation>
+        <TabPanel label="リンク" disabled={!isAuthenticated}>
+          <TimetableURL info={info} />
+        </TabPanel>
 
-        {/* リンク */}
-        <CustomTabPanel value={tabValue} index={0}>
-          {isAuthenticated && <TimetableURL info={info} />}
-        </CustomTabPanel>
+        <TabPanel label="履歴" disabled={!isAuthenticated}>
+          <HistoryListTable stationCode={stationCode} />
+        </TabPanel>
 
-        {/* 履歴 */}
-        <CustomTabPanel value={tabValue} index={1}>
-          {isAuthenticated && <HistoryListTable stationCode={stationCode} />}
-        </CustomTabPanel>
+        <TabPanel label="カスタム" disabled={!isAuthenticated}>
+          <CustomSubmitFormStation onSubmit={handleSubmitCustomDate} />
+        </TabPanel>
 
-        {/* カスタム */}
-        <CustomTabPanel value={tabValue} index={2}>
-          {isAuthenticated && (
-            <CustomSubmitFormStation onSubmit={handleSubmitCustomDate} />
-          )}
-        </CustomTabPanel>
-
-        {/* マップ */}
-        <CustomTabPanel value={tabValue} index={3} padding={0}>
+        <TabPanel label="マップ">
           <StationMap info={info} />
-        </CustomTabPanel>
-      </Box>
+        </TabPanel>
+      </TabNavigation>
     </Container>
   );
 };

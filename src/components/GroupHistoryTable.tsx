@@ -23,10 +23,8 @@ const stateName = ["乗降", "通過", "立ち寄り"];
 
 const GroupHistoryTable = ({
   stationGroupCode,
-  visible,
 }: {
   stationGroupCode: number;
-  visible: boolean;
 }) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -34,7 +32,7 @@ const GroupHistoryTable = ({
     useState<StationHistoryData>();
 
   const stationGroupAllHistoryQuery = useStationGroupAllHistory(
-    visible ? stationGroupCode : undefined,
+    stationGroupCode,
     (data: StationHistoryData[]) => {
       setDeleteLoading(false);
     }

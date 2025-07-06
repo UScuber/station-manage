@@ -12,5 +12,6 @@ export * from "./MapCustom";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as RespStationName } from "./RespStationName";
 export { default as StationMapGeojson } from "./StationMapGeojson";
+export * from "./TabNavigation";
 export * from "./Table";
 export { default as TimetableURL } from "./TimetableURL";
