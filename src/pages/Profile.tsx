@@ -22,6 +22,7 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { ConfirmDialog } from "../components";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -291,6 +292,7 @@ const DownloadURLButton = () => {
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, isAdmin, logout } = useAuth();
+  const { mode, changeDarkMode } = useDarkMode();
 
   const [open, setOpen] = useState(false);
   const navigation = useNavigate();
@@ -371,6 +373,20 @@ const Profile = () => {
         title="ログアウトしますか"
         deleteButtonText="確認"
       />
+
+      {/* テーマ切り替え */}
+      <Typography variant="h6" sx={{ fontSize: 16 }}>
+        テーマ切り替え
+      </Typography>
+      <Button
+        variant="outlined"
+        onClick={() => changeDarkMode(mode === "light" ? "dark" : "light")}
+      >
+        {mode === "light" ? "Dark" : "Light"}モードに切り替える
+      </Button>
+
+      <Divider sx={{ mt: 3, mb: 2 }} />
+
       <Button variant="outlined" color="error" onClick={() => setOpen(!open)}>
         <ListItemText primary="Logout" />
       </Button>

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -28,6 +28,7 @@ import CompanyInfo from "./pages/CompanyInfo";
 import PrefectureInfo from "./pages/PrefectureInfo";
 import PrefectureList from "./pages/PrefectureList";
 import HistoryMap from "./pages/HistoryMap";
+import { DarkModeProvider, getDarkMode } from "./contexts/DarkModeContext";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -106,38 +107,51 @@ const Notification = memo(() => {
 
 const AppChild = () => {
   const auth = getAuth();
+  const darkmode = getDarkMode();
+
+  const modedTheme = useMemo(
+    () =>
+      createTheme(theme, {
+        palette: {
+          mode: darkmode.mode,
+        },
+      }),
+    [darkmode.mode]
+  );
 
   return (
     <AuthProvider value={auth}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <BrowserRouter>
-          <Header />
-          <Notification />
-          <Routes>
-            <Route path="/" element={<Top />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/stationList" element={<StationList />} />
-            <Route path="/station/:stationCode" element={<StationInfo />} />
-            <Route
-              path="/stationGroup/:stationGroupCode"
-              element={<StationGroupInfo />}
-            />
-            <Route path="/railway" element={<RailwayList />} />
-            <Route path="/railway/:railwayCode" element={<RailwayInfo />} />
-            <Route path="/company" element={<CompanyList />} />
-            <Route path="/company/:companyCode" element={<CompanyInfo />} />
-            <Route path="/pref" element={<PrefectureList />} />
-            <Route path="/pref/:prefCode" element={<PrefectureInfo />} />
-            <Route path="/searchStation" element={<SearchStation />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/historyMap" element={<HistoryMap />} />
-            <Route path="/*" element={<NotFound />} />
-          </Routes>
-          <Footer />
-        </BrowserRouter>
+      <ThemeProvider theme={modedTheme}>
+        <DarkModeProvider value={darkmode}>
+          <CssBaseline />
+          <BrowserRouter>
+            <Header />
+            <Notification />
+            <Routes>
+              <Route path="/" element={<Top />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/stationList" element={<StationList />} />
+              <Route path="/station/:stationCode" element={<StationInfo />} />
+              <Route
+                path="/stationGroup/:stationGroupCode"
+                element={<StationGroupInfo />}
+              />
+              <Route path="/railway" element={<RailwayList />} />
+              <Route path="/railway/:railwayCode" element={<RailwayInfo />} />
+              <Route path="/company" element={<CompanyList />} />
+              <Route path="/company/:companyCode" element={<CompanyInfo />} />
+              <Route path="/pref" element={<PrefectureList />} />
+              <Route path="/pref/:prefCode" element={<PrefectureInfo />} />
+              <Route path="/searchStation" element={<SearchStation />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/historyMap" element={<HistoryMap />} />
+              <Route path="/*" element={<NotFound />} />
+            </Routes>
+            <Footer />
+          </BrowserRouter>
+        </DarkModeProvider>
       </ThemeProvider>
     </AuthProvider>
   );
