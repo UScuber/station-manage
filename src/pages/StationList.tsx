@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Box,
   CircularProgress,
-  Collapse,
   Container,
   IconButton,
   InputAdornment,
@@ -31,7 +30,6 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
-import getDateString from "../utils/getDateString";
 
 const Row = ({
   info,
@@ -39,7 +37,7 @@ const Row = ({
 }: {
   info: StationGroup;
   latestDate: StationGroupDate | undefined;
-}): JSX.Element => {
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -87,7 +85,7 @@ const Row = ({
           </>
         )}
       </TableRow>
-      {latestDate && (
+      {/* {latestDate && (
         <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={open} timeout="auto" unmountOnExit>
@@ -95,7 +93,7 @@ const Row = ({
                 <Typography variant="h6" gutterBottom component="div">
                   History
                 </Typography>
-                <Table size="small" aria-label="purchases">
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>Date</TableCell>
@@ -113,7 +111,7 @@ const Row = ({
             </Collapse>
           </TableCell>
         </TableRow>
-      )}
+      )} */}
     </>
   );
 };
@@ -121,7 +119,7 @@ const Row = ({
 const StationList = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(50);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | undefined>();
   const [inputName, setInputName] = useState("");
   const [searchName, setSearchName] = useState("");
 
@@ -159,9 +157,9 @@ const StationList = () => {
 
   // 500[ms]遅延して検索が更新される
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputName(event.target.value);
     const text = event.target.value;
-    clearInterval(timeoutId as unknown as number);
+    setInputName(text);
+    if (timeoutId) clearTimeout(timeoutId);
     setTimeoutId(
       setTimeout(() => {
         setSearchName(text);
@@ -170,7 +168,7 @@ const StationList = () => {
     );
   };
 
-  const CustomPagination = (): JSX.Element => {
+  const CustomPagination = () => {
     return (
       <BinaryPagination
         page={page}
@@ -200,7 +198,7 @@ const StationList = () => {
       <Container>
         <TextField
           id="stationName"
-          label="station name"
+          label="駅名"
           variant="standard"
           value={inputName}
           sx={{ maxWidth: "50%" }}
