@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   CssBaseline,
+  PaletteMode,
   ThemeProvider,
   createTheme,
 } from "@mui/material";
@@ -42,48 +43,54 @@ declare module "@mui/material/styles" {
   }
 }
 
-let theme = createTheme({
-  typography: {
-    fontFamily: [
-      '"Hiragino Kaku Gothic Pro"',
-      '"Hiragino Sans"',
-      "arial",
-      "Meiryo",
-      '"MS PGothic"',
-      "sans-serif",
-    ].join(","),
-    button: {
-      textTransform: "none",
+const getTheme = (mode: PaletteMode) => {
+  let theme = createTheme({
+    palette: {
+      mode: mode,
     },
-  },
-});
-
-theme = createTheme(theme, {
-  palette: {
-    access: theme.palette.augmentColor({
-      color: {
-        main: "#d1e3f5",
+    typography: {
+      fontFamily: [
+        '"Hiragino Kaku Gothic Pro"',
+        '"Hiragino Sans"',
+        "arial",
+        "Meiryo",
+        '"MS PGothic"',
+        "sans-serif",
+      ].join(","),
+      button: {
+        textTransform: "none",
       },
-      name: "access",
-    }),
-    complete: theme.palette.augmentColor({
-      color: {
-        main: "#d6ebdd",
-        light: "#dff0e3",
-        dark: "#cfebd5",
-      },
-      name: "complete",
-    }),
-  },
-});
+    },
+  });
 
-theme.typography.h3 = {
-  fontSize: 45,
-  fontWeight: 500,
-  [theme.breakpoints.down("md")]: {
-    fontSize: 28,
-    fontWeight: 600,
-  },
+  theme = createTheme(theme, {
+    palette: {
+      access: theme.palette.augmentColor({
+        color: {
+          main: mode === "light" ? "#d1e3f5" : "#002840",
+        },
+        name: "access",
+      }),
+      complete: theme.palette.augmentColor({
+        color: {
+          main: mode === "light" ? "#d6ebdd" : "#003825",
+        },
+        name: "complete",
+      }),
+    },
+    typography: {
+      h3: {
+        fontSize: 45,
+        fontWeight: 500,
+        [theme.breakpoints.down("md")]: {
+          fontSize: 28,
+          fontWeight: 600,
+        },
+      },
+    },
+  });
+
+  return theme;
 };
 
 const Notification = memo(() => {
@@ -109,15 +116,7 @@ const AppChild = () => {
   const auth = getAuth();
   const darkmode = getDarkMode();
 
-  const modedTheme = useMemo(
-    () =>
-      createTheme(theme, {
-        palette: {
-          mode: darkmode.mode,
-        },
-      }),
-    [darkmode.mode]
-  );
+  const modedTheme = useMemo(() => getTheme(darkmode.mode), [darkmode.mode]);
 
   return (
     <AuthProvider value={auth}>

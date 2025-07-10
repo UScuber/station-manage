@@ -127,7 +127,7 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
         <Button
           color="inherit"
           onClick={() => setDisableTooltip(!disableTooltip)}
-          sx={{ padding: 0, color: "gray", display: "inline-block" }}
+          sx={{ padding: 0, color: "text.secondary", display: "inline-block" }}
         >
           <Typography
             variant="h6"
@@ -390,7 +390,7 @@ const StationInfo = () => {
 
         {isAuthenticated && (
           <>
-            <Typography variant="h6" sx={{ color: "gray" }}>
+            <Typography variant="h6" sx={{ color: "text.secondary" }}>
               最終アクセス:
             </Typography>
             <Box sx={{ mx: 2 }}>

@@ -60,7 +60,7 @@ const HistoryContent = ({
           </RespStationName>
         </Box>
 
-        <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
+        <Typography variant="h6" color="text.secondary" sx={{ fontSize: 14 }}>
           {stateNames[history.state]}{" "}
           {("0" + history.date.getHours()).slice(-2)}:
           {("0" + history.date.getMinutes()).slice(-2)}
@@ -88,7 +88,7 @@ const HistoryContent = ({
         {history.map((hist) => (
           <Typography
             variant="h6"
-            color="gray"
+            color="text.secondary"
             sx={{ fontSize: 14 }}
             key={hist.date.toString()}
           >

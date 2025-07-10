@@ -1,9 +1,9 @@
+import { PaletteMode } from "@mui/material";
 import { createContext, useContext, useState } from "react";
 
-export type DarkLight = "light" | "dark";
 export type ThemeMode = {
-  mode: DarkLight;
-  changeDarkMode: (mode: DarkLight) => void;
+  mode: PaletteMode;
+  changeDarkMode: (mode: PaletteMode) => void;
 };
 
 const DarkModeContext = createContext<ThemeMode>({
@@ -12,11 +12,11 @@ const DarkModeContext = createContext<ThemeMode>({
 });
 
 export const getDarkMode = (): ThemeMode => {
-  const [mode, setMode] = useState<DarkLight>(
-    (localStorage.getItem("theme-mode") as DarkLight) ?? "light"
+  const [mode, setMode] = useState<PaletteMode>(
+    (localStorage.getItem("theme-mode") as PaletteMode) ?? "light"
   );
 
-  const changeDarkMode = (newMode: DarkLight) => {
+  const changeDarkMode = (newMode: PaletteMode) => {
     localStorage.setItem("theme-mode", newMode);
     setMode(newMode);
   };

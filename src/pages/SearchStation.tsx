@@ -48,7 +48,13 @@ const StationComponent = ({ info }: { info: Station }): JSX.Element => {
 
       {(latestDate || latestDateQuery.isLoading) && (
         <>
-          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: "text.secondary",
+            }}
+          >
             <Typography variant="h6" sx={{ fontSize: 16 }}>
               乗降:&nbsp;
             </Typography>
@@ -58,7 +64,13 @@ const StationComponent = ({ info }: { info: Station }): JSX.Element => {
               fontSize={16}
             />
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", color: "gray" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: "text.secondary",
+            }}
+          >
             <Typography variant="h6" sx={{ fontSize: 16 }}>
               通過:&nbsp;
             </Typography>

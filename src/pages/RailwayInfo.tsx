@@ -61,7 +61,7 @@ const StationItem = ({
 
       {isAuthenticated && (
         <Stack direction="column">
-          <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ fontSize: 14 }}>
             乗降:
             <AroundTime
               date={latestDate?.getDate}
@@ -70,7 +70,7 @@ const StationItem = ({
               isLoading={!latestDate}
             />
           </Typography>
-          <Typography variant="h6" color="gray" sx={{ fontSize: 14 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ fontSize: 14 }}>
             通過:
             <AroundTime
               date={latestDate?.passDate}

@@ -53,7 +53,7 @@ const EditableText = ({
   };
 
   return (
-    <Box sx={{ color: "gray" }}>
+    <Box sx={{ color: "text.secondary" }}>
       {editing ? (
         <Box sx={{ display: "flex" }}>
           <TextField
@@ -93,7 +93,7 @@ const EditableText = ({
             aria-label="edit"
             size="small"
             onClick={() => setEditting(true)}
-            sx={{ color: "gray" }}
+            sx={{ color: "text.secondary" }}
           >
             <Edit />
           </IconButton>

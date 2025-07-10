@@ -78,7 +78,7 @@ const Row = ({
         background: `linear-gradient(to right, ${
           achieve_rate !== 100
             ? theme.palette.access.main
-            : theme.palette.complete.light
+            : theme.palette.complete.main
         } ${achieve_rate}%, transparent ${achieve_rate}%)`,
       }}
     >
