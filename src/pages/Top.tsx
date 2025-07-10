@@ -65,27 +65,30 @@ const Top = () => {
   return (
     <Container>
       <Box>
-        {links.map((item) =>
-          !item.auth || isAuthenticated ? (
-            <Button
-              component={Link}
-              to={item.url}
-              color="inherit"
+        {links.map((item) => (
+          <Button
+            component={Link}
+            to={item.url}
+            sx={{
+              textAlign: "center",
+              display: { xs: "block", md: "inline-flex" },
+            }}
+            disabled={item.auth && !isAuthenticated}
+            key={item.url}
+          >
+            <Card
+              variant="outlined"
               sx={{
-                textAlign: "center",
-                display: { xs: "block", md: "inline-flex" },
+                opacity: item.auth && !isAuthenticated ? 0.5 : 1,
               }}
-              key={item.url}
             >
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography sx={{ fontSize: 18 }}>{item.text}</Typography>
-                  {item.description}
-                </CardContent>
-              </Card>
-            </Button>
-          ) : null
-        )}
+              <CardContent>
+                <Typography sx={{ fontSize: 18 }}>{item.text}</Typography>
+                {item.description}
+              </CardContent>
+            </Card>
+          </Button>
+        ))}
       </Box>
     </Container>
   );
