@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CircularProgress,
   Container,
   InputAdornment,
-  Paper,
   SelectChangeEvent,
   TextField,
   Typography,
@@ -26,6 +25,7 @@ import {
   TableHead,
   TableRow,
 } from "../components";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -104,10 +104,31 @@ const Row = ({
   );
 };
 
+// 検索で用いるデータ
+type SearchParams = {
+  name: string;
+  page: number;
+  pagesize: number;
+};
+
+const getURLSearchParams = (params: SearchParams) => {
+  return new URLSearchParams({
+    name: params.name,
+    page: params.page.toString(),
+    pagesize: params.pagesize.toString(),
+  });
+};
+
 const RailwayList = () => {
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [inputName, setInputName] = useState("");
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
+
+  const [searchParams, setSearchParams] = useState({
+    name: params.get("name") ?? "",
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("rowsPerPage") ?? 10),
+  });
 
   const railwayListQuery = useRailwayList();
   const railwayList = railwayListQuery.data;
@@ -115,16 +136,31 @@ const RailwayList = () => {
   const railwayProgressList = railwayProgressListQuery.data;
 
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputName(event.target.value);
+    setSearchParams({
+      ...searchParams,
+      name: event.target.value,
+    });
   };
 
   const handleChangePage = (newPage: number) => {
-    setPage(newPage);
+    setSearchParams({
+      ...searchParams,
+      page: newPage,
+    });
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(+event.target.value);
-    setPage(1);
+    setSearchParams({
+      ...searchParams,
+      pagesize: +event.target.value,
+      page: 1,
+    });
   };
+
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
 
   if (railwayListQuery.isError) {
     return (
@@ -148,21 +184,21 @@ const RailwayList = () => {
   const filteredRailways = railwayList
     .map((rail, idx) => ({
       ...rail,
-      ord: nameSimilarity(rail.railwayName, inputName),
+      ord: nameSimilarity(rail.railwayName, searchParams.name),
       idx: idx,
     }))
     .filter((rail) => rail.ord < 4)
     .sort((a, b) => a.ord - b.ord);
   const dividedRailways = filteredRailways.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
+    (searchParams.page - 1) * searchParams.pagesize,
+    searchParams.page * searchParams.pagesize
   );
 
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
-      page={page}
+      page={searchParams.page}
       count={filteredRailways.length}
-      rowsPerPage={rowsPerPage}
+      rowsPerPage={searchParams.pagesize}
       rowsPerPageOptions={[10, 25, 50, 100, 200]}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
@@ -176,7 +212,7 @@ const RailwayList = () => {
         id="railway name"
         label="路線名"
         variant="standard"
-        value={inputName}
+        value={searchParams.name}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
         slotProps={{

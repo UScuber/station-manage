@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   CircularProgress,
@@ -30,6 +30,7 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Row = ({
   info,
@@ -116,43 +117,73 @@ const Row = ({
   );
 };
 
+// 検索で用いるデータ
+type SearchParams = {
+  name: string;
+  page: number;
+  pagesize: number;
+};
+
+const getURLSearchParams = (params: SearchParams) => {
+  return new URLSearchParams({
+    name: params.name,
+    page: params.page.toString(),
+    pagesize: params.pagesize.toString(),
+  });
+};
+
 const StationList = () => {
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(50);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | undefined>();
-  const [inputName, setInputName] = useState("");
-  const [searchName, setSearchName] = useState("");
-
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
 
-  const stationGroupCount = useSearchStationGroupCount({ name: searchName });
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | undefined>();
+  const [inputName, setInputName] = useState(params.get("name") ?? "");
+  const [searchParams, setSearchParams] = useState({
+    name: params.get("name") ?? "",
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("pagesize") ?? 50),
+  });
+
+  const stationGroupCount = useSearchStationGroupCount({
+    name: searchParams.name,
+  });
 
   const stationGroupList = useSearchStationGroupList({
-    offset: (page - 1) * rowsPerPage,
+    offset: (searchParams.page - 1) * searchParams.pagesize,
     length: Math.min(
-      rowsPerPage,
-      (stationGroupCount.data ?? 1e9) - (page - 1) * rowsPerPage
+      searchParams.pagesize,
+      (stationGroupCount.data ?? 1e9) -
+        (searchParams.page - 1) * searchParams.pagesize
     ),
-    name: searchName,
+    name: searchParams.name,
   });
   const stationGroupsInfo = stationGroupList.data;
 
   const latestHistoryListQuery = useSearchStationGroupListHistory({
-    offset: (page - 1) * rowsPerPage,
+    offset: (searchParams.page - 1) * searchParams.pagesize,
     length: Math.min(
-      rowsPerPage,
-      (stationGroupCount.data ?? 1e9) - (page - 1) * rowsPerPage
+      searchParams.pagesize,
+      (stationGroupCount.data ?? 1e9) -
+        (searchParams.page - 1) * searchParams.pagesize
     ),
-    name: searchName,
+    name: searchParams.name,
   });
   const latestHistoryList = latestHistoryListQuery.data;
 
   const handleChangePage = (newPage: number) => {
-    setPage(newPage);
+    setSearchParams({
+      ...searchParams,
+      page: newPage,
+    });
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(+event.target.value);
-    setPage(1);
+    setSearchParams({
+      ...searchParams,
+      pagesize: +event.target.value,
+      page: 1,
+    });
   };
 
   // 500[ms]遅延して検索が更新される
@@ -162,8 +193,11 @@ const StationList = () => {
     if (timeoutId) clearTimeout(timeoutId);
     setTimeoutId(
       setTimeout(() => {
-        setSearchName(text);
-        setPage(1);
+        setSearchParams({
+          ...searchParams,
+          name: text,
+          page: 1,
+        });
       }, 500)
     );
   };
@@ -171,9 +205,9 @@ const StationList = () => {
   const CustomPagination = () => {
     return (
       <BinaryPagination
-        page={page}
+        page={searchParams.page}
         count={stationGroupCount.data!}
-        rowsPerPage={rowsPerPage}
+        rowsPerPage={searchParams.pagesize}
         rowsPerPageOptions={[10, 25, 50, 100, 200]}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
@@ -181,6 +215,12 @@ const StationList = () => {
       />
     );
   };
+
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
 
   if (stationGroupList.isError || stationGroupCount.isError) {
     return (

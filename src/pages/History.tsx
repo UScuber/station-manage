@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -18,7 +18,7 @@ import {
 import { Search as SearchIcon } from "@mui/icons-material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import {
   useStationHistoryList,
   useStationHistoryCount,
@@ -171,36 +171,71 @@ const splitHistoryList = (
   return res;
 };
 
+// 検索で用いるデータ
+type SearchParams = {
+  name: string;
+  page: number;
+  pagesize: number;
+  type: string;
+  dateFrom: Dayjs | null;
+  dateTo: Dayjs | null;
+};
+
+const getURLSearchParams = (params: SearchParams) => {
+  return new URLSearchParams({
+    name: params.name,
+    page: params.page.toString(),
+    pagesize: params.pagesize.toString(),
+    type: params.type,
+    ...(params.dateFrom
+      ? { dateFrom: getDateString(params.dateFrom.toDate(), true, true) }
+      : {}),
+    ...(params.dateTo
+      ? { dateTo: getDateString(params.dateTo.toDate(), true, true) }
+      : {}),
+  });
+};
+
 const History = () => {
-  const { isAuthenticated } = useAuth();
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
+
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
-  const [inputName, setInputName] = useState("");
-  const [searchName, setSearchName] = useState("");
-  const [searchType, setSearchType] = useState("station");
-  const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
-  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
+  const [inputName, setInputName] = useState(params.get("name") ?? "");
+  const getSearchParams = () => ({
+    name: params.get("name") ?? "",
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("pagesize") ?? 50),
+    type: params.get("type") ?? "station",
+    dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
+    dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
+  });
+  const [searchParams, setSearchParams] = useState(getSearchParams);
 
   const historyList = useStationHistoryList(
-    (page - 1) * rowsPerPage,
-    rowsPerPage,
-    searchName,
-    searchType,
-    dateFrom?.toDate(),
-    dateTo?.toDate()
+    (searchParams.page - 1) * searchParams.pagesize,
+    searchParams.pagesize,
+    searchParams.name,
+    searchParams.type,
+    searchParams.dateFrom?.toDate(),
+    searchParams.dateTo?.toDate()
   );
 
   const historyListCount = useStationHistoryCount(
-    searchName,
-    searchType,
-    dateFrom?.toDate(),
-    dateTo?.toDate()
+    searchParams.name,
+    searchParams.type,
+    searchParams.dateFrom?.toDate(),
+    searchParams.dateTo?.toDate()
   );
 
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(+event.target.value);
-    setPage(1);
+    setSearchParams({
+      ...searchParams,
+      pagesize: +event.target.value,
+      page: 1,
+    });
   };
 
   // 500[ms]遅延して検索が更新される
@@ -210,8 +245,11 @@ const History = () => {
     clearInterval(timeoutId as unknown as number);
     setTimeoutId(
       setTimeout(() => {
-        setSearchName(text);
-        setPage(1);
+        setSearchParams({
+          ...searchParams,
+          name: text,
+          page: 1,
+        });
       }, 500)
     );
   };
@@ -219,16 +257,33 @@ const History = () => {
   const CustomPagination = (): JSX.Element => {
     return (
       <BinaryPagination
-        page={page}
+        page={searchParams.page}
         count={historyListCount.data!}
-        rowsPerPage={rowsPerPage}
+        rowsPerPage={searchParams.pagesize}
         rowsPerPageOptions={[20, 50, 100, 200, 1000]}
-        onPageChange={(newPage) => setPage(newPage)}
+        onPageChange={(newPage) =>
+          setSearchParams({ ...searchParams, page: newPage })
+        }
         onRowsPerPageChange={handleChangeRowsPerPage}
         sx={{ my: 1 }}
       />
     );
   };
+
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
+
+  if (isLoading) {
+    return (
+      <Container>
+        <Typography variant="h6">Loading...</Typography>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   if (!isAuthenticated) {
     return <NotFound />;
@@ -270,8 +325,10 @@ const History = () => {
             <Select
               labelId="history-search-type-label"
               id="history-search-type-label"
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
+              value={searchParams.type}
+              onChange={(e) =>
+                setSearchParams({ ...searchParams, type: e.target.value })
+              }
               label="type"
             >
               <MenuItem value="station">駅名</MenuItem>
@@ -314,8 +371,10 @@ const History = () => {
           <Select
             labelId="history-search-type-label"
             id="history-search-type-label"
-            value={searchType}
-            onChange={(e) => setSearchType(e.target.value)}
+            value={searchParams.type}
+            onChange={(e) =>
+              setSearchParams({ ...searchParams, type: e.target.value })
+            }
             label="type"
           >
             <MenuItem value="station">駅名</MenuItem>
@@ -330,8 +389,10 @@ const History = () => {
         >
           <DatePicker
             label="開始日"
-            value={dateFrom}
-            onChange={(dateFrom) => setFromDate(dateFrom)}
+            value={searchParams.dateFrom}
+            onChange={(dateFrom) =>
+              setSearchParams({ ...searchParams, dateFrom: dateFrom })
+            }
             slotProps={{
               textField: { variant: "standard" },
               toolbar: { toolbarFormat: "YYYY年 M月" },
@@ -342,8 +403,10 @@ const History = () => {
           />
           <DatePicker
             label="終了日"
-            value={dateTo}
-            onChange={(dateTo) => setDateTo(dateTo)}
+            value={searchParams.dateTo}
+            onChange={(dateTo) =>
+              setSearchParams({ ...searchParams, dateTo: dateTo })
+            }
             slotProps={{
               textField: { variant: "standard" },
               toolbar: { toolbarFormat: "YYYY年 M月" },
@@ -368,7 +431,7 @@ const History = () => {
       <Box>
         {splitHistoryList(historyList.data).map((item, i, list) => {
           const date = item.date;
-          if (!i) console.log(list);
+          // if (!i) console.log(list);
           const isSameDate =
             i &&
             list[i - 1].date.getTime() - date.getTime() < 1000 * 60 * 60 * 24;

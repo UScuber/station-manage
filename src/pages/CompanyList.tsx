@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CircularProgress,
   Container,
@@ -25,6 +25,7 @@ import {
   TableHead,
   TableRow,
 } from "../components";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -87,10 +88,31 @@ const Row = ({
   );
 };
 
+// 検索で用いるデータ
+type SearchParams = {
+  name: string;
+  page: number;
+  pagesize: number;
+};
+
+const getURLSearchParams = (params: SearchParams) => {
+  return new URLSearchParams({
+    name: params.name,
+    page: params.page.toString(),
+    pagesize: params.pagesize.toString(),
+  });
+};
+
 const CompanyList = () => {
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [inputName, setInputName] = useState("");
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
+
+  const [searchParams, setSearchParams] = useState({
+    name: params.get("name") ?? "",
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("pagesize") ?? 10),
+  });
 
   const companyListQuery = useCompanyList();
   const companyList = companyListQuery.data;
@@ -98,16 +120,31 @@ const CompanyList = () => {
   const companyProgressList = companyProgressListQuery.data;
 
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputName(event.target.value);
+    setSearchParams({
+      ...searchParams,
+      name: event.target.value,
+    });
   };
 
   const handleChangePage = (newPage: number) => {
-    setPage(newPage);
+    setSearchParams({
+      ...searchParams,
+      page: newPage,
+    });
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(+event.target.value);
-    setPage(1);
+    setSearchParams({
+      ...searchParams,
+      pagesize: +event.target.value,
+      page: 1,
+    });
   };
+
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
 
   if (companyListQuery.isError) {
     return (
@@ -131,21 +168,21 @@ const CompanyList = () => {
   const filteredCompanies = companyList
     .map((comp, idx) => ({
       ...comp,
-      ord: nameSimilarity(comp.companyName, inputName),
+      ord: nameSimilarity(comp.companyName, searchParams.name),
       idx: idx,
     }))
     .filter((comp) => comp.ord < 4)
     .sort((a, b) => a.ord - b.ord);
   const dividedCompanies = filteredCompanies.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
+    (searchParams.page - 1) * searchParams.pagesize,
+    searchParams.page * searchParams.pagesize
   );
 
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
-      page={page}
+      page={searchParams.page}
       count={filteredCompanies.length}
-      rowsPerPage={rowsPerPage}
+      rowsPerPage={searchParams.pagesize}
       rowsPerPageOptions={[10, 25, 50, 100, 200]}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
@@ -159,7 +196,7 @@ const CompanyList = () => {
         id="company name"
         label="会社名"
         variant="standard"
-        value={inputName}
+        value={searchParams.name}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
         slotProps={{

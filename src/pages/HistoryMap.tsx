@@ -70,6 +70,24 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
   return result;
 };
 
+// 検索で用いるデータ
+type SearchParams = {
+  name: string;
+  page: number;
+  pagesize: number;
+  type: "station" | "railway" | "company";
+  dateFrom: Dayjs | null;
+  dateTo: Dayjs | null;
+};
+
+const getURLSearchParams = (params: SearchParams) => {
+  return new URLSearchParams({
+    name: params.name,
+    page: params.page.toString(),
+    pagesize: params.pagesize.toString(),
+  });
+};
+
 const HistoryMap = () => {
   const { isAuthenticated } = useAuth();
   const [showPoint, setShowPoint] = useState(false);
