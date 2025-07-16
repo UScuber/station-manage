@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -15,7 +15,7 @@ import {
 import { CircleMarker, FeatureGroup, Polyline, Popup } from "react-leaflet";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import {
   StationHistoryDetail,
   useCompanyList,
@@ -24,6 +24,8 @@ import {
 import { useAuth } from "../auth";
 import { CustomLink, MapCustom } from "../components";
 import NotFound from "./NotFound";
+import getDateString from "../utils/getDateString";
+import getURLSearchParams from "../utils/getURLSearchParams";
 
 type PathData = {
   railwayCode: number;
@@ -72,33 +74,47 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
 
 // 検索で用いるデータ
 type SearchParams = {
-  name: string;
   page: number;
   pagesize: number;
-  type: "station" | "railway" | "company";
+  comp: number | undefined;
   dateFrom: Dayjs | null;
   dateTo: Dayjs | null;
 };
 
-const getURLSearchParams = (params: SearchParams) => {
-  return new URLSearchParams({
-    name: params.name,
-    page: params.page.toString(),
-    pagesize: params.pagesize.toString(),
-  });
-};
-
 const HistoryMap = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
+
   const [showPoint, setShowPoint] = useState(false);
-  const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
-  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
-  const [selectCompany, setSelectCompany] = useState<number>();
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("pagesize") ?? 50),
+    comp: Number(params.get("comp")) || undefined,
+    dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
+    dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
+  });
 
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
 
   const companyListQuery = useCompanyList();
+
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
+
+  if (isLoading) {
+    return (
+      <Container>
+        <Typography variant="h6">Loading...</Typography>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   if (!isAuthenticated) {
     return <NotFound />;
@@ -130,17 +146,17 @@ const HistoryMap = () => {
   const filteredHistoryList = historyList
     .filter(
       (history) =>
-        (dateFrom?.toDate() ?? new Date(0)) <= history.date &&
+        (searchParams.dateFrom?.toDate() ?? new Date(0)) <= history.date &&
         new Date(
           history.date.getFullYear(),
           history.date.getMonth(),
           history.date.getDay()
-        ) <= (dateTo?.toDate() ?? new Date("9999-12-31"))
+        ) <= (searchParams.dateTo?.toDate() ?? new Date("9999-12-31"))
     )
     .filter((history) =>
-      selectCompany
-        ? history.companyCode === companyList[+selectCompany].companyCode
-        : selectCompany !== undefined
+      searchParams.comp
+        ? history.companyCode === companyList[searchParams.comp].companyCode
+        : searchParams.comp !== undefined
         ? history.companyCode <= 6 // JR
         : true
     );
@@ -155,8 +171,10 @@ const HistoryMap = () => {
         >
           <DatePicker
             label="開始日"
-            value={dateFrom}
-            onChange={(dateFrom) => setFromDate(dateFrom)}
+            value={searchParams.dateFrom}
+            onChange={(dateFrom) =>
+              setSearchParams({ ...searchParams, dateFrom: dateFrom })
+            }
             slotProps={{
               textField: { variant: "standard" },
               toolbar: { toolbarFormat: "YYYY年 M月" },
@@ -167,8 +185,10 @@ const HistoryMap = () => {
           />
           <DatePicker
             label="終了日"
-            value={dateTo}
-            onChange={(dateTo) => setDateTo(dateTo)}
+            value={searchParams.dateTo}
+            onChange={(dateTo) =>
+              setSearchParams({ ...searchParams, dateTo: dateTo })
+            }
             slotProps={{
               textField: { variant: "standard" },
               toolbar: { toolbarFormat: "YYYY年 M月" },
@@ -183,13 +203,14 @@ const HistoryMap = () => {
           <InputLabel id="filter-company-name-select">会社名</InputLabel>
           <Select
             id="filter-company-name-select"
-            value={selectCompany?.toString() ?? ""}
+            value={searchParams.comp?.toString() ?? ""}
             label="会社名"
             variant="standard"
             onChange={(e) =>
-              setSelectCompany(
-                e.target.value !== "" ? +e.target.value : undefined
-              )
+              setSearchParams({
+                ...searchParams,
+                comp: e.target.value !== "" ? +e.target.value : undefined,
+              })
             }
           >
             <MenuItem value="">None</MenuItem>

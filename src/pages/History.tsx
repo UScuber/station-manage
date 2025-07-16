@@ -35,6 +35,7 @@ import {
 import getDateString from "../utils/getDateString";
 import NotFound from "./NotFound";
 import aroundDayName from "../utils/aroundDayName";
+import getURLSearchParams from "../utils/getURLSearchParams";
 
 const stateNames = ["乗降", "通過"];
 const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
@@ -181,21 +182,6 @@ type SearchParams = {
   dateTo: Dayjs | null;
 };
 
-const getURLSearchParams = (params: SearchParams) => {
-  return new URLSearchParams({
-    name: params.name,
-    page: params.page.toString(),
-    pagesize: params.pagesize.toString(),
-    type: params.type,
-    ...(params.dateFrom
-      ? { dateFrom: getDateString(params.dateFrom.toDate(), true, true) }
-      : {}),
-    ...(params.dateTo
-      ? { dateTo: getDateString(params.dateTo.toDate(), true, true) }
-      : {}),
-  });
-};
-
 const History = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
@@ -204,7 +190,7 @@ const History = () => {
 
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
   const [inputName, setInputName] = useState(params.get("name") ?? "");
-  const getSearchParams = () => ({
+  const [searchParams, setSearchParams] = useState<SearchParams>({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
     pagesize: +(params.get("pagesize") ?? 50),
@@ -212,7 +198,6 @@ const History = () => {
     dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
     dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
   });
-  const [searchParams, setSearchParams] = useState(getSearchParams);
 
   const historyList = useStationHistoryList(
     (searchParams.page - 1) * searchParams.pagesize,

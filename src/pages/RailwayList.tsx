@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "../components";
 import { useLocation, useNavigate } from "react-router-dom";
+import getURLSearchParams from "../utils/getURLSearchParams";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
@@ -104,26 +105,12 @@ const Row = ({
   );
 };
 
-// 検索で用いるデータ
-type SearchParams = {
-  name: string;
-  page: number;
-  pagesize: number;
-};
-
-const getURLSearchParams = (params: SearchParams) => {
-  return new URLSearchParams({
-    name: params.name,
-    page: params.page.toString(),
-    pagesize: params.pagesize.toString(),
-  });
-};
-
 const RailwayList = () => {
   const location = useLocation();
   const navigation = useNavigate();
   const params = new URLSearchParams(location.search);
 
+  // 検索で用いるデータ
   const [searchParams, setSearchParams] = useState({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
