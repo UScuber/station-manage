@@ -190,7 +190,7 @@ const History = () => {
 
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
   const [inputName, setInputName] = useState(params.get("name") ?? "");
-  const [searchParams, setSearchParams] = useState<SearchParams>({
+  const getSearchParams = () => ({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
     pagesize: +(params.get("pagesize") ?? 50),
@@ -198,6 +198,8 @@ const History = () => {
     dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
     dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
   });
+  const [searchParams, setSearchParams] =
+    useState<SearchParams>(getSearchParams);
 
   const historyList = useStationHistoryList(
     (searchParams.page - 1) * searchParams.pagesize,
@@ -256,6 +258,12 @@ const History = () => {
   };
 
   useEffect(() => {
+    if (params.toString() !== getURLSearchParams(searchParams).toString()) {
+      setSearchParams(getSearchParams);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
     navigation(`?${getURLSearchParams(searchParams).toString()}`, {
       replace: true,
     });
@@ -290,7 +298,7 @@ const History = () => {
         <Box>
           <TextField
             id="search name"
-            label="search name"
+            label="検索"
             variant="standard"
             value={inputName}
             sx={{ maxWidth: "50%", mr: 3 }}
@@ -336,7 +344,7 @@ const History = () => {
       <Box>
         <TextField
           id="search name"
-          label="search name"
+          label="検索"
           variant="standard"
           value={inputName}
           sx={{ maxWidth: "50%", mr: 3 }}
