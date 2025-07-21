@@ -35,7 +35,11 @@ const Signup = () => {
   const signupMutation = signup((authorized) => {
     if (authorized) {
       navigation("/", {
-        state: { message: "サインアップに成功しました", url: "/" },
+        state: {
+          message: "サインアップに成功しました",
+          url: "/",
+          type: "success",
+        },
         replace: true,
       });
     } else {

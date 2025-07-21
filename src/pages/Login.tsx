@@ -23,6 +23,7 @@ const Login = () => {
 
   const emailRef = useRef<HTMLFormElement | null>(null);
   const passRef = useRef<HTMLFormElement | null>(null);
+  const loginedRef = useRef<boolean>(false); // loginが成功したかどうか(useEffectの発火回避用)
   const [emailHelperText, setEmailHelperText] = useState("");
   const [passHelperText, setPassHelperText] = useState("");
 
@@ -31,9 +32,10 @@ const Login = () => {
   const loginMutation = login((authorized) => {
     if (authorized) {
       navigation("/", {
-        state: { message: "ログインに成功しました", url: "/" },
+        state: { message: "ログインに成功しました", url: "/", type: "success" },
         replace: true,
       });
+      loginedRef.current = true;
     } else {
       setHelperText("ログインに失敗しました");
     }
@@ -83,8 +85,8 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigation("/");
+    if (isAuthenticated && !loginedRef.current) {
+      navigation("/", { replace: true });
     }
   }, [isAuthenticated]);
 

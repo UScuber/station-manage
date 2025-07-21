@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -295,16 +295,18 @@ const Profile = () => {
   const { mode, changeDarkMode } = useDarkMode();
 
   const [open, setOpen] = useState(false);
+  const logoutedRef = useRef<boolean>(false); // logoutが成功したかどうか(useEffectの発火回避用)
   const navigation = useNavigate();
   const logoutMutation = logout(() => {
     navigation("/", {
-      state: { message: "ログアウトしました", url: "/" },
+      state: { message: "ログアウトしました", url: "/", type: "success" },
       replace: true,
     });
+    logoutedRef.current = true;
   });
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !logoutedRef.current) {
       navigation("/");
     }
   }, [isAuthenticated, isLoading]);

@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -93,24 +93,38 @@ const getTheme = (mode: PaletteMode) => {
   return theme;
 };
 
-const Notification = memo(() => {
+const Notification = () => {
   const location = useLocation();
   const state = location.state;
 
+  const [alertInfo, setAlertInfo] = useState<{
+    message?: string;
+    url?: string;
+    type?: "success" | "info" | "warning" | "error";
+  }>();
+
+  useEffect(() => {
+    setAlertInfo({
+      message: state?.message,
+      url: state?.url,
+      type: state?.type,
+    });
+    window.history.replaceState({}, "");
+  }, [location.key]);
+
   if (
-    !state ||
-    !state.message ||
-    !state.url ||
-    state.url !== location.pathname
+    !alertInfo?.message ||
+    !alertInfo?.url ||
+    !location.pathname.startsWith(alertInfo.url)
   ) {
     return <Box sx={{ mt: 8 }}></Box>;
   }
   return (
-    <Alert severity="success" sx={{ mt: 1.3, mb: 0.7 }}>
-      {state.message}
+    <Alert severity={alertInfo?.type ?? "info"} sx={{ mt: 1.3, mb: 0.7 }}>
+      {alertInfo.message}
     </Alert>
   );
-});
+};
 
 const AppChild = () => {
   const auth = getAuth();
