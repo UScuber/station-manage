@@ -257,12 +257,15 @@ const History = () => {
     );
   };
 
+  // ブラウザバックなどでURLが変更されたとき
   useEffect(() => {
     if (params.toString() !== getURLSearchParams(searchParams).toString()) {
       setSearchParams(getSearchParams);
+      setInputName(params.get("name") ?? "");
     }
   }, [location.search]);
 
+  // クエリパラメータの更新
   useEffect(() => {
     navigation(`?${getURLSearchParams(searchParams).toString()}`, {
       replace: true,

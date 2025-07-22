@@ -25,6 +25,7 @@ const Signup = () => {
   const emailRef = useRef<HTMLFormElement | null>(null);
   const passRef = useRef<HTMLFormElement | null>(null);
   const pass2Ref = useRef<HTMLFormElement | null>(null);
+  const signupRef = useRef<boolean>(false); // signupが成功したかどうか(useEffectの発火回避用)
   const [nameHelperText, setNameHelperText] = useState("");
   const [emailHelperText, setEmailHelperText] = useState("");
   const [passHelperText, setPassHelperText] = useState("");
@@ -42,6 +43,7 @@ const Signup = () => {
         },
         replace: true,
       });
+      signupRef.current = true;
     } else {
       setHelperText("サインアップに失敗しました");
     }
@@ -112,7 +114,7 @@ const Signup = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !signupRef.current) {
       navigation("/");
     }
   }, [isAuthenticated]);

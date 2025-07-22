@@ -31,6 +31,7 @@ import {
 import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import { useLocation, useNavigate } from "react-router-dom";
+import getURLSearchParams from "../utils/getURLSearchParams";
 
 const Row = ({
   info,
@@ -124,14 +125,6 @@ type SearchParams = {
   pagesize: number;
 };
 
-const getURLSearchParams = (params: SearchParams) => {
-  return new URLSearchParams({
-    name: params.name,
-    page: params.page.toString(),
-    pagesize: params.pagesize.toString(),
-  });
-};
-
 const StationList = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
@@ -140,11 +133,12 @@ const StationList = () => {
 
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | undefined>();
   const [inputName, setInputName] = useState(params.get("name") ?? "");
-  const [searchParams, setSearchParams] = useState({
+  const getSearchParams = () => ({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
     pagesize: +(params.get("pagesize") ?? 50),
   });
+  const [searchParams, setSearchParams] = useState(getSearchParams);
 
   const stationGroupCount = useSearchStationGroupCount({
     name: searchParams.name,
@@ -216,6 +210,15 @@ const StationList = () => {
     );
   };
 
+  // ブラウザバックなどでURLが変更されたとき
+  useEffect(() => {
+    if (params.toString() !== getURLSearchParams(searchParams).toString()) {
+      setSearchParams(getSearchParams);
+      setInputName(params.get("name") ?? "");
+    }
+  }, [location.search]);
+
+  // クエリパラメータの更新
   useEffect(() => {
     navigation(`?${getURLSearchParams(searchParams).toString()}`, {
       replace: true,
