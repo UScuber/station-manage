@@ -4,19 +4,19 @@
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^6.2.0",
-    "@mui/material": "^6.2.0",
-    "@mui/x-date-pickers": "^7.23.1",
-    "@tanstack/react-query": "^5.62.7",
-    "axios": "^1.7.9",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@mui/x-date-pickers": "^8.23.0",
+    "@tanstack/react-query": "^5.90.15",
+    "axios": "^1.13.2",
     "date-fns": "^4.1.0",
-    "dayjs": "^1.11.13",
-    "react": "^18.3.1",
-    "react-dom": "^18.2.0",
-    "react-leaflet": "^4.2.1",
-    "react-router-dom": "^7.0.2",
-    "typescript": "^5.7.2"
+    "dayjs": "^1.11.19",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.11.0",
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "start": "vite",
@@ -41,11 +41,11 @@
     ]
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.15",
-    "@types/node": "^22.10.1",
-    "@types/react": "^18.3.16",
-    "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.3"
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.0"
   }
 }
