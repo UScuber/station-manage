@@ -2,15 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "./axios";
 import { Auth, User } from "./types";
 
-
-
 // 新規登録
 export const useSignupMutation = (
   callbackFn?: (authorized: boolean) => unknown
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async(req: User) => {
+    mutationFn: async (req: User) => {
       const { data } = await axios.post<Auth>("/api/signup", {
         ...req,
       });
@@ -27,14 +25,13 @@ export const useSignupMutation = (
   });
 };
 
-
 // ログイン
 export const useLoginMutation = (
   onSuccessFn?: (authorized: boolean) => unknown
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async(req: User) => {
+    mutationFn: async (req: User) => {
       const { data } = await axios.post<Auth>("/api/login", {
         ...req,
       });
@@ -50,14 +47,11 @@ export const useLoginMutation = (
   });
 };
 
-
 // check status
-export const useUserStatus = (
-  onSuccessFn?: (data: Auth) => unknown
-) => {
+export const useUserStatus = (onSuccessFn?: (data: Auth) => unknown) => {
   return useQuery<Auth>({
     queryKey: ["UserData"],
-    queryFn: async() => {
+    queryFn: async () => {
       const { data } = await axios.get<Auth>("/api/status");
       onSuccessFn && onSuccessFn(data);
       return data;
@@ -65,14 +59,11 @@ export const useUserStatus = (
   });
 };
 
-
 // logout
-export const useLogoutMutation = (
-  onSuccessFn?: () => unknown
-) => {
+export const useLogoutMutation = (onSuccessFn?: () => unknown) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async() => {
+    mutationFn: async () => {
       const { data } = await axios.get<string>("/api/logout");
       return data;
     },
@@ -81,16 +72,22 @@ export const useLogoutMutation = (
       // 履歴関連のキャッシュを全削除
       queryClient.invalidateQueries({ queryKey: ["LatestStationHistory"] });
       queryClient.invalidateQueries({ queryKey: ["LatestStationHistoryList"] });
-      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistory"] });
+      queryClient.invalidateQueries({
+        queryKey: ["LatestStationGroupHistory"],
+      });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistoryDetail"] });
       queryClient.invalidateQueries({ queryKey: ["StationHistory"] });
       queryClient.invalidateQueries({ queryKey: ["StationGroupHistory"] });
-      queryClient.invalidateQueries({ queryKey: ["LatestStationGroupHistoryList"] });
+      queryClient.invalidateQueries({
+        queryKey: ["LatestStationGroupHistoryList"],
+      });
       queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
       queryClient.invalidateQueries({ queryKey: ["RailwayProgressList"] });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgressListByPref"] });
+      queryClient.invalidateQueries({
+        queryKey: ["RailwayProgressListByPref"],
+      });
       queryClient.invalidateQueries({ queryKey: ["RailwayProgressListAll"] });
       queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
       queryClient.invalidateQueries({ queryKey: ["CompanyProgressList"] });

@@ -1,16 +1,22 @@
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { StationProgress } from "../api";
 
-
-const CircleProgress = (
-  { progress, size }
-  :{
-    progress: StationProgress,
-    size: number,
-  }
-) => {
+const CircleProgress = ({
+  progress,
+  size,
+}: {
+  progress: StationProgress;
+  size: number;
+}) => {
   return (
-    <Box sx={{ position: "relative", display: "flex", height: size, alignItems: "center" }}>
+    <Box
+      sx={{
+        position: "relative",
+        display: "flex",
+        height: size,
+        alignItems: "center",
+      }}
+    >
       <CircularProgress
         variant="determinate"
         sx={{
@@ -25,7 +31,12 @@ const CircleProgress = (
         variant="determinate"
         size={size}
         thickness={6}
-        value={progress.getOrPassStationNum / progress.stationNum * 100}
+        value={(progress.getOrPassStationNum / progress.stationNum) * 100}
+        color={
+          progress.getOrPassStationNum === progress.stationNum
+            ? "success"
+            : "primary"
+        }
         sx={{ position: "absolute", left: 0 }}
       />
       <Typography

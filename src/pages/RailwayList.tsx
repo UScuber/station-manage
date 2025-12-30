@@ -1,18 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CircularProgress,
   Container,
   InputAdornment,
-  Paper,
   SelectChangeEvent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import {
@@ -21,28 +15,39 @@ import {
   useRailwayList,
   useRailwayProgressList,
 } from "../api";
-import { BinaryPagination, CircleProgress, CustomLink } from "../components";
-
+import {
+  BinaryPagination,
+  CircleProgress,
+  CustomLink,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "../components";
+import { useLocation, useNavigate } from "react-router-dom";
+import getURLSearchParams from "../utils/getURLSearchParams";
 
 // 文字列同士の類似度、価が小さいほど高い
 const nameSimilarity = (name: string, input: string) => {
-  if(name === input) return 0;
+  if (name === input) return 0;
   const pos = name.indexOf(input);
-  if(pos === -1) return 4;
-  if(pos === 0) return 1;
-  if(pos === name.length - input.length) return 2;
+  if (pos === -1) return 4;
+  if (pos === 0) return 1;
+  if (pos === name.length - input.length) return 2;
   return 3;
 };
 
+const Row = ({
+  info,
+  progress,
+}: {
+  info: Railway;
+  progress: StationProgress | undefined;
+}) => {
+  const theme = useTheme();
 
-const Row = (
-  { info, progress }
-  :{
-    info: Railway,
-    progress: StationProgress | undefined,
-  }
-) => {
-  if(!progress){
+  if (!progress) {
     return (
       <TableRow>
         <TableCell>
@@ -55,7 +60,9 @@ const Row = (
                 textDecorationColor: "#" + info.railwayColor,
                 textDecorationThickness: 2,
               }}
-            >{info.railwayName}</Typography>
+            >
+              {info.railwayName}
+            </Typography>
           </CustomLink>
         </TableCell>
         <TableCell />
@@ -63,10 +70,19 @@ const Row = (
     );
   }
 
+  const achieve_rate =
+    (progress.getOrPassStationNum / progress.stationNum) * 100;
+
   return (
-    <TableRow sx={{
-      bgcolor: (progress.getOrPassStationNum === progress.stationNum ? "access.main" : "none")
-    }}>
+    <TableRow
+      sx={{
+        background: `linear-gradient(to right, ${
+          achieve_rate !== 100
+            ? theme.palette.access.main
+            : theme.palette.complete.main
+        } ${achieve_rate}%, transparent ${achieve_rate}%)`,
+      }}
+    >
       <TableCell>
         <CustomLink to={"/railway/" + info.railwayCode}>
           <Typography
@@ -77,7 +93,9 @@ const Row = (
               textDecorationColor: "#" + info.railwayColor,
               textDecorationThickness: 2,
             }}
-          >{info.railwayName}</Typography>
+          >
+            {info.railwayName}
+          </Typography>
         </CustomLink>
       </TableCell>
       <TableCell>
@@ -88,9 +106,16 @@ const Row = (
 };
 
 const RailwayList = () => {
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [inputName, setInputName] = useState("");
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
+
+  // 検索で用いるデータ
+  const [searchParams, setSearchParams] = useState({
+    name: params.get("name") ?? "",
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("rowsPerPage") ?? 10),
+  });
 
   const railwayListQuery = useRailwayList();
   const railwayList = railwayListQuery.data;
@@ -98,26 +123,43 @@ const RailwayList = () => {
   const railwayProgressList = railwayProgressListQuery.data;
 
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputName(event.target.value);
+    setSearchParams({
+      ...searchParams,
+      name: event.target.value,
+    });
   };
 
   const handleChangePage = (newPage: number) => {
-    setPage(newPage);
+    setSearchParams({
+      ...searchParams,
+      page: newPage,
+    });
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(+event.target.value);
-    setPage(1);
+    setSearchParams({
+      ...searchParams,
+      pagesize: +event.target.value,
+      page: 1,
+    });
   };
 
-  if(railwayListQuery.isError){
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
+
+  if (railwayListQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error: {railwayListQuery.error.message}
+        </Typography>
       </Container>
     );
   }
 
-  if(!railwayList){
+  if (!railwayList) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -126,23 +168,25 @@ const RailwayList = () => {
     );
   }
 
-  const filteredRailways =
-    railwayList
-      .map((rail, idx) => ({
-        ...rail,
-        ord: nameSimilarity(rail.railwayName, inputName),
-        idx: idx,
-      }))
-      .filter(rail => rail.ord < 4)
-      .sort((a, b) => a.ord - b.ord);
-  const dividedRailways = filteredRailways.slice((page-1)*rowsPerPage, page*rowsPerPage);
+  const filteredRailways = railwayList
+    .map((rail, idx) => ({
+      ...rail,
+      ord: nameSimilarity(rail.railwayName, searchParams.name),
+      idx: idx,
+    }))
+    .filter((rail) => rail.ord < 4)
+    .sort((a, b) => a.ord - b.ord);
+  const dividedRailways = filteredRailways.slice(
+    (searchParams.page - 1) * searchParams.pagesize,
+    searchParams.page * searchParams.pagesize
+  );
 
   const CustomPagination = (): JSX.Element => (
     <BinaryPagination
-      page={page}
+      page={searchParams.page}
       count={filteredRailways.length}
-      rowsPerPage={rowsPerPage}
-      rowsPerPageOptions={[10,25,50,100,200]}
+      rowsPerPage={searchParams.pagesize}
+      rowsPerPageOptions={[10, 25, 50, 100, 200]}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
       sx={{ my: 1 }}
@@ -153,40 +197,42 @@ const RailwayList = () => {
     <Container>
       <TextField
         id="railway name"
-        label="railway name"
+        label="路線名"
         variant="standard"
-        value={inputName}
+        value={searchParams.name}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          },
         }}
       />
       <CustomPagination />
 
-      <TableContainer component={Paper}>
-        <Table aria-label="railway table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Railway</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {dividedRailways.map(item => (
-              <Row
-                info={item}
-                progress={railwayProgressList ? railwayProgressList[item.idx] : undefined}
-                key={item.railwayCode}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Table aria-label="railway table">
+        <TableHead>
+          <TableRow>
+            <TableCell>路線名</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {dividedRailways.map((item) => (
+            <Row
+              info={item}
+              progress={
+                railwayProgressList ? railwayProgressList[item.idx] : undefined
+              }
+              key={item.railwayCode}
+            />
+          ))}
+        </TableBody>
+      </Table>
 
       <CustomPagination />
     </Container>

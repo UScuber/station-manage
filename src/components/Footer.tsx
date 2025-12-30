@@ -1,10 +1,7 @@
 import { Toolbar } from "@mui/material";
 
-
 const Footer = () => {
-  return (
-    <Toolbar />
-  );
+  return <Toolbar />;
 };
 
 export default Footer;
