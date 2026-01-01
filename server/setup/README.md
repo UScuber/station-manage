@@ -2,7 +2,8 @@
 
 ## 初期設定
 
-- .envファイルを設定する
+- .env ファイルを設定する
+
 ```
 API_KEY="<駅すぱあとのAPIKEY>"
 API_BASEURL="https://api.ekispert.jp/v1/json" // 駅すぱあとのAPIのURL
@@ -18,6 +19,7 @@ N02_RAILROAD_FILE="data/..._RailroadSection.geojson" // 国土交通省の線路
 ```
 
 - セットアップ
+
 ```
 npm install
 node fetch-data.js
@@ -38,18 +40,17 @@ node init-database.js
 node server.js
 ```
 
-
 ## プログラムの概要
 
 ### convert-geojson.js
 
-geojsonのデータからDBの基本的な情報を入力する
+geojson のデータから DB の基本的な情報を入力する
 
 ### export-sql.js, import-sql.js
 
-jsonデータから乗降や通過などのデータをDBからimport,exportする
+json データから乗降や通過などのデータを DB から import,export する
 
-#### railroad.txtの内容
+#### railroad.txt の内容
 
 ```
 駅の総数
