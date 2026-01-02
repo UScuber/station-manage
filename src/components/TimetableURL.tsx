@@ -1,22 +1,48 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Box, Button, CircularProgress, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
-import { Add, Cancel, Delete, Directions, Edit, OpenInNew, Save } from "@mui/icons-material";
-import { Station, useTimetableURL, useUpdateTimetableURLMutation, useUpdateTrainPosURLMutation } from "../api";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  IconButton,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from "@mui/material";
+import {
+  Add,
+  Cancel,
+  Delete,
+  Edit,
+  OpenInNew,
+  Save,
+} from "@mui/icons-material";
+import {
+  Station,
+  useTimetableURL,
+  useUpdateTimetableURLMutation,
+  useUpdateTrainPosURLMutation,
+} from "../api";
 import { useAuth } from "../auth";
 import ConfirmDialog from "./ConfirmDialog";
 
-
-const EditableText = (
-  { text, onChangeText }
-  :{
-    text: string,
-    onChangeText: (text: string) => unknown,
-  }
-) => {
+const EditableText = ({
+  text,
+  onChangeText,
+}: {
+  text: string;
+  onChangeText: (text: string) => unknown;
+}) => {
   const [editing, setEditting] = useState(false);
   const [newText, setNewText] = useState(text);
-  
+
   const handleSaveClick = () => {
     onChangeText(newText);
     setEditting(false);
@@ -27,7 +53,7 @@ const EditableText = (
   };
 
   return (
-    <Box sx={{ color: "gray" }}>
+    <Box sx={{ color: "text.secondary" }}>
       {editing ? (
         <Box sx={{ display: "flex" }}>
           <TextField
@@ -36,8 +62,8 @@ const EditableText = (
             size="small"
             onChange={(e) => setNewText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSaveClick()}
-            inputProps={{ style: { fontSize: 14 } }}
-            inputRef={input => input && input.focus()}
+            slotProps={{ input: { style: { fontSize: 14 } } }}
+            inputRef={(input) => input && input.focus()}
             sx={{ width: "100%" }}
           />
           <Button
@@ -57,37 +83,40 @@ const EditableText = (
         </Box>
       ) : (
         <Box>
-          <Typography variant="h6" sx={{ fontSize: 14, display: "inline-block" }}>
+          <Typography
+            variant="h6"
+            sx={{ fontSize: 14, display: "inline-block" }}
+          >
             {text ? text : "列車走行位置のURLを登録する"}
           </Typography>
           <IconButton
             aria-label="edit"
             size="small"
             onClick={() => setEditting(true)}
-            sx={{ color: "gray" }}
+            sx={{ color: "text.secondary" }}
           >
             <Edit />
           </IconButton>
         </Box>
       )}
     </Box>
-  )
+  );
 };
-
 
 type Column = {
-  direction: string,
-  url: string,
+  direction: string;
+  url: string;
 };
 
-const EditableTable = (
-  { table, onChangeOrAddRow, onDeleteRow }
-  :{
-    table: Column[],
-    onChangeOrAddRow: (row: Column) => unknown,
-    onDeleteRow: (row: Column) => unknown,
-  }
-) => {
+const EditableTable = ({
+  table,
+  onChangeOrAddRow,
+  onDeleteRow,
+}: {
+  table: Column[];
+  onChangeOrAddRow: (row: Column) => unknown;
+  onDeleteRow: (row: Column) => unknown;
+}) => {
   const [rowDirection, setRowDirection] = useState<string | null>(null);
   const [editURL, setEditURL] = useState("");
   const [addingDirection, setAddingDirection] = useState("");
@@ -101,8 +130,8 @@ const EditableTable = (
   };
 
   const handleSaveClick = () => {
-    const row = table.find(row => row.direction === rowDirection);
-    if(!row) return;
+    const row = table.find((row) => row.direction === rowDirection);
+    if (!row) return;
     onChangeOrAddRow(row);
     setRowDirection(null);
     setEditURL("");
@@ -114,25 +143,27 @@ const EditableTable = (
   };
 
   const handleDeleteClick = (direction: string) => {
-    const row = table.find(row => row.direction === direction);
-    if(!row) return;
+    const row = table.find((row) => row.direction === direction);
+    if (!row) return;
     setDialogOpen(true);
     setDeleteRow(row);
   };
 
   const handleDialogClose = (value: Column | undefined) => {
     setDialogOpen(false);
-    if(value) onDeleteRow(value);
+    if (value) onDeleteRow(value);
     setDeleteRow(undefined);
   };
 
   const handleAddClick = () => {
-    if(!addingDirection || !editURL) return;
-    onChangeOrAddRow({ direction: addingDirection.trim(), url: editURL.trim() });
+    if (!addingDirection || !editURL) return;
+    onChangeOrAddRow({
+      direction: addingDirection.trim(),
+      url: editURL.trim(),
+    });
     setEditURL("");
     setAddingDirection("");
   };
-
 
   return (
     <TableContainer component={Paper}>
@@ -145,7 +176,7 @@ const EditableTable = (
           </TableRow>
         </TableHead>
         <TableBody>
-          {table.map(row => (
+          {table.map((row) => (
             <TableRow key={row.direction}>
               <TableCell>{row.direction}</TableCell>
               <TableCell>
@@ -154,7 +185,7 @@ const EditableTable = (
                     size="small"
                     value={editURL}
                     onKeyDown={(e) => e.key === "Enter" && handleSaveClick()}
-                    inputProps={{ style: { fontSize: 14 } }}
+                    slotProps={{ input: { style: { fontSize: 14 } } }}
                     onChange={(e) => setEditURL(e.target.value)}
                     placeholder="時刻表のURL"
                     fullWidth
@@ -178,7 +209,9 @@ const EditableTable = (
                     <IconButton onClick={() => handleEditClick(row)}>
                       <Edit />
                     </IconButton>
-                    <IconButton onClick={() => handleDeleteClick(row.direction)}>
+                    <IconButton
+                      onClick={() => handleDeleteClick(row.direction)}
+                    >
                       <Delete />
                     </IconButton>
                   </>
@@ -192,7 +225,7 @@ const EditableTable = (
                 size="small"
                 value={addingDirection}
                 onKeyDown={(e) => e.key === "Enter" && handleAddClick()}
-                inputProps={{ style: { fontSize: 14 } }}
+                slotProps={{ input: { style: { fontSize: 14 } } }}
                 onChange={(e) => setAddingDirection(e.target.value)}
                 onFocus={handleCancelClick}
                 placeholder="～方面/～方向"
@@ -204,7 +237,7 @@ const EditableTable = (
                 size="small"
                 value={addingDirection ? editURL : ""}
                 onKeyDown={(e) => e.key === "Enter" && handleAddClick()}
-                inputProps={{ style: { fontSize: 14 } }}
+                slotProps={{ input: { style: { fontSize: 14 } } }}
                 onChange={(e) => setEditURL(e.target.value)}
                 placeholder="時刻表のURL(先に方面を入力)"
                 disabled={!addingDirection}
@@ -224,12 +257,11 @@ const EditableTable = (
         selectedValue={deleteRow}
         onClose={handleDialogClose}
         title="時刻表URLを削除しますか？"
-        descriptionFn={value => `${value.direction}： ${value.url}`}
+        descriptionFn={(value) => `${value.direction}： ${value.url}`}
       />
     </TableContainer>
   );
 };
-
 
 // 時刻表のリンクを表示
 const TimetableURL = ({ info }: { info: Station }) => {
@@ -266,7 +298,7 @@ const TimetableURL = ({ info }: { info: Station }) => {
     });
   };
 
-  if(!timetable){
+  if (!timetable) {
     return (
       <Box>
         <Typography variant="h6">Loading...</Typography>
@@ -277,39 +309,55 @@ const TimetableURL = ({ info }: { info: Station }) => {
 
   return (
     <Box sx={{ mb: 2 }}>
-      <Typography variant="h6">リンク</Typography>
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>時刻表</Typography>
-        {timetable.timetable.sort().map(row => (
+        <Typography variant="h6" sx={{ fontSize: 18 }}>
+          時刻表
+        </Typography>
+        {timetable.timetable.sort().map((row) => (
           <Button
             component={Link}
             target="__blank"
             to={row.url}
             endIcon={<OpenInNew />}
             key={row.direction}
-            sx={{ mr: 1 }}
+            sx={{ mr: 1, ml: 1 }}
           >
             {row.direction}
           </Button>
         ))}
 
-        {isAdmin && <EditableTable
+        {isAdmin && (
+          <EditableTable
             table={timetable.timetable.sort()}
             onChangeOrAddRow={(row) => handleUpdateTimetable(row)}
             onDeleteRow={(row) => handleDeleteTimetable(row)}
-          />}
+          />
+        )}
       </Box>
       <Box>
-        {timetable.trainPos && 
-          <Button
-            component={Link}
-            target="__blank"
-            to={timetable.trainPos}
-            endIcon={<OpenInNew />}
-          >
-            列車走行位置
-          </Button>}
-        {isAdmin && <EditableText text={timetable.trainPos ?? ""} onChangeText={handleUpdateTrainPos} />}
+        {timetable.trainPos && (
+          <Box>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="h6" sx={{ fontSize: 18 }}>
+              列車走行位置
+            </Typography>
+            <Button
+              component={Link}
+              target="__blank"
+              to={timetable.trainPos}
+              endIcon={<OpenInNew />}
+              sx={{ mr: 1, ml: 1 }}
+            >
+              列車走行位置
+            </Button>
+          </Box>
+        )}
+        {isAdmin && (
+          <EditableText
+            text={timetable.trainPos ?? ""}
+            onChangeText={handleUpdateTrainPos}
+          />
+        )}
       </Box>
     </Box>
   );

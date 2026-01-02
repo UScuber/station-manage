@@ -1,23 +1,26 @@
 import React, { useState } from "react";
 import { Box, Collapse, IconButton, SxProps, Theme } from "@mui/material";
 import {
-  KeyboardArrowUp as KeyboardArrowUpIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
 } from "@mui/icons-material";
 
-
-const Collapser = (
-  { buttonText, open, onClick, children, sx, collapseSx }
-  :{
-    buttonText?: JSX.Element,
-    open?: boolean,
-    onClick?: () => unknown,
-    children: React.ReactNode,
-    sx?: SxProps<Theme>,
-    collapseSx?: SxProps<Theme>,
-  }
-) => {
-  if(open === undefined || onClick === undefined){
+const Collapser = ({
+  buttonText,
+  open,
+  onClick,
+  children,
+  sx,
+  collapseSx,
+}: {
+  buttonText?: React.ReactElement;
+  open?: boolean;
+  onClick?: () => unknown;
+  children: React.ReactNode;
+  sx?: SxProps<Theme>;
+  collapseSx?: SxProps<Theme>;
+}) => {
+  if (open === undefined || onClick === undefined) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -28,8 +31,8 @@ const Collapser = (
           color="inherit"
           sx={{ padding: 0 }}
         >
+          {open ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
           {buttonText && buttonText}
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
         <Collapse in={open} timeout="auto" sx={collapseSx} unmountOnExit>
           {children}
@@ -46,8 +49,8 @@ const Collapser = (
         color="inherit"
         sx={{ padding: 0 }}
       >
+        {open ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
         {buttonText && buttonText}
-        {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
       </IconButton>
       <Collapse in={open} timeout="auto" sx={collapseSx} unmountOnExit>
         {children}

@@ -7,19 +7,23 @@ import {
   DialogTitle,
 } from "@mui/material";
 
-
-const ConfirmDialog = <T,>(
-  { open, selectedValue, onClose, title, descriptionFn, deleteButtonText }
-  :{
-    open: boolean,
-    selectedValue: T | undefined,
-    onClose: (value: T | undefined) => void,
-    title: string,
-    descriptionFn: (value: T) => string | JSX.Element,
-    deleteButtonText?: string,
-  }
-) => {
-  const description = selectedValue !== undefined ? descriptionFn(selectedValue) : undefined;
+const ConfirmDialog = <T,>({
+  open,
+  selectedValue,
+  onClose,
+  title,
+  descriptionFn,
+  deleteButtonText,
+}: {
+  open: boolean;
+  selectedValue: T | undefined;
+  onClose: (value: T | undefined) => void;
+  title: string;
+  descriptionFn: (value: T) => string | React.ReactElement;
+  deleteButtonText?: string;
+}) => {
+  const description =
+    selectedValue !== undefined ? descriptionFn(selectedValue) : undefined;
   return (
     <Dialog
       open={open}
@@ -29,13 +33,22 @@ const ConfirmDialog = <T,>(
     >
       <DialogTitle id="confirm-dialog-title">{title}</DialogTitle>
       <DialogContent>
-        {description && (typeof description === "string" ? (
-          <DialogContentText id="confirm-dialog-description">{description}</DialogContentText>
-        ) : description)}
+        {description &&
+          (typeof description === "string" ? (
+            <DialogContentText id="confirm-dialog-description">
+              {description}
+            </DialogContentText>
+          ) : (
+            description
+          ))}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose(undefined)} autoFocus>キャンセル</Button>
-        <Button color="error" onClick={() => onClose(selectedValue)}>{deleteButtonText ?? "削除"}</Button>
+        <Button onClick={() => onClose(undefined)} autoFocus>
+          キャンセル
+        </Button>
+        <Button color="error" onClick={() => onClose(selectedValue)}>
+          {deleteButtonText ?? "削除"}
+        </Button>
       </DialogActions>
     </Dialog>
   );

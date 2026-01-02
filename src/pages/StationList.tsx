@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   CircularProgress,
-  Collapse,
   Container,
   IconButton,
   InputAdornment,
@@ -31,131 +30,179 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
-import getDateString from "../utils/getDateString";
+import { useLocation, useNavigate } from "react-router-dom";
+import getURLSearchParams from "../utils/getURLSearchParams";
 
-
-const Row = (
-  { info, latestDate }
-  :{
-    info: StationGroup,
-    latestDate: StationGroupDate | undefined,
-  }
-): JSX.Element => {
+const Row = ({
+  info,
+  latestDate,
+}: {
+  info: StationGroup;
+  latestDate: StationGroupDate | undefined;
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
-        <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0 }}>
-          <CustomLink
-            to={"/stationGroup/" + info.stationGroupCode}
-          >
-            <Typography variant="h6" sx={{ fontSize: 15, lineHeight: 1.3 }}>{info.stationName}</Typography>
-            <Typography variant="h6" sx={{ fontSize: 9, lineHeight: 1 }}>{info.kana}</Typography>
+        <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0, width: "50%" }}>
+          <CustomLink to={"/stationGroup/" + info.stationGroupCode}>
+            <Typography variant="h6" sx={{ fontSize: 15, lineHeight: 1.3 }}>
+              {info.stationName}
+            </Typography>
+            <Typography variant="h6" sx={{ fontSize: 9, lineHeight: 1 }}>
+              {info.kana}
+            </Typography>
           </CustomLink>
         </TableCell>
         <TableCell align="center" sx={{ paddingX: 0.5 }}>
           <CustomLink color="inherit" to={"/pref/" + info.prefCode}>
-            <Typography sx={{ fontSize: 12, maxWidth: 50 }}>{info.prefName}</Typography>
+            <Typography sx={{ fontSize: 12, maxWidth: 50 }}>
+              {info.prefName}
+            </Typography>
           </CustomLink>
         </TableCell>
-        {latestDate && (<>
-          <TableCell align="center" sx={{ paddingX: 0.5 }}>
-            <AroundTime date={latestDate?.date} invalidMsg="" disableMinute fontSize={14}/>
-          </TableCell>
-          <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>
-            <IconButton
-              aria-label="expand row"
-              size="small"
-              onClick={() => setOpen(!open)}
-            >
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-          </TableCell>
-        </>)}
-        </TableRow>
         {latestDate && (
-          <TableRow>
-            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-              <Collapse in={open} timeout="auto" unmountOnExit>
-                <Box sx={{ margin: 1 }}>
-                  <Typography variant="h6" gutterBottom component="div">History</Typography>
-                  <Table size="small" aria-label="purchases">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Date</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {latestDate?.date && (
-                        <TableRow>
-                          <TableCell>{getDateString(latestDate.date)}</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </Box>
-              </Collapse>
+          <>
+            <TableCell align="center" sx={{ paddingX: 0.5 }}>
+              <AroundTime
+                date={latestDate?.date}
+                invalidMsg=""
+                disableMinute
+                fontSize={14}
+              />
             </TableCell>
-          </TableRow>
+            <TableCell
+              align="center"
+              sx={{ paddingLeft: 0, paddingRight: 1.5 }}
+            >
+              <IconButton
+                aria-label="expand row"
+                size="small"
+                onClick={() => setOpen(!open)}
+              >
+                {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              </IconButton>
+            </TableCell>
+          </>
         )}
+      </TableRow>
+      {/* {latestDate && (
+        <TableRow>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <Box sx={{ margin: 1 }}>
+                <Typography variant="h6" gutterBottom component="div">
+                  History
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {latestDate?.date && (
+                      <TableRow>
+                        <TableCell>{getDateString(latestDate.date)}</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Collapse>
+          </TableCell>
+        </TableRow>
+      )} */}
     </>
   );
 };
 
+// 検索で用いるデータ
+type SearchParams = {
+  name: string;
+  page: number;
+  pagesize: number;
+};
+
 const StationList = () => {
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(50);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timer>();
-  const [inputName, setInputName] = useState("");
-  const [searchName, setSearchName] = useState("");
-
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
 
-  const stationGroupCount = useSearchStationGroupCount({ name: searchName });
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | undefined>();
+  const [inputName, setInputName] = useState(params.get("name") ?? "");
+  const getSearchParams = () => ({
+    name: params.get("name") ?? "",
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("pagesize") ?? 50),
+  });
+  const [searchParams, setSearchParams] = useState(getSearchParams);
+
+  const stationGroupCount = useSearchStationGroupCount({
+    name: searchParams.name,
+  });
 
   const stationGroupList = useSearchStationGroupList({
-    offset: (page-1) * rowsPerPage,
-    length: Math.min(rowsPerPage, (stationGroupCount.data ?? 1e9) - (page-1) * rowsPerPage),
-    name: searchName,
+    offset: (searchParams.page - 1) * searchParams.pagesize,
+    length: Math.min(
+      searchParams.pagesize,
+      (stationGroupCount.data ?? 1e9) -
+        (searchParams.page - 1) * searchParams.pagesize
+    ),
+    name: searchParams.name,
   });
   const stationGroupsInfo = stationGroupList.data;
 
   const latestHistoryListQuery = useSearchStationGroupListHistory({
-    offset: (page-1) * rowsPerPage,
-    length: Math.min(rowsPerPage, (stationGroupCount.data ?? 1e9) - (page-1) * rowsPerPage),
-    name: searchName,
+    offset: (searchParams.page - 1) * searchParams.pagesize,
+    length: Math.min(
+      searchParams.pagesize,
+      (stationGroupCount.data ?? 1e9) -
+        (searchParams.page - 1) * searchParams.pagesize
+    ),
+    name: searchParams.name,
   });
   const latestHistoryList = latestHistoryListQuery.data;
 
   const handleChangePage = (newPage: number) => {
-    setPage(newPage);
+    setSearchParams({
+      ...searchParams,
+      page: newPage,
+    });
   };
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
-    setRowsPerPage(+event.target.value);
-    setPage(1);
+    setSearchParams({
+      ...searchParams,
+      pagesize: +event.target.value,
+      page: 1,
+    });
   };
 
   // 500[ms]遅延して検索が更新される
   const handleChangeText = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputName(event.target.value);
     const text = event.target.value;
-    clearInterval(timeoutId as unknown as number);
+    setInputName(text);
+    if (timeoutId) clearTimeout(timeoutId);
     setTimeoutId(
       setTimeout(() => {
-        setSearchName(text);
-        setPage(1);
+        setSearchParams({
+          ...searchParams,
+          name: text,
+          page: 1,
+        });
       }, 500)
     );
   };
 
-  const CustomPagination = (): JSX.Element => {
+  const CustomPagination = () => {
     return (
       <BinaryPagination
-        page={page}
+        page={searchParams.page}
         count={stationGroupCount.data!}
-        rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={[10,25,50,100,200]}
+        rowsPerPage={searchParams.pagesize}
+        rowsPerPageOptions={[10, 25, 50, 100, 200]}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         sx={{ my: 1 }}
@@ -163,31 +210,50 @@ const StationList = () => {
     );
   };
 
+  // ブラウザバックなどでURLが変更されたとき
+  useEffect(() => {
+    if (params.toString() !== getURLSearchParams(searchParams).toString()) {
+      setSearchParams(getSearchParams);
+      setInputName(params.get("name") ?? "");
+    }
+  }, [location.search]);
 
-  if(stationGroupList.isError || stationGroupCount.isError){
+  // クエリパラメータの更新
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
+
+  if (stationGroupList.isError || stationGroupCount.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error:{" "}
+          {stationGroupList.error?.message || stationGroupCount.error?.message}
+        </Typography>
       </Container>
     );
   }
 
-  if(!stationGroupsInfo || stationGroupCount.data === undefined){
+  if (!stationGroupsInfo || stationGroupCount.data === undefined) {
     return (
       <Container>
         <TextField
           id="stationName"
-          label="station name"
+          label="駅名"
           variant="standard"
           value={inputName}
           sx={{ maxWidth: "50%" }}
           onChange={handleChangeText}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
           }}
         />
         {stationGroupCount.data !== undefined && <CustomPagination />}
@@ -203,36 +269,58 @@ const StationList = () => {
     <Container>
       <TextField
         id="stationName"
-        label="station name"
+        label="駅名"
         variant="standard"
         value={inputName}
         sx={{ maxWidth: "50%" }}
         onChange={handleChangeText}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          },
         }}
       />
       <CustomPagination />
-      
+
       <TableContainer component={Paper}>
         <Table aria-label="collapsible table" size="medium">
           <TableHead>
-            <TableRow>
-              <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>駅名</TableCell>
-              <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>都道府県</TableCell>
-              {isAuthenticated && <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>立ち寄り</TableCell>}
-              {isAuthenticated && <TableCell align="center" sx={{ paddingLeft: 0, paddingRight: 1.5 }}>詳細</TableCell>}
-            </TableRow>
+            {isAuthenticated ? (
+              <TableRow>
+                <TableCell sx={{ paddingLeft: 1.5, paddingRight: 0.5 }}>
+                  駅名
+                </TableCell>
+                <TableCell sx={{ minWidth: 75, paddingX: 0.5 }}>
+                  都道府県
+                </TableCell>
+                <TableCell align="center" sx={{ minWidth: 75, paddingX: 0.5 }}>
+                  立ち寄り
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{ paddingLeft: 0, paddingRight: 1.5 }}
+                >
+                  詳細
+                </TableCell>
+              </TableRow>
+            ) : (
+              <TableRow>
+                <TableCell sx={{ width: "70%" }}>駅名</TableCell>
+                <TableCell sx={{ width: "30%" }}>都道府県</TableCell>
+              </TableRow>
+            )}
           </TableHead>
           <TableBody>
             {stationGroupsInfo.map((item, idx) => (
               <Row
                 info={item}
-                latestDate={latestHistoryList ? latestHistoryList[idx] : undefined}
+                latestDate={
+                  latestHistoryList ? latestHistoryList[idx] : undefined
+                }
                 key={item.stationGroupCode}
               />
             ))}

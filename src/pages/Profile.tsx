@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -22,7 +22,7 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { ConfirmDialog } from "../components";
-
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -52,7 +52,7 @@ const UploadButton = () => {
   const handleClose = (value: number | undefined) => {
     setOpen(false);
     // OK
-    if(value) uploadFile();
+    if (value) uploadFile();
 
     setSelectedFilename("");
     setFileContent("");
@@ -62,10 +62,10 @@ const UploadButton = () => {
   const UploadForm = () => {
     const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
       const files = event.currentTarget.files;
-      if(!files || !files.length) return;
+      if (!files || !files.length) return;
 
       const file = files[0];
-      if(file.name.substring(file.name.lastIndexOf(".")+1) !== "json"){
+      if (file.name.substring(file.name.lastIndexOf(".") + 1) !== "json") {
         setErrorMessage("JSONファイルを選択してください");
         return;
       }
@@ -80,7 +80,9 @@ const UploadButton = () => {
 
     return (
       <Box>
-        <FormHelperText sx={{ m: 0 }} error>今までの履歴は消されます</FormHelperText>
+        <FormHelperText sx={{ m: 0 }} error>
+          今までの履歴は消されます
+        </FormHelperText>
         <Button
           component="label"
           variant="contained"
@@ -88,11 +90,15 @@ const UploadButton = () => {
           tabIndex={-1}
         >
           ファイルを選択
-          <VisuallyHiddenInput type="file" accept=".json" onChange={handleFileChange} />
+          <VisuallyHiddenInput
+            type="file"
+            accept=".json"
+            onChange={handleFileChange}
+          />
         </Button>
         <DialogContentText
           variant="h6"
-          sx={{ fontSize: 14, ml: 1,  display: "inline" }}
+          sx={{ fontSize: 14, ml: 1, display: "inline" }}
         >
           {selectedFilename}
         </DialogContentText>
@@ -101,13 +107,9 @@ const UploadButton = () => {
     );
   };
 
-
   return (
     <Box>
-      <Button
-        variant="outlined"
-        onClick={() => setOpen(true)}
-      >
+      <Button variant="outlined" onClick={() => setOpen(true)}>
         Upload
       </Button>
       <ConfirmDialog
@@ -122,11 +124,10 @@ const UploadButton = () => {
   );
 };
 
-
 const DownloadButton = () => {
   const [open, setOpen] = useState(false);
 
-  const exportMutation = useExportHistoryMutation(data => {
+  const exportMutation = useExportHistoryMutation((data) => {
     const blob = new Blob([data], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -138,23 +139,16 @@ const DownloadButton = () => {
   const DownloadForm = () => {
     return (
       <Box sx={{ textAlign: "center" }}>
-        <Button
-          variant="contained"
-          onClick={() => exportMutation.mutate()}
-        >
+        <Button variant="contained" onClick={() => exportMutation.mutate()}>
           ダウンロード
         </Button>
       </Box>
     );
   };
 
-
   return (
     <Box>
-      <Button
-        variant="outlined"
-        onClick={() => setOpen(true)}
-      >
+      <Button variant="outlined" onClick={() => setOpen(true)}>
         Download
       </Button>
       <ConfirmDialog
@@ -168,8 +162,6 @@ const DownloadButton = () => {
     </Box>
   );
 };
-
-
 
 const UploadURLButton = () => {
   const [open, setOpen] = useState(false);
@@ -187,7 +179,7 @@ const UploadURLButton = () => {
   const handleClose = (value: number | undefined) => {
     setOpen(false);
     // OK
-    if(value) uploadFile();
+    if (value) uploadFile();
 
     setSelectedFilename("");
     setFileContent("");
@@ -197,10 +189,10 @@ const UploadURLButton = () => {
   const UploadForm = () => {
     const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
       const files = event.currentTarget.files;
-      if(!files || !files.length) return;
+      if (!files || !files.length) return;
 
       const file = files[0];
-      if(file.name.substring(file.name.lastIndexOf(".")+1) !== "json"){
+      if (file.name.substring(file.name.lastIndexOf(".") + 1) !== "json") {
         setErrorMessage("JSONファイルを選択してください");
         return;
       }
@@ -215,7 +207,9 @@ const UploadURLButton = () => {
 
     return (
       <Box>
-        <FormHelperText sx={{ m: 0 }} error>今までのデータは消されます</FormHelperText>
+        <FormHelperText sx={{ m: 0 }} error>
+          今までのデータは消されます
+        </FormHelperText>
         <Button
           component="label"
           variant="contained"
@@ -223,11 +217,15 @@ const UploadURLButton = () => {
           tabIndex={-1}
         >
           ファイルを選択
-          <VisuallyHiddenInput type="file" accept=".json" onChange={handleFileChange} />
+          <VisuallyHiddenInput
+            type="file"
+            accept=".json"
+            onChange={handleFileChange}
+          />
         </Button>
         <DialogContentText
           variant="h6"
-          sx={{ fontSize: 14, ml: 1,  display: "inline" }}
+          sx={{ fontSize: 14, ml: 1, display: "inline" }}
         >
           {selectedFilename}
         </DialogContentText>
@@ -236,13 +234,9 @@ const UploadURLButton = () => {
     );
   };
 
-
   return (
     <Box>
-      <Button
-        variant="outlined"
-        onClick={() => setOpen(true)}
-      >
+      <Button variant="outlined" onClick={() => setOpen(true)}>
         Upload
       </Button>
       <ConfirmDialog
@@ -257,11 +251,10 @@ const UploadURLButton = () => {
   );
 };
 
-
 const DownloadURLButton = () => {
   const [open, setOpen] = useState(false);
 
-  const exportMutation = useExportStationURLMutation(data => {
+  const exportMutation = useExportStationURLMutation((data) => {
     const blob = new Blob([data], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -273,23 +266,16 @@ const DownloadURLButton = () => {
   const DownloadForm = () => {
     return (
       <Box sx={{ textAlign: "center" }}>
-        <Button
-          variant="contained"
-          onClick={() => exportMutation.mutate()}
-        >
+        <Button variant="contained" onClick={() => exportMutation.mutate()}>
           ダウンロード
         </Button>
       </Box>
     );
   };
 
-
   return (
     <Box>
-      <Button
-        variant="outlined"
-        onClick={() => setOpen(true)}
-      >
+      <Button variant="outlined" onClick={() => setOpen(true)}>
         Download
       </Button>
       <ConfirmDialog
@@ -304,33 +290,35 @@ const DownloadURLButton = () => {
   );
 };
 
-
 const Profile = () => {
   const { user, isAuthenticated, isLoading, isAdmin, logout } = useAuth();
+  const { mode, changeDarkMode } = useDarkMode();
 
   const [open, setOpen] = useState(false);
+  const logoutedRef = useRef<boolean>(false); // logoutが成功したかどうか(useEffectの発火回避用)
   const navigation = useNavigate();
-  const logoutMutation = logout(
-    () => {
-      navigation("/", { state: { message: "ログアウトしました", url: "/" }, replace: true });
-    }
-  );
+  const logoutMutation = logout(() => {
+    navigation("/", {
+      state: { message: "ログアウトしました", url: "/", type: "success" },
+      replace: true,
+    });
+    logoutedRef.current = true;
+  });
 
   useEffect(() => {
-    if(!isLoading && !isAuthenticated){
+    if (!isLoading && !isAuthenticated && !logoutedRef.current) {
       navigation("/");
     }
   }, [isAuthenticated, isLoading]);
 
   const handleClose = (value: number | undefined) => {
     setOpen(false);
-    if(!value || !user) return;
-    
+    if (!value || !user) return;
+
     logoutMutation.mutate(user);
   };
 
-  
-  if(isLoading || !user){
+  if (isLoading || !user) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -342,29 +330,42 @@ const Profile = () => {
   return (
     <Container>
       <Typography variant="h4">{user.userName}</Typography>
-      <Typography variant="h6" sx={{ fontSize: 16 }}>{isAdmin && "admin"}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 16 }}>
+        {isAdmin && "admin"}
+      </Typography>
       <Divider sx={{ mt: 0.5, mb: 2 }} />
 
-      <Box>
-      </Box>
+      <Box></Box>
 
       <Box sx={{ my: 4 }} />
 
-      <Typography variant="h6" sx={{ fontSize: 16 }}>乗降履歴をダウンロードする(json)</Typography>
+      <Typography variant="h6" sx={{ fontSize: 16 }}>
+        乗降履歴をダウンロードする(json)
+      </Typography>
       <DownloadButton />
-      <Typography variant="h6" sx={{ fontSize: 16, mt: 2 }}>乗降履歴をアップロードする(json)</Typography>
+      <Typography variant="h6" sx={{ fontSize: 16, mt: 2 }}>
+        乗降履歴をアップロードする(json)
+      </Typography>
       <UploadButton />
 
       <Divider sx={{ mt: 3, mb: 2 }} />
 
-      {isAdmin && <Box>
-        <Typography variant="h6" sx={{ fontSize: 14 }}>admin</Typography>
-        <Typography variant="h6" sx={{ fontSize: 16 }}>駅のURLデータをダウンロードする(json)</Typography>
-        <DownloadURLButton />
-        <Typography variant="h6" sx={{ fontSize: 16, mt: 2 }}>駅のURLデータをアップロードする(json)</Typography>
-        <UploadURLButton />
-        <Divider sx={{ mt: 3, mb: 2 }} />
-      </Box>}
+      {isAdmin && (
+        <Box>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            admin
+          </Typography>
+          <Typography variant="h6" sx={{ fontSize: 16 }}>
+            駅のURLデータをダウンロードする(json)
+          </Typography>
+          <DownloadURLButton />
+          <Typography variant="h6" sx={{ fontSize: 16, mt: 2 }}>
+            駅のURLデータをアップロードする(json)
+          </Typography>
+          <UploadURLButton />
+          <Divider sx={{ mt: 3, mb: 2 }} />
+        </Box>
+      )}
 
       <ConfirmDialog
         open={open}
@@ -374,11 +375,21 @@ const Profile = () => {
         title="ログアウトしますか"
         deleteButtonText="確認"
       />
+
+      {/* テーマ切り替え */}
+      <Typography variant="h6" sx={{ fontSize: 16 }}>
+        テーマ切り替え
+      </Typography>
       <Button
         variant="outlined"
-        color="error"
-        onClick={() => setOpen(!open)}
+        onClick={() => changeDarkMode(mode === "light" ? "dark" : "light")}
       >
+        {mode === "light" ? "Dark" : "Light"}モードに切り替える
+      </Button>
+
+      <Divider sx={{ mt: 3, mb: 2 }} />
+
+      <Button variant="outlined" color="error" onClick={() => setOpen(!open)}>
         <ListItemText primary="Logout" />
       </Button>
     </Container>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -6,20 +6,20 @@ import {
   CircularProgress,
   Container,
   Typography,
-  ListItemText,
   Stack,
-  Divider,
   styled,
   Checkbox,
+  FormHelperText,
 } from "@mui/material";
-import { OpenInNew } from "@mui/icons-material";
 import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import Leaflet, { LatLng } from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import {
   RecordState,
+  Station,
   StationDate,
+  StationHistory,
   useLatestStationHistory,
   useRailPath,
   useSearchKNearestStationGroups,
@@ -37,8 +37,9 @@ import {
   StationMapGeojson,
   RespStationName,
   TimetableURL,
+  TabNavigation,
+  TabPanel,
 } from "../components";
-
 
 const DefaultIcon = Leaflet.icon({
   iconUrl: icon,
@@ -48,13 +49,11 @@ const DefaultIcon = Leaflet.icon({
 });
 Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
-
 const ChangeMapCenter = ({ position }: { position: LatLng }) => {
   const map = useMap();
   map.panTo(position);
   return null;
 };
-
 
 const NextStationName = styled(Typography)(({ theme }) => ({
   fontSize: 20,
@@ -70,11 +69,11 @@ const NextStationKana = styled(Typography)(({ theme }) => ({
   },
 }));
 
-const NextStation = ({ code }: { code: number }): JSX.Element => {
+const NextStation = ({ code }: { code: number }): React.ReactElement => {
   const station = useStationInfo(code);
   const info = station.data;
 
-  if(!info){
+  if (!info) {
     return (
       <Box>
         <CircularProgress />
@@ -97,25 +96,8 @@ const NextStation = ({ code }: { code: number }): JSX.Element => {
   );
 };
 
-
-const StationInfo = () => {
-  const stationCode = Number(useParams<"stationCode">().stationCode);
-  const { isAuthenticated } = useAuth();
-
-  const [getLoading, setGetLoading] = useState(false);
-  const [passLoading, setPassLoading] = useState(false);
+const StationMap = ({ info }: { info: Station | undefined }) => {
   const [disableTooltip, setDisableTooltip] = useState(false);
-
-  const station = useStationInfo(stationCode);
-  const info = station.data;
-  const latestDateQuery = useLatestStationHistory(stationCode, (data: StationDate) => {
-    if((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))){
-      setGetLoading(false);
-    }else{
-      setPassLoading(false);
-    }
-  });
-  const latestDate = latestDateQuery.data;
 
   const nearStationsQuery = useSearchKNearestStationGroups(
     info ? { lat: info.latitude, lng: info.longitude } : undefined,
@@ -128,16 +110,124 @@ const StationInfo = () => {
   const railwayPathQuery = useRailPath(info?.railwayCode);
   const railwayPath = railwayPathQuery.data;
 
-  const mutation = useSendStationStateMutation();
+  if (!info) {
+    return (
+      <Box>
+        <Typography variant="h6">Loading...</Typography>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const position = new LatLng(info.latitude, info.longitude);
+
+  return (
+    <>
+      <Box sx={{ textAlign: "right", mt: 1 }}>
+        <Button
+          color="inherit"
+          onClick={() => setDisableTooltip(!disableTooltip)}
+          sx={{ padding: 0, color: "text.secondary", display: "inline-block" }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ fontSize: 12, display: "inline-block" }}
+          >
+            駅名を非表示
+          </Typography>
+          <Checkbox size="small" checked={disableTooltip} sx={{ padding: 0 }} />
+        </Button>
+      </Box>
+
+      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
+        {stationList && railwayPath && (
+          <StationMapGeojson
+            railwayPath={railwayPath}
+            stationList={stationList}
+          />
+        )}
+        <Marker position={position}>
+          <Popup>
+            <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
+          </Popup>
+          <Tooltip direction="bottom" opacity={1} permanent>
+            {info.stationName}
+          </Tooltip>
+        </Marker>
+        {nearStations &&
+          nearStations
+            .filter((_, i) => i)
+            .map((item) => (
+              <Marker
+                position={[item.latitude, item.longitude]}
+                key={item.stationGroupCode}
+              >
+                <Popup>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Link to={"/stationGroup/" + item.stationGroupCode}>
+                      {item.stationName}
+                    </Link>
+                  </Box>
+                </Popup>
+                {!disableTooltip && (
+                  <Tooltip direction="bottom" opacity={1} permanent>
+                    {item.stationName}
+                  </Tooltip>
+                )}
+              </Marker>
+            ))}
+        <ChangeMapCenter position={position} />
+      </MapCustom>
+    </>
+  );
+};
+
+const StationInfo = () => {
+  const stationCode = Number(useParams<"stationCode">().stationCode);
+  const { isAuthenticated, isLoading } = useAuth();
+
+  const [getLoading, setGetLoading] = useState(false);
+  const [passLoading, setPassLoading] = useState(false);
+  const [buttonErrorMsg, setButtonErrorMsg] = useState("");
+
+  const station = useStationInfo(stationCode);
+  const info = station.data;
+  const latestDateQuery = useLatestStationHistory(
+    stationCode,
+    (data: StationDate) => {
+      if ((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))) {
+        setGetLoading(false);
+      } else {
+        setPassLoading(false);
+      }
+    }
+  );
+  const latestDate = latestDateQuery.data;
+
+  const handleSubmitError = (err: Error, variables: StationHistory) => {
+    if (variables.state === RecordState.Get) {
+      setGetLoading(false);
+      setButtonErrorMsg(
+        `${info?.stationName}駅 乗降記録の送信に失敗しました(Error: ${err.message})`
+      );
+    } else if (variables.state === RecordState.Pass) {
+      setPassLoading(false);
+      setButtonErrorMsg(
+        `${info?.stationName}駅 通過記録の送信に失敗しました(Error: ${err.message})`
+      );
+    }
+  };
+
+  const mutation = useSendStationStateMutation(handleSubmitError);
 
   const navigation = useNavigate();
   const rightKeyRef = useRef(false);
   const leftKeyRef = useRef(false);
 
   const handleSubmit = (state: number) => {
-    if(!info) return;
+    if (!info) return;
 
-    if(state === RecordState.Get) setGetLoading(true);
+    if (state === RecordState.Get) setGetLoading(true);
     else setPassLoading(true);
 
     mutation.mutate({
@@ -149,31 +239,44 @@ const StationInfo = () => {
   };
 
   const handleSubmitCustomDate = (date: Date, state: RecordState) => {
-    if(!info) return;
+    if (!info) return;
 
     mutation.mutate({
       stationCode: stationCode,
       stationGroupCode: info.stationGroupCode,
       state: Number(state),
       date: date,
-    })
+    });
   };
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if(!info) return;
-    if(info.left.length >= 1 && !e.altKey && e.key === "ArrowLeft" && !leftKeyRef.current){
-      navigation("/station/" + info.left[0]);
-      leftKeyRef.current = true;
-    }
-    if(info.right.length >= 1 && !e.altKey && e.key === "ArrowRight" && !rightKeyRef.current){
-      navigation("/station/" + info.right[0]);
-      rightKeyRef.current = true;
-    }
-  }, [info, navigation]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!info) return;
+      if (
+        info.left.length >= 1 &&
+        !e.altKey &&
+        e.key === "ArrowLeft" &&
+        !leftKeyRef.current
+      ) {
+        navigation("/station/" + info.left[0]);
+        leftKeyRef.current = true;
+      }
+      if (
+        info.right.length >= 1 &&
+        !e.altKey &&
+        e.key === "ArrowRight" &&
+        !rightKeyRef.current
+      ) {
+        navigation("/station/" + info.right[0]);
+        rightKeyRef.current = true;
+      }
+    },
+    [info, navigation]
+  );
 
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    if(e.key === "ArrowLeft") leftKeyRef.current = false;
-    if(e.key === "ArrowRight") rightKeyRef.current = false;
+    if (e.key === "ArrowLeft") leftKeyRef.current = false;
+    if (e.key === "ArrowRight") rightKeyRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -189,16 +292,15 @@ const StationInfo = () => {
     window.scrollTo(0, 0);
   }, []);
 
-
-  if(station.isError){
+  if (station.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">Error: {station.error.message}</Typography>
       </Container>
     );
   }
 
-  if(!info){
+  if (!info) {
     return (
       <Container>
         <Typography variant="h6">Loading...</Typography>
@@ -207,24 +309,35 @@ const StationInfo = () => {
     );
   }
 
-  const lastAccessTime = (latestDate && (latestDate.getDate ?? 0) > (latestDate.passDate ?? 0)) ? latestDate.getDate : latestDate?.passDate;
-  const position = new LatLng(info.latitude, info.longitude);
+  const lastAccessTime =
+    latestDate && (latestDate.getDate ?? 0) > (latestDate.passDate ?? 0)
+      ? latestDate.getDate
+      : latestDate?.passDate;
 
   return (
     <Container>
       <Box maxWidth="sm" sx={{ margin: "auto" }}>
         <Box sx={{ textAlign: "center" }}>
-          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{info.stationName}</RespStationName>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>
+            {info.stationName}
+          </RespStationName>
           <RespStationName variant="h6">{info.kana}</RespStationName>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, height: "120px" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            mb: 2,
+            height: "120px",
+          }}
+        >
           <Box sx={{ textAlign: "left" }}>
-            {info.left.map(code => (
+            {info.left.map((code) => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
           <Box sx={{ textAlign: "right" }}>
-            {info.right.map(code => (
+            {info.right.map((code) => (
               <NextStation key={code} code={code} />
             ))}
           </Box>
@@ -247,7 +360,12 @@ const StationInfo = () => {
             color="inherit"
             sx={{ padding: 0 }}
           >
-            <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
+            <Typography
+              variant="h6"
+              sx={{ fontSize: 15, display: "inline-block" }}
+            >
+              {info.railwayCompany}
+            </Typography>
           </Button>
           <Button
             component={Link}
@@ -270,102 +388,87 @@ const StationInfo = () => {
           </Button>
         </Box>
 
-        {isAuthenticated && (<>
-          <Typography variant="h6" sx={{ color: "gray" }}>最終アクセス:</Typography>
-          <Box sx={{ mx: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Typography variant="h6">乗降:&nbsp;</Typography>
-              <AroundTime date={latestDate?.getDate} invalidMsg="なし" />
+        {isAuthenticated && (
+          <>
+            <Typography variant="h6" sx={{ color: "text.secondary" }}>
+              最終アクセス:
+            </Typography>
+            <Box sx={{ mx: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography variant="h6">乗降:&nbsp;</Typography>
+                <AroundTime
+                  date={latestDate?.getDate}
+                  invalidMsg="なし"
+                  isLoading={latestDateQuery.isLoading}
+                />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography variant="h6">通過:&nbsp;</Typography>
+                <AroundTime
+                  date={latestDate?.passDate}
+                  invalidMsg="なし"
+                  isLoading={latestDateQuery.isLoading}
+                />
+              </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Typography variant="h6">通過:&nbsp;</Typography>
-              <AroundTime date={latestDate?.passDate} invalidMsg="なし" />
-            </Box>
-          </Box>
-        </>)}
+          </>
+        )}
       </Box>
 
       <Box sx={{ mb: 2 }}>
+        {/* 乗降/通過ボタン */}
         {isAuthenticated && (
-          <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
-            <AccessButton
-              text="乗降"
-              loading={getLoading}
-              timeLimit={60*3}
-              accessedTime={lastAccessTime}
-              onClick={() => handleSubmit(RecordState.Get)}
-            />
-            <AccessButton
-              text="通過"
-              loading={passLoading}
-              timeLimit={60*3}
-              accessedTime={lastAccessTime}
-              onClick={() => handleSubmit(RecordState.Pass)}
-            />
-          </Stack>
+          <>
+            <Stack spacing={2} direction="row" sx={{ mb: 0 }}>
+              <AccessButton
+                text="乗降"
+                loading={getLoading}
+                timeLimit={60 * 3}
+                accessedTime={lastAccessTime}
+                onClick={() => handleSubmit(RecordState.Get)}
+              />
+              <AccessButton
+                text="通過"
+                loading={passLoading}
+                timeLimit={60 * 3}
+                accessedTime={lastAccessTime}
+                onClick={() => handleSubmit(RecordState.Pass)}
+              />
+            </Stack>
+            <FormHelperText error sx={{ m: 0 }}>
+              {buttonErrorMsg || " "}
+            </FormHelperText>
+          </>
         )}
+
         <Button
           component={Link}
           to={"/stationGroup/" + info.stationGroupCode}
           variant="outlined"
         >
-          <ListItemText primary="駅グループ" />
+          駅グループ
         </Button>
       </Box>
 
-      <Typography variant="h5">詳細</Typography>
-      <Divider sx={{ mb: 1 }} />
+      <Box sx={{ mb: 2 }} />
 
-      {isAuthenticated && (
-        <Box sx={{ mb: 2 }}>
-          {/* 時刻表 */}
+      <TabNavigation>
+        <TabPanel label="リンク" disabled={!isAuthenticated}>
           <TimetableURL info={info} />
+        </TabPanel>
 
-          {/* 履歴 */}
+        <TabPanel label="履歴" disabled={!isAuthenticated}>
           <HistoryListTable stationCode={stationCode} />
+        </TabPanel>
 
-          {/* 履歴追加 */}
+        <TabPanel label="カスタム" disabled={!isAuthenticated}>
           <CustomSubmitFormStation onSubmit={handleSubmitCustomDate} />
-        </Box>
-        )}
+        </TabPanel>
 
-      <Box sx={{ textAlign: "right" }}>
-        <Button
-          color="inherit"
-          onClick={() => setDisableTooltip(!disableTooltip)}
-          sx={{ padding: 0, color: "gray", display: "inline-block" }}
-        >
-          <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
-          <Checkbox
-          size="small"
-          checked={disableTooltip}
-          sx={{ padding: 0 }}
-        />
-        </Button>
-      </Box>
-
-      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
-        {stationList && railwayPath && (
-          <StationMapGeojson railwayPath={railwayPath} stationList={stationList} />
-        )}
-        <Marker position={position}>
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
-          </Popup>
-          <Tooltip direction="bottom" opacity={1} permanent>{info.stationName}</Tooltip>
-        </Marker>
-        {nearStations && nearStations.filter((_,i) => i).map(item => (
-          <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
-              </Box>
-            </Popup>
-            {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
-          </Marker>
-        ))}
-        <ChangeMapCenter position={position} />
-      </MapCustom>
+        <TabPanel label="マップ">
+          <StationMap info={info} />
+        </TabPanel>
+      </TabNavigation>
     </Container>
   );
 };

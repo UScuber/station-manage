@@ -10,8 +10,12 @@ serve(
     const path = new URL(req.url).pathname;
 
     if(contents.includes(path) || path.startsWith("/assets")){
-      return serveDir(req, {
-        fsRoot: "build",
+      const response = await serveDir(req, { fsRoot: "build" });
+      const headers = new Headers(response.headers);
+      headers.set("Cache-Control", "max-age=604800, stale-while-revalidate=604800, stale-if-error=604800");
+      return new Response(response.body, {
+        ...response,
+        headers,
       });
     }
     return new Response(HTML, {

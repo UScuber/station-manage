@@ -9,6 +9,7 @@
 #include <map>
 #include <queue>
 #include <cassert>
+#include <cstdint>
 
 constexpr double PI = 3.14159265358979323846;
 

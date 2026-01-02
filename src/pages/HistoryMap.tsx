@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -12,33 +12,33 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import {
-  CircleMarker,
-  FeatureGroup,
-  Polyline,
-  Popup,
-} from "react-leaflet";
+import { CircleMarker, FeatureGroup, Polyline, Popup } from "react-leaflet";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Dayjs } from "dayjs";
-import { StationHistoryDetail, useCompanyList, useStationHistoryListAndInfo } from "../api";
+import dayjs, { Dayjs } from "dayjs";
+import {
+  StationHistoryDetail,
+  useCompanyList,
+  useStationHistoryListAndInfo,
+} from "../api";
 import { useAuth } from "../auth";
 import { CustomLink, MapCustom } from "../components";
 import NotFound from "./NotFound";
-
+import getDateString from "../utils/getDateString";
+import getURLSearchParams from "../utils/getURLSearchParams";
 
 type PathData = {
-  railwayCode: number,
-  railwayName: string,
-  railwayColor: string,
-  companyName: string,
-  path: [number, number][],
-  key: string,
+  railwayCode: number;
+  railwayName: string;
+  railwayColor: string;
+  companyName: string;
+  path: [number, number][];
+  key: string;
 };
 
 // 同じ路線の移動ごとに分割
 const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
-  if(!historyList.length) return [];
+  if (!historyList.length) return [];
   let result: PathData[] = [
     {
       railwayCode: historyList[0].railwayCode,
@@ -47,16 +47,18 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
       companyName: historyList[0].railwayCompany,
       path: [[historyList[0].latitude, historyList[0].longitude]],
       key: `${historyList[0].date.toString()}|${historyList[0].stationCode}`,
-    }
+    },
   ];
-  for(let i = 1; i < historyList.length; i++){
+  for (let i = 1; i < historyList.length; i++) {
     const cur = historyList[i];
-    const prev = historyList[i-1];
-    if(cur.railwayCode === prev.railwayCode
-      && cur.date.getTime() - prev.date.getTime() < 1000*60*60*24
-      && cur.left.concat(cur.right).includes(prev.stationCode)){
-      result[result.length-1].path.push([cur.latitude, cur.longitude]);
-    }else{
+    const prev = historyList[i - 1];
+    if (
+      cur.railwayCode === prev.railwayCode &&
+      cur.date.getTime() - prev.date.getTime() < 1000 * 60 * 60 * 24 &&
+      cur.left.concat(cur.right).includes(prev.stationCode)
+    ) {
+      result[result.length - 1].path.push([cur.latitude, cur.longitude]);
+    } else {
       result.push({
         railwayCode: cur.railwayCode,
         railwayName: cur.railwayName,
@@ -70,56 +72,93 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
   return result;
 };
 
+// 検索で用いるデータ
+type SearchParams = {
+  page: number;
+  pagesize: number;
+  comp: number | undefined;
+  dateFrom: Dayjs | null;
+  dateTo: Dayjs | null;
+};
 
 const HistoryMap = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+  const navigation = useNavigate();
+  const params = new URLSearchParams(location.search);
+
   const [showPoint, setShowPoint] = useState(false);
-  const [dateFrom, setFromDate] = useState<Dayjs | null>(null);
-  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
-  const [selectCompany, setSelectCompany] = useState<number>();
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    page: +(params.get("page") ?? 1),
+    pagesize: +(params.get("pagesize") ?? 50),
+    comp: Number(params.get("comp")) || undefined,
+    dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
+    dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
+  });
 
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
 
   const companyListQuery = useCompanyList();
 
+  useEffect(() => {
+    navigation(`?${getURLSearchParams(searchParams).toString()}`, {
+      replace: true,
+    });
+  }, [searchParams]);
 
-  if(!isAuthenticated){
-    return (
-      <NotFound />
-    );
-  }
-
-  if(historyListQuery.isError){
-    return (
-      <Container>
-        <Typography variant="h5">Error</Typography>
-      </Container>
-    );
-  }
-
-  if(!historyList || !companyListQuery.data){
+  if (isLoading) {
     return (
       <Container>
-        Loading ...
+        <Typography variant="h6">Loading...</Typography>
         <CircularProgress />
       </Container>
     );
   }
 
-  const companyList = [{ companyCode: 0, companyName: "JR" }].concat(companyListQuery.data);
+  if (!isAuthenticated) {
+    return <NotFound />;
+  }
+
+  if (historyListQuery.isError) {
+    return (
+      <Container>
+        <Typography variant="h5">
+          Error: {historyListQuery.error.message}
+        </Typography>
+      </Container>
+    );
+  }
+
+  if (!historyList || !companyListQuery.data) {
+    return (
+      <Container>
+        Loading...
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  const companyList = [{ companyCode: 0, companyName: "JR" }].concat(
+    companyListQuery.data
+  );
 
   const filteredHistoryList = historyList
     .filter(
-      history => (dateFrom?.toDate() ?? new Date(0)) <= history.date
-        && new Date(history.date.getFullYear(), history.date.getMonth(), history.date.getDay()) <= (dateTo?.toDate() ?? new Date("9999-12-31"))
+      (history) =>
+        (searchParams.dateFrom?.toDate() ?? new Date(0)) <= history.date &&
+        new Date(
+          history.date.getFullYear(),
+          history.date.getMonth(),
+          history.date.getDay()
+        ) <= (searchParams.dateTo?.toDate() ?? new Date("9999-12-31"))
     )
-    .filter(
-      history => selectCompany ?
-        history.companyCode === companyList[+selectCompany].companyCode
-        : selectCompany !== undefined ?
-          history.companyCode <= 6 // JR
-          : true
+    .filter((history) =>
+      searchParams.comp
+        ? history.companyCode === companyList[searchParams.comp].companyCode
+        : searchParams.comp !== undefined
+        ? history.companyCode <= 6 // JR
+        : true
     );
 
   return (
@@ -132,8 +171,10 @@ const HistoryMap = () => {
         >
           <DatePicker
             label="開始日"
-            value={dateFrom}
-            onChange={(dateFrom) => setFromDate(dateFrom)}
+            value={searchParams.dateFrom}
+            onChange={(dateFrom) =>
+              setSearchParams({ ...searchParams, dateFrom: dateFrom })
+            }
             slotProps={{
               textField: { variant: "standard" },
               toolbar: { toolbarFormat: "YYYY年 M月" },
@@ -144,14 +185,16 @@ const HistoryMap = () => {
           />
           <DatePicker
             label="終了日"
-            value={dateTo}
-            onChange={(dateTo) => setDateTo(dateTo)}
+            value={searchParams.dateTo}
+            onChange={(dateTo) =>
+              setSearchParams({ ...searchParams, dateTo: dateTo })
+            }
             slotProps={{
               textField: { variant: "standard" },
               toolbar: { toolbarFormat: "YYYY年 M月" },
             }}
             format="YYYY-MM-DD"
-            sx={{ display: "inline-block", width: 120,  ml: 3 }}
+            sx={{ display: "inline-block", width: 120, ml: 3 }}
             disableFuture
           />
         </LocalizationProvider>
@@ -160,14 +203,21 @@ const HistoryMap = () => {
           <InputLabel id="filter-company-name-select">会社名</InputLabel>
           <Select
             id="filter-company-name-select"
-            value={selectCompany?.toString() ?? ""}
+            value={searchParams.comp?.toString() ?? ""}
             label="会社名"
             variant="standard"
-            onChange={(e) => setSelectCompany(e.target.value !== "" ? +e.target.value : undefined)}
+            onChange={(e) =>
+              setSearchParams({
+                ...searchParams,
+                comp: e.target.value !== "" ? +e.target.value : undefined,
+              })
+            }
           >
             <MenuItem value="">None</MenuItem>
             {companyList.map((company, idx) => (
-              <MenuItem value={idx} key={company.companyCode}>{company.companyName}</MenuItem>
+              <MenuItem value={idx} key={company.companyCode}>
+                {company.companyName}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -177,46 +227,66 @@ const HistoryMap = () => {
           onClick={() => setShowPoint(!showPoint)}
           sx={{ margin: "auto", ml: 2, mt: 2 }}
         >
-          <Typography variant="h6" sx={{ fontSize: 14, display: "inline-block" }}>点を表示</Typography>
-          <Checkbox
-          size="small"
-          checked={showPoint}
-          sx={{ padding: 0 }}
-        />
+          <Typography
+            variant="h6"
+            sx={{ fontSize: 14, display: "inline-block" }}
+          >
+            点を表示
+          </Typography>
+          <Checkbox size="small" checked={showPoint} sx={{ padding: 0 }} />
         </Button>
       </Box>
 
       <Box sx={{ mb: 2 }}>
         <CustomLink to="/history">
-          <Typography variant="h6" sx={{ fontSize: 14 }}>履歴を見る</Typography>
+          <Typography variant="h6" sx={{ fontSize: 14 }}>
+            履歴を見る
+          </Typography>
         </CustomLink>
       </Box>
 
-      <MapCustom center={[36.265185, 138.126471]} zoom={6} style={{ height: "90vh" }}>
-        {splitHistoryList(filteredHistoryList).map(item => (
-          <FeatureGroup pathOptions={{ color: "#" + item.railwayColor }} key={item.key}>
+      <MapCustom
+        center={[36.265185, 138.126471]}
+        zoom={6}
+        style={{ height: "90vh" }}
+      >
+        {splitHistoryList(filteredHistoryList).map((item) => (
+          <FeatureGroup
+            pathOptions={{ color: "#" + item.railwayColor }}
+            key={item.key}
+          >
             <Popup>
               <Box sx={{ textAlign: "center" }}>
-                <Link to={"/railway/" + item.railwayCode}>{item.railwayName}</Link>
+                <Link to={"/railway/" + item.railwayCode}>
+                  {item.railwayName}
+                </Link>
               </Box>
             </Popup>
             <Polyline weight={5} positions={item.path} />
           </FeatureGroup>
         ))}
-        {showPoint && filteredHistoryList.map(info => (
-          <CircleMarker
-            center={[info.latitude, info.longitude]}
-            pathOptions={{ color: "black", weight: 2, fillColor: "white", fillOpacity: 1 }}
-            radius={6}
-            key={`${info.stationCode}|${info.date}|${info.state}`}
-          >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/station/" + info.stationCode}>{info.stationName}</Link>
-              </Box>
-            </Popup>
-          </CircleMarker>
-        ))}
+        {showPoint &&
+          filteredHistoryList.map((info) => (
+            <CircleMarker
+              center={[info.latitude, info.longitude]}
+              pathOptions={{
+                color: "black",
+                weight: 2,
+                fillColor: "white",
+                fillOpacity: 1,
+              }}
+              radius={6}
+              key={`${info.stationCode}|${info.date}|${info.state}`}
+            >
+              <Popup>
+                <Box sx={{ textAlign: "center" }}>
+                  <Link to={"/station/" + info.stationCode}>
+                    {info.stationName}
+                  </Link>
+                </Box>
+              </Popup>
+            </CircleMarker>
+          ))}
       </MapCustom>
     </Container>
   );

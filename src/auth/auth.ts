@@ -9,15 +9,18 @@ import {
   useUserStatus,
 } from "../api";
 
-
 export type AuthInfo = {
-  signup: (onSuccessFn?: (authorized: boolean) => unknown) => any,
-  login: (onSuccessFn?: (authorized: boolean) => unknown) => UseMutationResult<Auth, Error, User, unknown>,
-  logout: (onSuccessFn?: () => unknown) => UseMutationResult<string, Error, User, unknown>,
-  isLoading: boolean,
-  isAuthenticated: boolean,
-  user: User | undefined,
-  isAdmin: boolean,
+  signup: (onSuccessFn?: (authorized: boolean) => unknown) => any;
+  login: (
+    onSuccessFn?: (authorized: boolean) => unknown
+  ) => UseMutationResult<Auth, Error, User, unknown>;
+  logout: (
+    onSuccessFn?: () => unknown
+  ) => UseMutationResult<string, Error, User, unknown>;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  user: User | undefined;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthInfo>({
@@ -30,7 +33,6 @@ const AuthContext = createContext<AuthInfo>({
   isAdmin: false,
 });
 
-
 const roleFlags = Object.freeze({
   none: 0,
   admin: 1,
@@ -40,26 +42,23 @@ const hasAdmin = (role: number) => {
   return role === roleFlags.admin;
 };
 
-
 export const getAuth = (): AuthInfo => {
   const [loading, setLoading] = useState(true);
   const [authState, setAuthState] = useState(false);
   const [role, setRole] = useState(0);
   const [user, setUser] = useState<User>();
 
-  useUserStatus(
-    (data) => {
-      setAuthState(data.auth);
-      setRole(data.role);
-      if(data.userName && data.userEmail){
-        setUser({
-          userName: data.userName,
-          userEmail: data.userEmail,
-        });
-      }
-      setLoading(false);
+  useUserStatus((data) => {
+    setAuthState(data.auth);
+    setRole(data.role);
+    if (data.userName && data.userEmail) {
+      setUser({
+        userName: data.userName,
+        userEmail: data.userEmail,
+      });
     }
-  );
+    setLoading(false);
+  });
 
   return {
     signup: useSignupMutation,

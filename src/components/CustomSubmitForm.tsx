@@ -1,4 +1,4 @@
-// 任意の日付を送信するフォーム 
+// 任意の日付を送信するフォーム
 import { FormEvent, useState } from "react";
 import {
   Button,
@@ -8,21 +8,23 @@ import {
   Radio,
   FormControl,
   FormHelperText,
+  Box,
 } from "@mui/material";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  LocalizationProvider,
+  TimePicker,
+} from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ja";
 import { RecordState } from "../api";
-import { Collapser } from ".";
 
-
-export const CustomSubmitFormStation = (
-  { onSubmit }
-  :{
-    onSubmit: (date: Date, state: RecordState) => unknown,
-  }
-) => {
+export const CustomSubmitFormStation = ({
+  onSubmit,
+}: {
+  onSubmit: (date: Date, state: RecordState) => unknown;
+}) => {
   const [date, setDate] = useState<Dayjs | null>(null);
   const [time, setTime] = useState<Dayjs | null>(null);
   const [radioState, setRadioState] = useState<RecordState | null>(null);
@@ -32,17 +34,20 @@ export const CustomSubmitFormStation = (
   const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if(date === null || time === null || date > dayjs()){
+    if (date === null || time === null || date > dayjs()) {
       setError(true);
       setHelperText("日付を選択してください");
-    }else if(radioState === null){
+    } else if (radioState === null) {
       setError(true);
       setHelperText("選択してください");
       return;
-    }else{
+    } else {
       setError(false);
       setHelperText("追加されました");
-      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("HH:mm:ss")), radioState);
+      onSubmit(
+        new Date(date.format("YYYY-MM-DD") + " " + time.format("HH:mm:ss")),
+        radioState
+      );
       // reset
       setDate(null);
       setTime(null);
@@ -51,11 +56,10 @@ export const CustomSubmitFormStation = (
   };
 
   return (
-    <Collapser
-      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
-      sx={{ mb: 2 }}
-      collapseSx={{ mx: 2 }}
-    >
+    <Box>
+      <Typography variant="h6" sx={{ fontSize: 16, mb: 2 }}>
+        任意の時間を指定して登録できます
+      </Typography>
       <form onSubmit={onSubmitForm}>
         <FormControl error={error} variant="standard" required>
           <LocalizationProvider
@@ -90,25 +94,32 @@ export const CustomSubmitFormStation = (
             onChange={(e) => setRadioState(+e.target.value)}
             row
           >
-            <FormControlLabel value={RecordState.Get} control={<Radio size="small" />} label="乗降" />
-            <FormControlLabel value={RecordState.Pass} control={<Radio size="small" />} label="通過" />
+            <FormControlLabel
+              value={RecordState.Get}
+              control={<Radio size="small" />}
+              label="乗降"
+            />
+            <FormControlLabel
+              value={RecordState.Pass}
+              control={<Radio size="small" />}
+              label="通過"
+            />
           </RadioGroup>
           <FormHelperText>{helperText}</FormHelperText>
-          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>
+            送信
+          </Button>
         </FormControl>
       </form>
-    </Collapser>
+    </Box>
   );
 };
 
-
-
-export const CustomSubmitFormGroup = (
-  { onSubmit }
-  :{
-    onSubmit: (date: Date) => unknown,
-  }
-) => {
+export const CustomSubmitFormGroup = ({
+  onSubmit,
+}: {
+  onSubmit: (date: Date) => unknown;
+}) => {
   const [date, setDate] = useState<Dayjs | null>(null);
   const [time, setTime] = useState<Dayjs | null>(null);
   const [error, setError] = useState(false);
@@ -117,13 +128,15 @@ export const CustomSubmitFormGroup = (
   const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if(date === null || time === null || date > dayjs()){
+    if (date === null || time === null || date > dayjs()) {
       setError(true);
       setHelperText("日付を選択してください");
-    }else{
+    } else {
       setError(false);
       setHelperText("追加されました");
-      onSubmit(new Date(date.format("YYYY-MM-DD") + " " + time.format("HH:mm:ss")));
+      onSubmit(
+        new Date(date.format("YYYY-MM-DD") + " " + time.format("HH:mm:ss"))
+      );
       // reset
       setDate(null);
       setTime(null);
@@ -131,11 +144,10 @@ export const CustomSubmitFormGroup = (
   };
 
   return (
-    <Collapser
-      buttonText={<Typography variant="h6" sx={{ display: "inline" }}>カスタム</Typography>}
-      sx={{ mb: 2 }}
-      collapseSx={{ mx: 2 }}
-    >
+    <Box>
+      <Typography variant="h6" sx={{ fontSize: 16, mb: 2 }}>
+        任意の時間を指定して登録できます
+      </Typography>
       <form onSubmit={onSubmitForm}>
         <FormControl error={error} variant="standard" required>
           <LocalizationProvider
@@ -165,9 +177,11 @@ export const CustomSubmitFormGroup = (
             />
           </LocalizationProvider>
           <FormHelperText>{helperText}</FormHelperText>
-          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>送信</Button>
+          <Button type="submit" variant="outlined" sx={{ mt: 1 }}>
+            送信
+          </Button>
         </FormControl>
       </form>
-    </Collapser>
+    </Box>
   );
 };

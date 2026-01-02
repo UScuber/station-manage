@@ -6,7 +6,6 @@ import {
   Checkbox,
   CircularProgress,
   Container,
-  Divider,
   Typography,
 } from "@mui/material";
 import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
@@ -15,6 +14,7 @@ import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import {
   Station,
+  StationGroup,
   StationGroupDate,
   useLatestStationGroupHistory,
   useLatestStationHistory,
@@ -31,8 +31,9 @@ import {
   GroupHistoryTable,
   MapCustom,
   RespStationName,
+  TabNavigation,
+  TabPanel,
 } from "../components";
-
 
 const DefaultIcon = Leaflet.icon({
   iconUrl: icon,
@@ -42,15 +43,88 @@ const DefaultIcon = Leaflet.icon({
 });
 Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
-
 const ChangeMapCenter = ({ position }: { position: LatLng }) => {
   const map = useMap();
   map.panTo(position);
   return null;
 };
 
+const StationMap = ({
+  groupStationData,
+}: {
+  groupStationData: StationGroup;
+}) => {
+  const [disableTooltip, setDisableTooltip] = useState(false);
 
-const StationItem = ({ info }: { info: Station }): JSX.Element => {
+  const nearStationsQuery = useSearchKNearestStationGroups(
+    { lat: groupStationData.latitude, lng: groupStationData.longitude },
+    5
+  );
+  const nearStations = nearStationsQuery.data;
+
+  const position = new LatLng(
+    groupStationData.latitude,
+    groupStationData.longitude
+  );
+
+  return (
+    <>
+      <Box sx={{ textAlign: "right" }}>
+        <Button
+          color="inherit"
+          onClick={() => setDisableTooltip(!disableTooltip)}
+          sx={{ padding: 0, display: "inline-block" }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ fontSize: 12, display: "inline-block" }}
+          >
+            駅名を非表示
+          </Typography>
+          <Checkbox size="small" checked={disableTooltip} sx={{ padding: 0 }} />
+        </Button>
+      </Box>
+
+      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
+        <Marker position={position}>
+          <Popup>
+            <Box sx={{ textAlign: "center" }}>
+              {groupStationData.stationName}
+            </Box>
+          </Popup>
+          <Tooltip direction="bottom" opacity={1} permanent>
+            {groupStationData.stationName}
+          </Tooltip>
+        </Marker>
+        {nearStations &&
+          nearStations
+            .filter((_, i) => i)
+            .map((item) => (
+              <Marker
+                position={[item.latitude, item.longitude]}
+                key={item.stationGroupCode}
+              >
+                <Popup>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Link to={"/stationGroup/" + item.stationGroupCode}>
+                      {item.stationName}
+                    </Link>
+                  </Box>
+                </Popup>
+                {!disableTooltip && (
+                  <Tooltip direction="bottom" opacity={1} permanent>
+                    {item.stationName}
+                  </Tooltip>
+                )}
+              </Marker>
+            ))}
+        <ChangeMapCenter position={position} />
+      </MapCustom>
+    </>
+  );
+};
+
+const StationItem = ({ info }: { info: Station }): React.ReactElement => {
   const latestDateQuery = useLatestStationHistory(info.stationCode);
   const latestDate = latestDateQuery.data;
 
@@ -62,7 +136,9 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
       color="inherit"
       sx={{ display: "block", mb: 0.5 }}
     >
-      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>{info.railwayCompany}</Typography>
+      <Typography variant="h6" sx={{ fontSize: 15, display: "inline-block" }}>
+        {info.railwayCompany}
+      </Typography>
       <Typography
         variant="h6"
         sx={{
@@ -76,38 +152,56 @@ const StationItem = ({ info }: { info: Station }): JSX.Element => {
         {info.railwayName}
       </Typography>
 
-      {(latestDate || latestDateQuery.isLoading) && (<>
-        <Typography variant="h6" sx={{ fontSize: 18 }}>乗降: <AroundTime date={latestDate?.getDate} invalidMsg="なし" /></Typography>
-        <Typography variant="h6" sx={{ fontSize: 18 }}>通過: <AroundTime date={latestDate?.passDate} invalidMsg="なし" /></Typography>
-      </>)}
+      {(latestDate || latestDateQuery.isLoading) && (
+        <>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ fontSize: 18 }}>
+              乗降:&nbsp;
+            </Typography>
+            <AroundTime
+              date={latestDate?.getDate}
+              invalidMsg="なし"
+              isLoading={latestDateQuery.isLoading}
+              fontSize={18}
+            />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ fontSize: 18 }}>
+              通過:&nbsp;
+            </Typography>
+            <AroundTime
+              date={latestDate?.passDate}
+              invalidMsg="なし"
+              isLoading={latestDateQuery.isLoading}
+              fontSize={18}
+            />
+          </Box>
+        </>
+      )}
     </Button>
   );
 };
 
-
-
 const StationGroupInfo = () => {
-  const stationGroupCode = Number(useParams<"stationGroupCode">().stationGroupCode);
+  const stationGroupCode = Number(
+    useParams<"stationGroupCode">().stationGroupCode
+  );
   const { isAuthenticated } = useAuth();
 
   const [loading, setLoading] = useState(false);
-  const [disableTooltip, setDisableTooltip] = useState(false);
 
   const groupStations = useStationsInfoByGroupCode(stationGroupCode);
   const stationList = groupStations.data;
 
   const groupStationQuery = useStationGroupInfo(stationGroupCode);
   const groupStationData = groupStationQuery.data;
-  const latestDateQuery = useLatestStationGroupHistory(stationGroupCode, (data: StationGroupDate) => {
-    setLoading(false);
-  });
-  const latestDate = latestDateQuery.data;
-
-  const nearStationsQuery = useSearchKNearestStationGroups(
-    groupStationData ? { lat: groupStationData.latitude, lng: groupStationData.longitude } : undefined,
-    5
+  const latestDateQuery = useLatestStationGroupHistory(
+    stationGroupCode,
+    (data: StationGroupDate) => {
+      setLoading(false);
+    }
   );
-  const nearStations = nearStationsQuery.data;
+  const latestDate = latestDateQuery.data;
 
   const sendMutation = useSendStationGroupStateMutation();
 
@@ -124,23 +218,25 @@ const StationGroupInfo = () => {
     sendMutation.mutate({
       stationGroupCode: stationGroupCode,
       date: date,
-    })
+    });
   };
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [stationGroupCode]);
 
-
-  if(groupStations.isError || groupStationQuery.isError){
+  if (groupStations.isError || groupStationQuery.isError) {
     return (
       <Container>
-        <Typography variant="h5">Error</Typography>
+        <Typography variant="h5">
+          Error:{" "}
+          {groupStations.error?.message || groupStationQuery.error?.message}
+        </Typography>
       </Container>
     );
   }
 
-  if(!stationList || !groupStationData){
+  if (!stationList || !groupStationData) {
     return (
       <Container>
         Loading...
@@ -149,14 +245,16 @@ const StationGroupInfo = () => {
     );
   }
 
-  const position = new LatLng(groupStationData.latitude, groupStationData.longitude);
-
   return (
     <Container>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ textAlign: "center", mb: 2 }}>
-          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>{groupStationData.stationName}</RespStationName>
-          <RespStationName variant="h6" sx={{ fontSize: 16 }}>{groupStationData.kana}</RespStationName>
+          <RespStationName variant="h3" sx={{ lineHeight: 1 }}>
+            {groupStationData.stationName}
+          </RespStationName>
+          <RespStationName variant="h6" sx={{ fontSize: 16 }}>
+            {groupStationData.kana}
+          </RespStationName>
         </Box>
         <Button
           component={Link}
@@ -168,75 +266,49 @@ const StationGroupInfo = () => {
         </Button>
       </Box>
 
-      {isAuthenticated && (<>
-        <Typography variant="h6" sx={{ display: "inline-block" }}>
-          立ち寄り: <AroundTime date={latestDate?.date} invalidMsg="なし" />
-        </Typography>
-
-        <AccessButton
-          text="立ち寄り"
-          loading={loading}
-          timeLimit={60*3}
-          accessedTime={latestDate?.date}
-          onClick={handleSubmit}
-          sx={{ mb: 2, display: "block" }}
-        />
-      </>)}
-
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6">路線一覧</Typography>
-        <Divider sx={{ mb: 1 }} />
-
-        {stationList?.map(item => (
-          <StationItem info={item} key={item.stationCode} />
-        ))}
-      </Box>
-
-      <Typography variant="h5">詳細</Typography>
-      <Divider sx={{ mb: 1 }} />
-
       {isAuthenticated && (
-        <Box sx={{ mb: 2 }}>
-          <GroupHistoryTable stationGroupCode={stationGroupCode} />
+        <>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6">立ち寄り:&nbsp;</Typography>
+            <AroundTime
+              date={latestDate?.date}
+              invalidMsg="なし"
+              isLoading={latestDateQuery.isLoading}
+            />
+          </Box>
 
-          <CustomSubmitFormGroup onSubmit={handleSubmitCustomDate} />
-        </Box>
+          <AccessButton
+            text="立ち寄り"
+            loading={loading}
+            timeLimit={60 * 3}
+            accessedTime={latestDate?.date}
+            onClick={handleSubmit}
+            sx={{ display: "inline-block" }}
+          />
+
+          <Box sx={{ my: 1 }} />
+        </>
       )}
 
-      <Box sx={{ textAlign: "right" }}>
-        <Button
-          color="inherit"
-          onClick={() => setDisableTooltip(!disableTooltip)}
-          sx={{ padding: 0, display: "inline-block" }}
-        >
-          <Typography variant="h6" sx={{ fontSize: 12, display: "inline-block" }}>駅名を非表示</Typography>
-          <Checkbox
-          size="small"
-          checked={disableTooltip}
-          sx={{ padding: 0 }}
-        />
-        </Button>
-      </Box>
+      <TabNavigation>
+        <TabPanel label="路線一覧">
+          {stationList?.map((item) => (
+            <StationItem info={item} key={item.stationCode} />
+          ))}
+        </TabPanel>
 
-      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
-        <Marker position={position}>
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>{groupStationData?.stationName}</Box>
-          </Popup>
-          <Tooltip direction="bottom" opacity={1} permanent>{groupStationData?.stationName}</Tooltip>
-        </Marker>
-        {nearStations && nearStations.filter((_,i) => i).map(item => (
-          <Marker position={[item.latitude, item.longitude]} key={item.stationGroupCode}>
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/stationGroup/" + item.stationGroupCode}>{item.stationName}</Link>
-              </Box>
-            </Popup>
-            {!disableTooltip && <Tooltip direction="bottom" opacity={1} permanent>{item.stationName}</Tooltip>}
-          </Marker>
-        ))}
-        <ChangeMapCenter position={position} />
-      </MapCustom>
+        <TabPanel label="履歴" disabled={!isAuthenticated}>
+          <GroupHistoryTable stationGroupCode={stationGroupCode} />
+        </TabPanel>
+
+        <TabPanel label="カスタム" disabled={!isAuthenticated}>
+          <CustomSubmitFormGroup onSubmit={handleSubmitCustomDate} />
+        </TabPanel>
+
+        <TabPanel label="マップ">
+          <StationMap groupStationData={groupStationData} />
+        </TabPanel>
+      </TabNavigation>
     </Container>
   );
 };
