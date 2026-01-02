@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -12,7 +13,7 @@ import { useAuth } from "../auth";
 const links: Array<{
   text: string;
   url: string;
-  description: JSX.Element;
+  description: React.ReactElement;
   auth: boolean;
 }> = [
   {

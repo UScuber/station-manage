@@ -53,7 +53,7 @@ const AroundTime = ({
   disableMinute?: boolean;
   fontSize?: number;
   isLoading?: boolean;
-}): JSX.Element => {
+}): React.ReactElement => {
   const [isDisplayDate, setIsDisplayDate] = useState(false);
 
   useEffect(() => {

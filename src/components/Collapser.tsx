@@ -13,7 +13,7 @@ const Collapser = ({
   sx,
   collapseSx,
 }: {
-  buttonText?: JSX.Element;
+  buttonText?: React.ReactElement;
   open?: boolean;
   onClick?: () => unknown;
   children: React.ReactNode;

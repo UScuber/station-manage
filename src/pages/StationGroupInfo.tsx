@@ -124,7 +124,7 @@ const StationMap = ({
   );
 };
 
-const StationItem = ({ info }: { info: Station }): JSX.Element => {
+const StationItem = ({ info }: { info: Station }): React.ReactElement => {
   const latestDateQuery = useLatestStationHistory(info.stationCode);
   const latestDate = latestDateQuery.data;
 
