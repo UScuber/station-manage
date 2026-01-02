@@ -106,7 +106,7 @@ const RailwayItem = ({
 }: {
   info: Railway;
   progress: StationProgress | undefined;
-}): JSX.Element => {
+}): React.ReactElement => {
   const theme = useTheme();
   const achieve_rate = progress
     ? (progress.getOrPassStationNum / progress.stationNum) * 100

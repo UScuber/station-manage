@@ -44,7 +44,7 @@ const HistoryContent = ({
   history,
 }: {
   history: StationHistoryDetail | StationHistoryDetail[];
-}): JSX.Element => {
+}): React.ReactElement => {
   if (!Array.isArray(history)) {
     return (
       <Button
@@ -241,7 +241,7 @@ const History = () => {
     );
   };
 
-  const CustomPagination = (): JSX.Element => {
+  const CustomPagination = (): React.ReactElement => {
     return (
       <BinaryPagination
         page={searchParams.page}

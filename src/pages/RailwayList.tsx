@@ -181,7 +181,7 @@ const RailwayList = () => {
     searchParams.page * searchParams.pagesize
   );
 
-  const CustomPagination = (): JSX.Element => (
+  const CustomPagination = (): React.ReactElement => (
     <BinaryPagination
       page={searchParams.page}
       count={filteredRailways.length}

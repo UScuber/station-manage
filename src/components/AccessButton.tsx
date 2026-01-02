@@ -17,7 +17,7 @@ type Props = {
   sx?: SxProps<Theme>;
 };
 
-const AccessButton = (props: Props): JSX.Element => {
+const AccessButton = (props: Props): React.ReactElement => {
   const { text, loading, timeLimit, accessedTime, onClick, sx } = props;
   const [disabled, setDisabled] = useState(() => {
     const waitTime =

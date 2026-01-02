@@ -69,7 +69,7 @@ const NextStationKana = styled(Typography)(({ theme }) => ({
   },
 }));
 
-const NextStation = ({ code }: { code: number }): JSX.Element => {
+const NextStation = ({ code }: { code: number }): React.ReactElement => {
   const station = useStationInfo(code);
   const info = station.data;
 

@@ -19,7 +19,7 @@ const ConfirmDialog = <T,>({
   selectedValue: T | undefined;
   onClose: (value: T | undefined) => void;
   title: string;
-  descriptionFn: (value: T) => string | JSX.Element;
+  descriptionFn: (value: T) => string | React.ReactElement;
   deleteButtonText?: string;
 }) => {
   const description =

@@ -35,7 +35,7 @@ const StationItem = ({
 }: {
   info: Station;
   latestDate: StationDate | undefined;
-}): JSX.Element => {
+}): React.ReactElement => {
   const { isAuthenticated } = useAuth();
 
   return (

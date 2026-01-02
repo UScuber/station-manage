@@ -17,7 +17,7 @@ import {
 } from "../api";
 import { AroundTime } from "../components";
 
-const StationComponent = ({ info }: { info: Station }): JSX.Element => {
+const StationComponent = ({ info }: { info: Station }): React.ReactElement => {
   const latestDateQuery = useLatestStationHistory(info.stationCode);
   const latestDate = latestDateQuery.data;
 
@@ -92,7 +92,7 @@ const StationGroupInfo = ({
 }: {
   code: number;
   distance: number | undefined;
-}): JSX.Element => {
+}): React.ReactElement => {
   const stations = useStationsInfoByGroupCode(code);
   const infos = stations.data;
 

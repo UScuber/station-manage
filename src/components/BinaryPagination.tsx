@@ -27,7 +27,7 @@ const BinaryPagination = ({
   onPageChange: (page: number) => unknown;
   onRowsPerPageChange: (event: SelectChangeEvent) => unknown;
   sx?: SxProps<Theme>;
-}): JSX.Element => {
+}): React.ReactElement => {
   const pageNum = Math.max(Math.ceil(count / rowsPerPage), 1);
   const rightKeyRef = useRef(false);
   const leftKeyRef = useRef(false);
