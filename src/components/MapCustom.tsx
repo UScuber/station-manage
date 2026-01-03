@@ -1,8 +1,6 @@
-import { CSSProperties, useState } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import Leaflet from "leaflet";
-import { LatLngExpression } from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { CSSProperties } from "react";
+import Map from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 export const MapCustom = ({
   center,
@@ -10,19 +8,24 @@ export const MapCustom = ({
   style,
   children,
 }: {
-  center?: LatLngExpression | undefined;
-  zoom?: number | undefined;
+  center: [number, number] | { lat: number; lng: number };
+  zoom?: number;
   style?: CSSProperties;
   children?: React.ReactNode | undefined;
 }) => {
   return (
-    <MapContainer center={center} zoom={zoom} style={style}>
-      <TileLayer
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <Map
+      initialViewState={{
+        longitude: Array.isArray(center) ? center[1] : center.lng,
+        latitude: Array.isArray(center) ? center[0] : center.lat,
+        zoom,
+      }}
+      style={style}
+      mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL as string}
+      mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+    >
       {children}
-    </MapContainer>
+    </Map>
   );
 };
 
@@ -31,14 +34,5 @@ export const FitMapZoom = ({
 }: {
   positions: { lat: number; lng: number }[];
 }) => {
-  const map = useMap();
-  const [first, setFirst] = useState(true);
-  if (first) {
-    const group = Leaflet.featureGroup(
-      positions.map((pos) => Leaflet.marker(pos))
-    );
-    map.fitBounds(group.getBounds());
-    setFirst(false);
-  }
   return null;
 };

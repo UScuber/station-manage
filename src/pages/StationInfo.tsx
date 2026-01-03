@@ -11,10 +11,6 @@ import {
   Checkbox,
   FormHelperText,
 } from "@mui/material";
-import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
-import Leaflet, { LatLng } from "leaflet";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import {
   RecordState,
   Station,
@@ -33,27 +29,13 @@ import {
   AroundTime,
   CustomSubmitFormStation,
   HistoryListTable,
-  MapCustom,
   StationMapGeojson,
   RespStationName,
   TimetableURL,
   TabNavigation,
   TabPanel,
 } from "../components";
-
-const DefaultIcon = Leaflet.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconAnchor: [13, 40],
-  popupAnchor: [0, -35],
-});
-Leaflet.Marker.prototype.options.icon = DefaultIcon;
-
-const ChangeMapCenter = ({ position }: { position: LatLng }) => {
-  const map = useMap();
-  map.panTo(position);
-  return null;
-};
+import Map, { MapRef, Popup } from "react-map-gl/mapbox";
 
 const NextStationName = styled(Typography)(({ theme }) => ({
   fontSize: 20,
@@ -96,8 +78,45 @@ const NextStation = ({ code }: { code: number }): React.ReactElement => {
   );
 };
 
+const calcBounds = (
+  points: { lat: number; lng: number }[]
+): [[number, number], [number, number]] => {
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+
+  for (const p of points) {
+    minLng = Math.min(minLng, p.lng);
+    minLat = Math.min(minLat, p.lat);
+    maxLng = Math.max(maxLng, p.lng);
+    maxLat = Math.max(maxLat, p.lat);
+  }
+
+  return [
+    [minLng, minLat],
+    [maxLng, maxLat],
+  ];
+};
+
+// mapの要素をクリックしたときに表示する情報の型
+type StationMapProperties = (
+  | {
+      type: "station";
+      stationCode: string;
+      stationName: string;
+    }
+  | {
+      type: "railway";
+      railwayCode: string;
+      railwayName: string;
+    }
+) & { lat: number; lng: number };
+
 const StationMap = ({ info }: { info: Station | undefined }) => {
   const [disableTooltip, setDisableTooltip] = useState(false);
+  const [popupInfo, setPopupInfo] = useState<StationMapProperties | null>(null);
+  const mapRef = useRef<MapRef | null>(null);
 
   const nearStationsQuery = useSearchKNearestStationGroups(
     info ? { lat: info.latitude, lng: info.longitude } : undefined,
@@ -110,6 +129,21 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
   const railwayPathQuery = useRailPath(info?.railwayCode);
   const railwayPath = railwayPathQuery.data;
 
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const bounds = calcBounds(
+      stationList?.map((item) => ({
+        lat: item.latitude,
+        lng: item.longitude,
+      })) || [{ lat: info?.latitude || 0, lng: info?.longitude || 0 }]
+    );
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 40,
+      duration: 600,
+    });
+  }, []);
+
   if (!info) {
     return (
       <Box>
@@ -118,8 +152,6 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
       </Box>
     );
   }
-
-  const position = new LatLng(info.latitude, info.longitude);
 
   return (
     <>
@@ -139,45 +171,88 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
         </Button>
       </Box>
 
-      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
+      <Map
+        initialViewState={{
+          longitude: info.longitude,
+          latitude: info.latitude,
+          zoom: 15,
+        }}
+        style={{ height: "60vh" }}
+        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
+        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+        interactiveLayerIds={["station", "railway"]}
+        ref={mapRef}
+        onClick={(e) => {
+          const feature = e.features?.[0];
+          if (!feature) {
+            setPopupInfo(null);
+            return;
+          }
+
+          const { lat, lng } = e.lngLat;
+
+          if (feature.layer?.id === "station") {
+            const { stationCode, stationName } = feature.properties as {
+              stationCode: string;
+              stationName: string;
+            };
+            setPopupInfo({
+              type: "station",
+              stationCode,
+              stationName,
+              lat,
+              lng,
+            });
+            return;
+          }
+          if (feature.layer?.id === "railway") {
+            const { railwayCode, railwayName } = feature.properties as {
+              railwayCode: string;
+              railwayName: string;
+            };
+            setPopupInfo({
+              type: "railway",
+              railwayCode,
+              railwayName,
+              lat,
+              lng,
+            });
+            return;
+          }
+
+          setPopupInfo(null);
+        }}
+      >
         {stationList && railwayPath && (
           <StationMapGeojson
             railwayPath={railwayPath}
             stationList={stationList}
           />
         )}
-        <Marker position={position}>
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>{info.stationName}</Box>
+        {popupInfo && (
+          <Popup
+            longitude={popupInfo.lng}
+            latitude={popupInfo.lat}
+            onClose={() => setPopupInfo(null)}
+            closeOnClick={false}
+          >
+            {popupInfo.type === "station" && (
+              <Box sx={{ textAlign: "center", borderRadius: 10, px: 1 }}>
+                <Link to={`/station/${popupInfo.stationCode}`}>
+                  {popupInfo.stationName}
+                </Link>
+              </Box>
+            )}
+            {popupInfo.type === "railway" && (
+              <Box sx={{ textAlign: "center", borderRadius: 10, px: 1 }}>
+                <Link to={`/railway/${popupInfo.railwayCode}`}>
+                  {popupInfo.railwayName}
+                </Link>
+              </Box>
+            )}
           </Popup>
-          <Tooltip direction="bottom" opacity={1} permanent>
-            {info.stationName}
-          </Tooltip>
-        </Marker>
-        {nearStations &&
-          nearStations
-            .filter((_, i) => i)
-            .map((item) => (
-              <Marker
-                position={[item.latitude, item.longitude]}
-                key={item.stationGroupCode}
-              >
-                <Popup>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Link to={"/stationGroup/" + item.stationGroupCode}>
-                      {item.stationName}
-                    </Link>
-                  </Box>
-                </Popup>
-                {!disableTooltip && (
-                  <Tooltip direction="bottom" opacity={1} permanent>
-                    {item.stationName}
-                  </Tooltip>
-                )}
-              </Marker>
-            ))}
-        <ChangeMapCenter position={position} />
-      </MapCustom>
+        )}
+      </Map>
     </>
   );
 };
