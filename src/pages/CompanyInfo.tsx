@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -9,8 +9,6 @@ import {
   useTheme,
   Checkbox,
 } from "@mui/material";
-import Map, { Layer, MapRef, Popup, Source } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Railway,
   Station,
@@ -25,31 +23,14 @@ import {
 import {
   CircleProgress,
   CustomLink,
+  MapCustom,
   ProgressBar,
+  StationMapGeojson,
   TabNavigation,
   TabPanel,
 } from "../components";
-
-const calcBounds = (
-  points: { lat: number; lng: number }[]
-): [[number, number], [number, number]] => {
-  let minLng = Infinity;
-  let minLat = Infinity;
-  let maxLng = -Infinity;
-  let maxLat = -Infinity;
-
-  for (const p of points) {
-    minLng = Math.min(minLng, p.lng);
-    minLat = Math.min(minLat, p.lat);
-    maxLng = Math.max(maxLng, p.lng);
-    maxLat = Math.max(maxLat, p.lat);
-  }
-
-  return [
-    [minLng, minLat],
-    [maxLng, maxLat],
-  ];
-};
+import { Popup } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const CompanyStationMap = ({
   companyCode,
@@ -62,10 +43,10 @@ const CompanyStationMap = ({
   const [popupInfo, setPopupInfo] = useState<{
     lng: number;
     lat: number;
-    stationCode: number;
-    stationName: string;
+    type: "station" | "railway";
+    code: number; // stationCode or railwayCode
+    name: string; // stationName or railwayName
   } | null>(null);
-  const mapRef = useRef<MapRef | null>(null);
 
   const railwayPathQuery = useRailPathByCompanyCode(companyCode);
   const railwayPath = railwayPathQuery.data;
@@ -78,38 +59,14 @@ const CompanyStationMap = ({
     { lat: 0, lng: 0 }
   );
 
-  const handleFitBounds = useCallback(() => {
-    if (!mapRef.current || stationList.length === 0) return;
-    const bounds = calcBounds(
+  const stationPosList = useMemo(
+    () =>
       stationList.map((item) => ({
         lat: item.latitude,
         lng: item.longitude,
-      }))
-    );
-
-    mapRef.current.fitBounds(bounds, {
-      padding: 40,
-      duration: 0,
-    });
-  }, [stationList]);
-
-  useEffect(() => {
-    handleFitBounds();
-  }, [handleFitBounds]);
-
-  const stationFeatures = stationList.map((item) => ({
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [item.longitude, item.latitude],
-    },
-    properties: {
-      stationCode: item.stationCode,
-      stationName: item.stationName,
-    },
-  }));
-
-  const lineFeatures = railwayPath || [];
+      })),
+    [stationList]
+  );
 
   return (
     <>
@@ -129,18 +86,12 @@ const CompanyStationMap = ({
         </Button>
       </Box>
 
-      <Map
-        initialViewState={{
-          longitude: centerPosition.lng,
-          latitude: centerPosition.lat,
-          zoom: 10,
-        }}
+      <MapCustom
+        center={centerPosition}
+        zoom={10}
         style={{ height: "80vh" }}
-        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
-        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
-        interactiveLayerIds={!hideStations ? ["stations"] : []}
-        ref={mapRef}
-        onLoad={handleFitBounds}
+        stationList={stationPosList}
+        interactiveLayerIds={[...(!hideStations ? ["stations"] : []), "lines"]}
         onClick={(e) => {
           const feature = e.features?.[0];
           if (!feature) {
@@ -149,55 +100,32 @@ const CompanyStationMap = ({
           }
           const { lat, lng } = e.lngLat;
           const props = feature.properties;
-          setPopupInfo({
-            lng,
-            lat,
-            stationCode: props?.stationCode,
-            stationName: props?.stationName,
-          });
+          const layerId = feature.layer.id;
+
+          if (layerId === "stations") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "station",
+              code: props?.stationCode,
+              name: props?.stationName,
+            });
+          } else if (layerId === "lines") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "railway",
+              code: props?.railwayCode,
+              name: props?.railwayName,
+            });
+          }
         }}
       >
-        <Source
-          type="geojson"
-          data={{
-            type: "FeatureCollection",
-            features: lineFeatures as any,
-          }}
-        >
-          <Layer
-            id="lines"
-            type="line"
-            layout={{
-              "line-join": "round",
-              "line-cap": "round",
-            }}
-            paint={{
-              "line-color": ["concat", "#", ["get", "railwayColor"]],
-              "line-width": 4,
-            }}
-          />
-        </Source>
-
-        {!hideStations && (
-          <Source
-            type="geojson"
-            data={{
-              type: "FeatureCollection",
-              features: stationFeatures as any,
-            }}
-          >
-            <Layer
-              id="stations"
-              type="circle"
-              paint={{
-                "circle-radius": 4,
-                "circle-color": "#ffffff",
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "#000000",
-              }}
-            />
-          </Source>
-        )}
+        <StationMapGeojson
+          railwayPath={railwayPath}
+          stationList={stationList}
+          hideStations={hideStations}
+        />
 
         {popupInfo && (
           <Popup
@@ -207,13 +135,19 @@ const CompanyStationMap = ({
             closeOnClick={false}
           >
             <Box sx={{ textAlign: "center" }}>
-              <Link to={`/station/${popupInfo.stationCode}`}>
-                {popupInfo.stationName}
+              <Link
+                to={
+                  popupInfo.type === "station"
+                    ? `/station/${popupInfo.code}`
+                    : `/railway/${popupInfo.code}`
+                }
+              >
+                {popupInfo.name}
               </Link>
             </Box>
           </Popup>
         )}
-      </Map>
+      </MapCustom>
     </>
   );
 };

@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -9,8 +9,6 @@ import {
   Typography,
   Checkbox,
 } from "@mui/material";
-import Map, { Layer, MapRef, Popup, Source } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Station,
   StationDate,
@@ -24,32 +22,15 @@ import { useAuth } from "../auth";
 import {
   AroundTime,
   CustomLink,
+  MapCustom,
   ProgressBar,
   RespStationName,
+  StationMapGeojson,
   TabNavigation,
   TabPanel,
 } from "../components";
-
-const calcBounds = (
-  points: { lat: number; lng: number }[]
-): [[number, number], [number, number]] => {
-  let minLng = Infinity;
-  let minLat = Infinity;
-  let maxLng = -Infinity;
-  let maxLat = -Infinity;
-
-  for (const p of points) {
-    minLng = Math.min(minLng, p.lng);
-    minLat = Math.min(minLat, p.lat);
-    maxLng = Math.max(maxLng, p.lng);
-    maxLat = Math.max(maxLat, p.lat);
-  }
-
-  return [
-    [minLng, minLat],
-    [maxLng, maxLat],
-  ];
-};
+import { Popup } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const StationItem = ({
   info,
@@ -191,7 +172,6 @@ const RailwayMap = ({
     stationCode: number;
     stationName: string;
   } | null>(null);
-  const mapRef = useRef<MapRef | null>(null);
 
   const railwayPathQuery = useRailPath(railwayCode);
   const railwayPath = railwayPathQuery.data;
@@ -204,38 +184,14 @@ const RailwayMap = ({
     { lat: 0, lng: 0 }
   );
 
-  const handleFitBounds = useCallback(() => {
-    if (!mapRef.current || stationList.length === 0) return;
-    const bounds = calcBounds(
+  const stationPosList = useMemo(
+    () =>
       stationList.map((item) => ({
         lat: item.latitude,
         lng: item.longitude,
-      }))
-    );
-
-    mapRef.current.fitBounds(bounds, {
-      padding: 40,
-      duration: 0,
-    });
-  }, [stationList]);
-
-  useEffect(() => {
-    handleFitBounds();
-  }, [handleFitBounds]);
-
-  const stationFeatures = stationList.map((item) => ({
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [item.longitude, item.latitude],
-    },
-    properties: {
-      stationCode: item.stationCode,
-      stationName: item.stationName,
-    },
-  }));
-
-  const lineFeatures = railwayPath ? [railwayPath] : [];
+      })),
+    [stationList]
+  );
 
   return (
     <>
@@ -255,18 +211,12 @@ const RailwayMap = ({
         </Button>
       </Box>
 
-      <Map
-        initialViewState={{
-          longitude: centerPosition.lng,
-          latitude: centerPosition.lat,
-          zoom: 10,
-        }}
+      <MapCustom
+        center={centerPosition}
+        zoom={10}
         style={{ height: "80vh" }}
-        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
-        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+        stationList={stationPosList}
         interactiveLayerIds={!hideStations ? ["stations"] : []}
-        ref={mapRef}
-        onLoad={handleFitBounds}
         onClick={(e) => {
           const feature = e.features?.[0];
           if (!feature) {
@@ -283,47 +233,11 @@ const RailwayMap = ({
           });
         }}
       >
-        <Source
-          type="geojson"
-          data={{
-            type: "FeatureCollection",
-            features: lineFeatures as any,
-          }}
-        >
-          <Layer
-            id="lines"
-            type="line"
-            layout={{
-              "line-join": "round",
-              "line-cap": "round",
-            }}
-            paint={{
-              "line-color": "#007aff",
-              "line-width": 4,
-            }}
-          />
-        </Source>
-
-        {!hideStations && (
-          <Source
-            type="geojson"
-            data={{
-              type: "FeatureCollection",
-              features: stationFeatures as any,
-            }}
-          >
-            <Layer
-              id="stations"
-              type="circle"
-              paint={{
-                "circle-radius": 4,
-                "circle-color": "#ffffff",
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "#000000",
-              }}
-            />
-          </Source>
-        )}
+        <StationMapGeojson
+          railwayPath={railwayPath}
+          stationList={stationList}
+          hideStations={hideStations}
+        />
 
         {popupInfo && (
           <Popup
@@ -339,7 +253,7 @@ const RailwayMap = ({
             </Box>
           </Popup>
         )}
-      </Map>
+      </MapCustom>
     </>
   );
 };

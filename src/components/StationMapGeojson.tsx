@@ -1,85 +1,76 @@
 import { PathData, Station } from "../api";
 import { Layer, Source } from "react-map-gl/mapbox";
 
-const RailwayGeojson = ({
-  railwayPath,
-}: {
-  railwayPath: PathData | PathData[];
-}) => {
-  if (!Array.isArray(railwayPath)) {
-    return (
-      <Source type="geojson" data={railwayPath}>
-        <Layer
-          id="railway"
-          type="line"
-          paint={{
-            "line-color": ["concat", "#", ["get", "railwayColor"]],
-            "line-width": 8,
-          }}
-        />
-      </Source>
-    );
-  } else {
-    return (
-      <Source
-        type="geojson"
-        data={{
-          type: "FeatureCollection",
-          features: railwayPath,
-        }}
-      >
-        <Layer
-          id="railway"
-          type="line"
-          paint={{
-            "line-color": ["concat", "#", ["get", "railwayColor"]],
-            "line-width": 8,
-          }}
-        />
-      </Source>
-    );
-  }
-};
-
 const StationMapGeojson = ({
   railwayPath,
   stationList,
+  hideStations = false,
 }: {
-  railwayPath: PathData | PathData[];
-  stationList: Station[];
+  railwayPath?: PathData | PathData[];
+  stationList?: Station[];
+  hideStations?: boolean;
 }) => {
+  const lineFeatures = railwayPath
+    ? Array.isArray(railwayPath)
+      ? railwayPath
+      : [railwayPath]
+    : [];
+
+  const stationFeatures = stationList?.map((item) => ({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [item.longitude, item.latitude],
+    },
+    properties: {
+      stationCode: item.stationCode,
+      stationName: item.stationName,
+    },
+  }));
+
   return (
     <>
-      <RailwayGeojson railwayPath={railwayPath} />
-
       <Source
         type="geojson"
         data={{
           type: "FeatureCollection",
-          features: stationList.map((item) => ({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [item.longitude, item.latitude],
-            },
-            properties: {
-              stationCode: item.stationCode,
-              stationName: item.stationName,
-            },
-          })),
+          features: lineFeatures as any,
         }}
       >
         <Layer
-          id="station"
-          type="circle"
+          id="lines"
+          type="line"
+          layout={{
+            "line-join": "round",
+            "line-cap": "round",
+          }}
           paint={{
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 1, 15, 6],
-            "circle-color": "white",
-            "circle-stroke-color": "black",
-            "circle-stroke-width": 2,
+            "line-color": ["concat", "#", ["get", "railwayColor"]],
+            "line-width": 4,
           }}
         />
       </Source>
+
+      {!hideStations && stationFeatures && (
+        <Source
+          type="geojson"
+          data={{
+            type: "FeatureCollection",
+            features: stationFeatures as any,
+          }}
+        >
+          <Layer
+            id="stations"
+            type="circle"
+            paint={{
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 1, 15, 6],
+              "circle-color": "#ffffff",
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#000000",
+            }}
+          />
+        </Source>
+      )}
     </>
   );
 };
