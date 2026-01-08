@@ -32,7 +32,6 @@ import {
   TabPanel,
 } from "../components";
 
-
 const StationMap = ({
   groupStationData,
 }: {
@@ -52,12 +51,11 @@ const StationMap = ({
   );
   const nearStations = nearStationsQuery.data;
 
-  // Features for formatting
   const stationFeatures = nearStations
     ? nearStations.map((item) => ({
-        type: "Feature",
+        type: "Feature" as const,
         geometry: {
-          type: "Point",
+          type: "Point" as const,
           coordinates: [item.longitude, item.latitude],
         },
         properties: {
@@ -66,18 +64,12 @@ const StationMap = ({
         },
       }))
     : [];
-  // Add current station to features if not present (though usually nearest includes self, let's be safe or just rely on nearest)
-  // Actually nearest 5 usually includes the station itself if distance is 0.
-  // But let's make sure we display the main station prominently or just all as stations.
-  // The original Leaflet implementation showed only the main station initially and then added neighbors?
-  // No, `nearStations` was mapped. And main station was `Marker position={position}` separately.
-  // So I should combine them.
 
   const allFeatures = [
     {
-      type: "Feature",
+      type: "Feature" as const,
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [groupStationData.longitude, groupStationData.latitude],
       },
       properties: {
@@ -87,8 +79,7 @@ const StationMap = ({
       },
     },
     ...(stationFeatures || []).filter(
-      (f) =>
-        f.properties.stationGroupCode !== groupStationData.stationGroupCode
+      (f) => f.properties.stationGroupCode !== groupStationData.stationGroupCode
     ),
   ];
 
@@ -141,7 +132,7 @@ const StationMap = ({
             type="geojson"
             data={{
               type: "FeatureCollection",
-              features: allFeatures as any,
+              features: allFeatures,
             }}
           >
             <Layer

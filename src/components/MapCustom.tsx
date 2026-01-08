@@ -35,7 +35,6 @@ export const MapCustom = ({
     });
   }, [stationList, mapRef]);
 
-  // Handle fitBounds when stationList changes
   useEffect(() => {
     handleFitBounds();
   }, [handleFitBounds]);
@@ -58,12 +57,4 @@ export const MapCustom = ({
       {children}
     </Map>
   );
-};
-
-export const FitMapZoom = ({
-  positions,
-}: {
-  positions: { lat: number; lng: number }[];
-}) => {
-  return null;
 };

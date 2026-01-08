@@ -17,9 +17,9 @@ const StationMapGeojson = ({
     : [];
 
   const stationFeatures = stationList?.map((item) => ({
-    type: "Feature",
+    type: "Feature" as const,
     geometry: {
-      type: "Point",
+      type: "Point" as const,
       coordinates: [item.longitude, item.latitude],
     },
     properties: {
@@ -34,7 +34,7 @@ const StationMapGeojson = ({
         type="geojson"
         data={{
           type: "FeatureCollection",
-          features: lineFeatures as any,
+          features: lineFeatures,
         }}
       >
         <Layer
@@ -56,14 +56,22 @@ const StationMapGeojson = ({
           type="geojson"
           data={{
             type: "FeatureCollection",
-            features: stationFeatures as any,
+            features: stationFeatures,
           }}
         >
           <Layer
             id="stations"
             type="circle"
             paint={{
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 1, 15, 6],
+              "circle-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                7,
+                1,
+                15,
+                6,
+              ],
               "circle-color": "#ffffff",
               "circle-stroke-width": 2,
               "circle-stroke-color": "#000000",

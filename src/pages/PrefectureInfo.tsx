@@ -7,9 +7,9 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import Map, { Layer, Popup, Source } from "react-map-gl/mapbox";
+import { Popup } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Railway,
   Station,
@@ -22,27 +22,42 @@ import {
 } from "../api";
 import {
   CustomLink,
+  MapCustom,
+  StationMapGeojson,
   ProgressBar,
   TabNavigation,
   TabPanel,
 } from "../components";
 
 const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
-  const centerPosition = stationList.reduce(
-    (totPos, item) => ({
-      lat: totPos.lat + item.latitude / stationList.length,
-      lng: totPos.lng + item.longitude / stationList.length,
-    }),
-    { lat: 0, lng: 0 }
+  const centerPosition = useMemo(
+    () =>
+      stationList.reduce(
+        (totPos, item) => ({
+          lat: totPos.lat + item.latitude / stationList.length,
+          lng: totPos.lng + item.longitude / stationList.length,
+        }),
+        { lat: 0, lng: 0 }
+      ),
+    [stationList]
   );
 
-  const stationsPositionMap = (() => {
+  const stationPosList = useMemo(
+    () =>
+      stationList.map((item) => ({
+        lat: item.latitude,
+        lng: item.longitude,
+      })),
+    [stationList]
+  );
+
+  const stationsPositionMap = useMemo(() => {
     let codeMap: { [key: number]: { lat: number; lng: number } } = {};
     stationList.forEach((item) => {
       codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
     });
     return codeMap;
-  })();
+  }, [stationList]);
 
   const [popupInfo, setPopupInfo] = useState<{
     lng: number;
@@ -54,49 +69,43 @@ const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
     isStation: boolean;
   } | null>(null);
 
-  const stationFeatures = stationList.map((item) => ({
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [item.longitude, item.latitude],
-    },
-    properties: {
-      stationCode: item.stationCode,
-      stationName: item.stationName,
-      railwayCode: item.railwayCode,
-      railwayName: item.railwayName,
-      railwayColor: item.railwayColor,
-    },
-  }));
-
-  const lineFeatures = stationList.flatMap((item) =>
-    item.left.map((code) => ({
-      type: "Feature",
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [item.longitude, item.latitude],
-          [stationsPositionMap[code].lng, stationsPositionMap[code].lat],
-        ],
-      },
-      properties: {
-        railwayCode: item.railwayCode,
-        railwayName: item.railwayName,
-        railwayColor: item.railwayColor,
-      },
-    }))
+  const lineFeatures = useMemo(
+    () =>
+      stationList.flatMap((item) =>
+        item.left.map((code) => ({
+          type: "Feature" as const,
+          geometry: {
+            type: "MultiLineString" as const,
+            coordinates: [
+              [
+                [item.longitude, item.latitude] as [number, number],
+                [
+                  stationsPositionMap[code].lng,
+                  stationsPositionMap[code].lat,
+                ] as [number, number],
+              ],
+            ],
+          },
+          properties: {
+            railwayCode: item.railwayCode,
+            railwayName: item.railwayName,
+            railwayColor: item.railwayColor,
+            companyCode: item.companyCode,
+            companyName: "",
+            railwayKana: "",
+            formalName: "",
+          },
+        }))
+      ),
+    [stationList, stationsPositionMap]
   );
 
   return (
-    <Map
-      initialViewState={{
-        longitude: centerPosition.lng,
-        latitude: centerPosition.lat,
-        zoom: 10,
-      }}
+    <MapCustom
+      center={centerPosition}
+      zoom={10}
       style={{ height: "80vh" }}
-      mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
-      mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+      stationList={stationPosList}
       interactiveLayerIds={["stations", "lines"]}
       onClick={(e) => {
         const feature = e.features?.[0];
@@ -106,8 +115,9 @@ const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
         }
         const { lat, lng } = e.lngLat;
         const props = feature.properties;
+        const layerId = feature.layer.id;
 
-        if (feature.layer?.id === "stations") {
+        if (layerId === "stations") {
           setPopupInfo({
             lng,
             lat,
@@ -117,7 +127,7 @@ const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
             railwayName: props?.railwayName,
             isStation: true,
           });
-        } else if (feature.layer?.id === "lines") {
+        } else if (layerId === "lines") {
           setPopupInfo({
             lng,
             lat,
@@ -130,45 +140,7 @@ const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
         }
       }}
     >
-      <Source
-        type="geojson"
-        data={{
-          type: "FeatureCollection",
-          features: lineFeatures as any,
-        }}
-      >
-        <Layer
-          id="lines"
-          type="line"
-          layout={{
-            "line-join": "round",
-            "line-cap": "round",
-          }}
-          paint={{
-            "line-color": ["concat", "#", ["get", "railwayColor"]],
-            "line-width": 8,
-          }}
-        />
-      </Source>
-
-      <Source
-        type="geojson"
-        data={{
-          type: "FeatureCollection",
-          features: stationFeatures as any,
-        }}
-      >
-        <Layer
-          id="stations"
-          type="circle"
-          paint={{
-            "circle-radius": 6,
-            "circle-color": "white",
-            "circle-stroke-color": "black",
-            "circle-stroke-width": 2,
-          }}
-        />
-      </Source>
+      <StationMapGeojson railwayPath={lineFeatures} stationList={stationList} />
       {popupInfo && (
         <Popup
           longitude={popupInfo.lng}
@@ -189,7 +161,7 @@ const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
           </Box>
         </Popup>
       )}
-    </Map>
+    </MapCustom>
   );
 };
 

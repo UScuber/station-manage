@@ -23,6 +23,7 @@ import {
   useStationInfo,
   useStationsInfoByRailwayCode,
 } from "../api";
+import { calcBounds } from "../utils/map";
 import { useAuth } from "../auth";
 import {
   AccessButton,
@@ -77,26 +78,6 @@ const NextStation = ({ code }: { code: number }): React.ReactElement => {
   );
 };
 
-const calcBounds = (
-  points: { lat: number; lng: number }[]
-): [[number, number], [number, number]] => {
-  let minLng = Infinity;
-  let minLat = Infinity;
-  let maxLng = -Infinity;
-  let maxLat = -Infinity;
-
-  for (const p of points) {
-    minLng = Math.min(minLng, p.lng);
-    minLat = Math.min(minLat, p.lat);
-    maxLng = Math.max(maxLng, p.lng);
-    maxLat = Math.max(maxLat, p.lat);
-  }
-
-  return [
-    [minLng, minLat],
-    [maxLng, maxLat],
-  ];
-};
 
 // mapの要素をクリックしたときに表示する情報の型
 type StationMapProperties = (
@@ -153,13 +134,13 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
   }
 
   const stationFeatures = stationList?.map((item) => ({
-    type: "Feature",
+    type: "Feature" as const,
     geometry: {
-      type: "Point",
+      type: "Point" as const,
       coordinates: [item.longitude, item.latitude],
     },
     properties: {
-      stationCode: item.stationCode.toString(),
+      stationCode: item.stationCode,
       stationName: item.stationName,
     },
   }));
@@ -242,7 +223,7 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
           type="geojson"
           data={{
             type: "FeatureCollection",
-            features: lineFeatures as any,
+            features: lineFeatures,
           }}
         >
           <Layer
@@ -259,12 +240,12 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
           />
         </Source>
 
-        {!hideStations && (
+        {!hideStations && stationFeatures && (
           <Source
             type="geojson"
             data={{
               type: "FeatureCollection",
-              features: stationFeatures as any,
+              features: stationFeatures,
             }}
           >
             <Layer
