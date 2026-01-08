@@ -7,7 +7,9 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { CircleMarker, FeatureGroup, Polyline, Popup } from "react-leaflet";
+import Map, { Layer, Popup, Source } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { useState } from "react";
 import {
   Railway,
   Station,
@@ -20,8 +22,6 @@ import {
 } from "../api";
 import {
   CustomLink,
-  FitMapZoom,
-  MapCustom,
   ProgressBar,
   TabNavigation,
   TabPanel,
@@ -44,59 +44,152 @@ const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
     return codeMap;
   })();
 
+  const [popupInfo, setPopupInfo] = useState<{
+    lng: number;
+    lat: number;
+    stationCode: number;
+    stationName: string;
+    railwayCode: number;
+    railwayName: string;
+    isStation: boolean;
+  } | null>(null);
+
+  const stationFeatures = stationList.map((item) => ({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [item.longitude, item.latitude],
+    },
+    properties: {
+      stationCode: item.stationCode,
+      stationName: item.stationName,
+      railwayCode: item.railwayCode,
+      railwayName: item.railwayName,
+      railwayColor: item.railwayColor,
+    },
+  }));
+
+  const lineFeatures = stationList.flatMap((item) =>
+    item.left.map((code) => ({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [item.longitude, item.latitude],
+          [stationsPositionMap[code].lng, stationsPositionMap[code].lat],
+        ],
+      },
+      properties: {
+        railwayCode: item.railwayCode,
+        railwayName: item.railwayName,
+        railwayColor: item.railwayColor,
+      },
+    }))
+  );
+
   return (
-    <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-      {stationList.map((item) => (
-        <FeatureGroup
-          pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }}
-          key={item.stationCode}
-        >
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>
-              <Link to={"/railway/" + item.railwayCode}>
-                {item.railwayName}
-              </Link>
-            </Box>
-          </Popup>
-          {item.left.map((code) => (
-            <Polyline
-              key={code}
-              weight={8}
-              positions={[
-                stationsPositionMap[item.stationCode],
-                stationsPositionMap[code],
-              ]}
-            />
-          ))}
-        </FeatureGroup>
-      ))}
-      {stationList.map((item) => (
-        <CircleMarker
-          center={[item.latitude, item.longitude]}
-          pathOptions={{
-            color: "black",
-            weight: 2,
-            fillColor: "white",
-            fillOpacity: 1,
+    <Map
+      initialViewState={{
+        longitude: centerPosition.lng,
+        latitude: centerPosition.lat,
+        zoom: 10,
+      }}
+      style={{ height: "80vh" }}
+      mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
+      mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+      interactiveLayerIds={["stations", "lines"]}
+      onClick={(e) => {
+        const feature = e.features?.[0];
+        if (!feature) {
+          setPopupInfo(null);
+          return;
+        }
+        const { lat, lng } = e.lngLat;
+        const props = feature.properties;
+
+        if (feature.layer?.id === "stations") {
+          setPopupInfo({
+            lng,
+            lat,
+            stationCode: props?.stationCode,
+            stationName: props?.stationName,
+            railwayCode: props?.railwayCode,
+            railwayName: props?.railwayName,
+            isStation: true,
+          });
+        } else if (feature.layer?.id === "lines") {
+          setPopupInfo({
+            lng,
+            lat,
+            stationCode: 0,
+            stationName: "",
+            railwayCode: props?.railwayCode,
+            railwayName: props?.railwayName,
+            isStation: false,
+          });
+        }
+      }}
+    >
+      <Source
+        type="geojson"
+        data={{
+          type: "FeatureCollection",
+          features: lineFeatures as any,
+        }}
+      >
+        <Layer
+          id="lines"
+          type="line"
+          layout={{
+            "line-join": "round",
+            "line-cap": "round",
           }}
-          radius={6}
-          key={item.stationCode}
+          paint={{
+            "line-color": ["concat", "#", ["get", "railwayColor"]],
+            "line-width": 8,
+          }}
+        />
+      </Source>
+
+      <Source
+        type="geojson"
+        data={{
+          type: "FeatureCollection",
+          features: stationFeatures as any,
+        }}
+      >
+        <Layer
+          id="stations"
+          type="circle"
+          paint={{
+            "circle-radius": 6,
+            "circle-color": "white",
+            "circle-stroke-color": "black",
+            "circle-stroke-width": 2,
+          }}
+        />
+      </Source>
+      {popupInfo && (
+        <Popup
+          longitude={popupInfo.lng}
+          latitude={popupInfo.lat}
+          onClose={() => setPopupInfo(null)}
+          closeOnClick={false}
         >
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>
-              <Link to={"/station/" + item.stationCode}>
-                {item.stationName}
+          <Box sx={{ textAlign: "center" }}>
+            {popupInfo.isStation ? (
+              <Link to={"/station/" + popupInfo.stationCode}>
+                {popupInfo.stationName}
               </Link>
-            </Box>
-          </Popup>
-        </CircleMarker>
-      ))}
-      <FitMapZoom
-        positions={Object.keys(stationsPositionMap).map(
-          (key) => stationsPositionMap[Number(key)]
-        )}
-      />
-    </MapCustom>
+            ) : (
+              <Link to={"/railway/" + popupInfo.railwayCode}>
+                {popupInfo.railwayName}
+              </Link>
+            )}
+          </Box>
+        </Popup>
+      )}
+    </Map>
   );
 };
 

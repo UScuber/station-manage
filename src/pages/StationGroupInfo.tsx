@@ -8,10 +8,8 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import { Marker, Popup, Tooltip, useMap } from "react-leaflet";
-import Leaflet, { LatLng } from "leaflet";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import Map, { Layer, Popup, Source } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Station,
   StationGroup,
@@ -29,32 +27,24 @@ import {
   AroundTime,
   CustomSubmitFormGroup,
   GroupHistoryTable,
-  MapCustom,
   RespStationName,
   TabNavigation,
   TabPanel,
 } from "../components";
 
-const DefaultIcon = Leaflet.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconAnchor: [13, 40],
-  popupAnchor: [0, -35],
-});
-Leaflet.Marker.prototype.options.icon = DefaultIcon;
-
-const ChangeMapCenter = ({ position }: { position: LatLng }) => {
-  const map = useMap();
-  map.panTo(position);
-  return null;
-};
 
 const StationMap = ({
   groupStationData,
 }: {
   groupStationData: StationGroup;
 }) => {
-  const [disableTooltip, setDisableTooltip] = useState(false);
+  const [hideStations, setHideStations] = useState(false);
+  const [popupInfo, setPopupInfo] = useState<{
+    lng: number;
+    lat: number;
+    stationGroupCode: number;
+    stationName: string;
+  } | null>(null);
 
   const nearStationsQuery = useSearchKNearestStationGroups(
     { lat: groupStationData.latitude, lng: groupStationData.longitude },
@@ -62,64 +52,131 @@ const StationMap = ({
   );
   const nearStations = nearStationsQuery.data;
 
-  const position = new LatLng(
-    groupStationData.latitude,
-    groupStationData.longitude
-  );
+  // Features for formatting
+  const stationFeatures = nearStations
+    ? nearStations.map((item) => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [item.longitude, item.latitude],
+        },
+        properties: {
+          stationGroupCode: item.stationGroupCode,
+          stationName: item.stationName,
+        },
+      }))
+    : [];
+  // Add current station to features if not present (though usually nearest includes self, let's be safe or just rely on nearest)
+  // Actually nearest 5 usually includes the station itself if distance is 0.
+  // But let's make sure we display the main station prominently or just all as stations.
+  // The original Leaflet implementation showed only the main station initially and then added neighbors?
+  // No, `nearStations` was mapped. And main station was `Marker position={position}` separately.
+  // So I should combine them.
+
+  const allFeatures = [
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [groupStationData.longitude, groupStationData.latitude],
+      },
+      properties: {
+        stationGroupCode: groupStationData.stationGroupCode,
+        stationName: groupStationData.stationName,
+        isMain: true,
+      },
+    },
+    ...(stationFeatures || []).filter(
+      (f) =>
+        f.properties.stationGroupCode !== groupStationData.stationGroupCode
+    ),
+  ];
 
   return (
     <>
       <Box sx={{ textAlign: "right" }}>
         <Button
           color="inherit"
-          onClick={() => setDisableTooltip(!disableTooltip)}
+          onClick={() => setHideStations(!hideStations)}
           sx={{ padding: 0, display: "inline-block" }}
         >
           <Typography
             variant="h6"
             sx={{ fontSize: 12, display: "inline-block" }}
           >
-            駅名を非表示
+            駅を非表示
           </Typography>
-          <Checkbox size="small" checked={disableTooltip} sx={{ padding: 0 }} />
+          <Checkbox size="small" checked={hideStations} sx={{ padding: 0 }} />
         </Button>
       </Box>
 
-      <MapCustom center={position} zoom={15} style={{ height: "60vh" }}>
-        <Marker position={position}>
-          <Popup>
+      <Map
+        initialViewState={{
+          longitude: groupStationData.longitude,
+          latitude: groupStationData.latitude,
+          zoom: 15,
+        }}
+        style={{ height: "60vh" }}
+        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
+        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+        interactiveLayerIds={!hideStations ? ["stations"] : []}
+        onClick={(e) => {
+          const feature = e.features?.[0];
+          if (!feature) {
+            setPopupInfo(null);
+            return;
+          }
+          const { lat, lng } = e.lngLat;
+          const props = feature.properties;
+          setPopupInfo({
+            lng,
+            lat,
+            stationGroupCode: props?.stationGroupCode,
+            stationName: props?.stationName,
+          });
+        }}
+      >
+        {!hideStations && (
+          <Source
+            type="geojson"
+            data={{
+              type: "FeatureCollection",
+              features: allFeatures as any,
+            }}
+          >
+            <Layer
+              id="stations"
+              type="circle"
+              paint={{
+                "circle-radius": 6,
+                "circle-color": [
+                  "case",
+                  ["boolean", ["get", "isMain"], false],
+                  "#ff0000",
+                  "#007aff",
+                ],
+                "circle-stroke-width": 1,
+                "circle-stroke-color": "#fff",
+              }}
+            />
+          </Source>
+        )}
+
+        {popupInfo && (
+          <Popup
+            longitude={popupInfo.lng}
+            latitude={popupInfo.lat}
+            onClose={() => setPopupInfo(null)}
+            closeOnClick={false}
+          >
             <Box sx={{ textAlign: "center" }}>
-              {groupStationData.stationName}
+              <Link to={`/stationGroup/${popupInfo.stationGroupCode}`}>
+                {popupInfo.stationName}
+              </Link>
             </Box>
           </Popup>
-          <Tooltip direction="bottom" opacity={1} permanent>
-            {groupStationData.stationName}
-          </Tooltip>
-        </Marker>
-        {nearStations &&
-          nearStations
-            .filter((_, i) => i)
-            .map((item) => (
-              <Marker
-                position={[item.latitude, item.longitude]}
-                key={item.stationGroupCode}
-              >
-                <Popup>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Link to={"/stationGroup/" + item.stationGroupCode}>
-                      {item.stationName}
-                    </Link>
-                  </Box>
-                </Popup>
-                {!disableTooltip && (
-                  <Tooltip direction="bottom" opacity={1} permanent>
-                    {item.stationName}
-                  </Tooltip>
-                )}
-              </Marker>
-            ))}
-        <ChangeMapCenter position={position} />
-      </MapCustom>
+        )}
+      </Map>
     </>
   );
 };

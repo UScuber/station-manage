@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -6,7 +7,10 @@ import {
   Container,
   Typography,
   useTheme,
+  Checkbox,
 } from "@mui/material";
+import Map, { Layer, MapRef, Popup, Source } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Railway,
   Station,
@@ -21,13 +25,31 @@ import {
 import {
   CircleProgress,
   CustomLink,
-  FitMapZoom,
-  MapCustom,
   ProgressBar,
-  StationMapGeojson,
   TabNavigation,
   TabPanel,
 } from "../components";
+
+const calcBounds = (
+  points: { lat: number; lng: number }[]
+): [[number, number], [number, number]] => {
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+
+  for (const p of points) {
+    minLng = Math.min(minLng, p.lng);
+    minLat = Math.min(minLat, p.lat);
+    maxLng = Math.max(maxLng, p.lng);
+    maxLat = Math.max(maxLat, p.lat);
+  }
+
+  return [
+    [minLng, minLat],
+    [maxLng, maxLat],
+  ];
+};
 
 const CompanyStationMap = ({
   companyCode,
@@ -36,6 +58,15 @@ const CompanyStationMap = ({
   companyCode: number;
   stationList: Station[];
 }) => {
+  const [hideStations, setHideStations] = useState(false);
+  const [popupInfo, setPopupInfo] = useState<{
+    lng: number;
+    lat: number;
+    stationCode: number;
+    stationName: string;
+  } | null>(null);
+  const mapRef = useRef<MapRef | null>(null);
+
   const railwayPathQuery = useRailPathByCompanyCode(companyCode);
   const railwayPath = railwayPathQuery.data;
 
@@ -47,28 +78,143 @@ const CompanyStationMap = ({
     { lat: 0, lng: 0 }
   );
 
-  const stationsPositionMap = (() => {
-    let codeMap: { [key: number]: { lat: number; lng: number } } = {};
-    stationList.forEach((item) => {
-      codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
+  const handleFitBounds = useCallback(() => {
+    if (!mapRef.current || stationList.length === 0) return;
+    const bounds = calcBounds(
+      stationList.map((item) => ({
+        lat: item.latitude,
+        lng: item.longitude,
+      }))
+    );
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 40,
+      duration: 0,
     });
-    return codeMap;
-  })();
+  }, [stationList]);
+
+  useEffect(() => {
+    handleFitBounds();
+  }, [handleFitBounds]);
+
+  const stationFeatures = stationList.map((item) => ({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [item.longitude, item.latitude],
+    },
+    properties: {
+      stationCode: item.stationCode,
+      stationName: item.stationName,
+    },
+  }));
+
+  const lineFeatures = railwayPath || [];
 
   return (
-    <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-      {railwayPath && (
-        <StationMapGeojson
-          railwayPath={railwayPath}
-          stationList={stationList}
-        />
-      )}
-      <FitMapZoom
-        positions={Object.keys(stationsPositionMap).map(
-          (key) => stationsPositionMap[Number(key)]
+    <>
+      <Box sx={{ textAlign: "right" }}>
+        <Button
+          color="inherit"
+          onClick={() => setHideStations(!hideStations)}
+          sx={{ padding: 0, display: "inline-block" }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ fontSize: 12, display: "inline-block" }}
+          >
+            駅を非表示
+          </Typography>
+          <Checkbox size="small" checked={hideStations} sx={{ padding: 0 }} />
+        </Button>
+      </Box>
+
+      <Map
+        initialViewState={{
+          longitude: centerPosition.lng,
+          latitude: centerPosition.lat,
+          zoom: 10,
+        }}
+        style={{ height: "80vh" }}
+        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
+        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+        interactiveLayerIds={!hideStations ? ["stations"] : []}
+        ref={mapRef}
+        onLoad={handleFitBounds}
+        onClick={(e) => {
+          const feature = e.features?.[0];
+          if (!feature) {
+            setPopupInfo(null);
+            return;
+          }
+          const { lat, lng } = e.lngLat;
+          const props = feature.properties;
+          setPopupInfo({
+            lng,
+            lat,
+            stationCode: props?.stationCode,
+            stationName: props?.stationName,
+          });
+        }}
+      >
+        <Source
+          type="geojson"
+          data={{
+            type: "FeatureCollection",
+            features: lineFeatures as any,
+          }}
+        >
+          <Layer
+            id="lines"
+            type="line"
+            layout={{
+              "line-join": "round",
+              "line-cap": "round",
+            }}
+            paint={{
+              "line-color": ["concat", "#", ["get", "railwayColor"]],
+              "line-width": 4,
+            }}
+          />
+        </Source>
+
+        {!hideStations && (
+          <Source
+            type="geojson"
+            data={{
+              type: "FeatureCollection",
+              features: stationFeatures as any,
+            }}
+          >
+            <Layer
+              id="stations"
+              type="circle"
+              paint={{
+                "circle-radius": 4,
+                "circle-color": "#ffffff",
+                "circle-stroke-width": 2,
+                "circle-stroke-color": "#000000",
+              }}
+            />
+          </Source>
         )}
-      />
-    </MapCustom>
+
+        {popupInfo && (
+          <Popup
+            longitude={popupInfo.lng}
+            latitude={popupInfo.lat}
+            onClose={() => setPopupInfo(null)}
+            closeOnClick={false}
+          >
+            <Box sx={{ textAlign: "center" }}>
+              <Link to={`/station/${popupInfo.stationCode}`}>
+                {popupInfo.stationName}
+              </Link>
+            </Box>
+          </Popup>
+        )}
+      </Map>
+    </>
   );
 };
 

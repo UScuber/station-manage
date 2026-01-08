@@ -29,13 +29,12 @@ import {
   AroundTime,
   CustomSubmitFormStation,
   HistoryListTable,
-  StationMapGeojson,
   RespStationName,
   TimetableURL,
   TabNavigation,
   TabPanel,
 } from "../components";
-import Map, { MapRef, Popup } from "react-map-gl/mapbox";
+import Map, { Layer, MapRef, Popup, Source } from "react-map-gl/mapbox";
 
 const NextStationName = styled(Typography)(({ theme }) => ({
   fontSize: 20,
@@ -114,7 +113,7 @@ type StationMapProperties = (
 ) & { lat: number; lng: number };
 
 const StationMap = ({ info }: { info: Station | undefined }) => {
-  const [disableTooltip, setDisableTooltip] = useState(false);
+  const [hideStations, setHideStations] = useState(false);
   const [popupInfo, setPopupInfo] = useState<StationMapProperties | null>(null);
   const mapRef = useRef<MapRef | null>(null);
 
@@ -153,21 +152,35 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
     );
   }
 
+  const stationFeatures = stationList?.map((item) => ({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [item.longitude, item.latitude],
+    },
+    properties: {
+      stationCode: item.stationCode.toString(),
+      stationName: item.stationName,
+    },
+  }));
+
+  const lineFeatures = railwayPath ? [railwayPath] : [];
+
   return (
     <>
       <Box sx={{ textAlign: "right", mt: 1 }}>
         <Button
           color="inherit"
-          onClick={() => setDisableTooltip(!disableTooltip)}
+          onClick={() => setHideStations(!hideStations)}
           sx={{ padding: 0, color: "text.secondary", display: "inline-block" }}
         >
           <Typography
             variant="h6"
             sx={{ fontSize: 12, display: "inline-block" }}
           >
-            駅名を非表示
+            駅を非表示
           </Typography>
-          <Checkbox size="small" checked={disableTooltip} sx={{ padding: 0 }} />
+          <Checkbox size="small" checked={hideStations} sx={{ padding: 0 }} />
         </Button>
       </Box>
 
@@ -180,7 +193,9 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
         style={{ height: "60vh" }}
         mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
         mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
-        interactiveLayerIds={["station", "railway"]}
+        interactiveLayerIds={
+          !hideStations ? ["station", "railway"] : ["railway"]
+        }
         ref={mapRef}
         onClick={(e) => {
           const feature = e.features?.[0];
@@ -223,11 +238,46 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
           setPopupInfo(null);
         }}
       >
-        {stationList && railwayPath && (
-          <StationMapGeojson
-            railwayPath={railwayPath}
-            stationList={stationList}
+        <Source
+          type="geojson"
+          data={{
+            type: "FeatureCollection",
+            features: lineFeatures as any,
+          }}
+        >
+          <Layer
+            id="railway"
+            type="line"
+            layout={{
+              "line-join": "round",
+              "line-cap": "round",
+            }}
+            paint={{
+              "line-color": "#007aff",
+              "line-width": 4,
+            }}
           />
+        </Source>
+
+        {!hideStations && (
+          <Source
+            type="geojson"
+            data={{
+              type: "FeatureCollection",
+              features: stationFeatures as any,
+            }}
+          >
+            <Layer
+              id="station"
+              type="circle"
+              paint={{
+                "circle-radius": 4,
+                "circle-color": "#ffffff",
+                "circle-stroke-width": 2,
+                "circle-stroke-color": "#000000",
+              }}
+            />
+          </Source>
         )}
         {popupInfo && (
           <Popup

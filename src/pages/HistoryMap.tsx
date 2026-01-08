@@ -12,7 +12,8 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { CircleMarker, FeatureGroup, Polyline, Popup } from "react-leaflet";
+import Map, { Layer, Popup, Source } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
@@ -22,7 +23,7 @@ import {
   useStationHistoryListAndInfo,
 } from "../api";
 import { useAuth } from "../auth";
-import { CustomLink, MapCustom } from "../components";
+import { CustomLink } from "../components";
 import NotFound from "./NotFound";
 import getDateString from "../utils/getDateString";
 import getURLSearchParams from "../utils/getURLSearchParams";
@@ -95,6 +96,16 @@ const HistoryMap = () => {
     dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
     dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
   });
+
+  const [popupInfo, setPopupInfo] = useState<{
+    lng: number;
+    lat: number;
+    type: "line" | "point";
+    railwayCode?: number;
+    railwayName?: string;
+    stationCode?: number;
+    stationName?: string;
+  } | null>(null);
 
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
@@ -244,50 +255,128 @@ const HistoryMap = () => {
           </Typography>
         </CustomLink>
       </Box>
-
-      <MapCustom
-        center={[36.265185, 138.126471]}
-        zoom={6}
+      <Map
+        initialViewState={{
+          longitude: 138.126471,
+          latitude: 36.265185,
+          zoom: 6,
+        }}
         style={{ height: "90vh" }}
+        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
+        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+        interactiveLayerIds={["history-lines", "history-points"]}
+        onClick={(e) => {
+          const feature = e.features?.[0];
+          if (!feature) {
+            setPopupInfo(null);
+            return;
+          }
+          const { lat, lng } = e.lngLat;
+          const props = feature.properties;
+
+          if (feature.layer?.id === "history-lines") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "line",
+              railwayCode: props?.railwayCode,
+              railwayName: props?.railwayName,
+            });
+          } else if (feature.layer?.id === "history-points") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "point",
+              stationCode: props?.stationCode,
+              stationName: props?.stationName,
+            });
+          }
+        }}
       >
-        {splitHistoryList(filteredHistoryList).map((item) => (
-          <FeatureGroup
-            pathOptions={{ color: "#" + item.railwayColor }}
-            key={item.key}
+        <Source
+          type="geojson"
+          data={{
+            type: "FeatureCollection",
+            features: splitHistoryList(filteredHistoryList).map((item) => ({
+              type: "Feature",
+              geometry: {
+                type: "LineString",
+                coordinates: item.path.map((p) => [p[1], p[0]]),
+              },
+              properties: {
+                railwayCode: item.railwayCode,
+                railwayName: item.railwayName,
+                railwayColor: item.railwayColor,
+              },
+            })),
+          }}
+        >
+          <Layer
+            id="history-lines"
+            type="line"
+            layout={{
+              "line-join": "round",
+              "line-cap": "round",
+            }}
+            paint={{
+              "line-color": ["concat", "#", ["get", "railwayColor"]],
+              "line-width": 5,
+            }}
+          />
+        </Source>
+
+        {showPoint && (
+          <Source
+            type="geojson"
+            data={{
+              type: "FeatureCollection",
+              features: filteredHistoryList.map((info) => ({
+                type: "Feature",
+                geometry: {
+                  type: "Point",
+                  coordinates: [info.longitude, info.latitude],
+                },
+                properties: {
+                  stationCode: info.stationCode,
+                  stationName: info.stationName,
+                },
+              })),
+            }}
           >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/railway/" + item.railwayCode}>
-                  {item.railwayName}
-                </Link>
-              </Box>
-            </Popup>
-            <Polyline weight={5} positions={item.path} />
-          </FeatureGroup>
-        ))}
-        {showPoint &&
-          filteredHistoryList.map((info) => (
-            <CircleMarker
-              center={[info.latitude, info.longitude]}
-              pathOptions={{
-                color: "black",
-                weight: 2,
-                fillColor: "white",
-                fillOpacity: 1,
+            <Layer
+              id="history-points"
+              type="circle"
+              paint={{
+                "circle-radius": 6,
+                "circle-color": "white",
+                "circle-stroke-color": "black",
+                "circle-stroke-width": 2,
               }}
-              radius={6}
-              key={`${info.stationCode}|${info.date}|${info.state}`}
-            >
-              <Popup>
-                <Box sx={{ textAlign: "center" }}>
-                  <Link to={"/station/" + info.stationCode}>
-                    {info.stationName}
-                  </Link>
-                </Box>
-              </Popup>
-            </CircleMarker>
-          ))}
-      </MapCustom>
+            />
+          </Source>
+        )}
+
+        {popupInfo && (
+          <Popup
+            longitude={popupInfo.lng}
+            latitude={popupInfo.lat}
+            onClose={() => setPopupInfo(null)}
+            closeOnClick={false}
+          >
+            <Box sx={{ textAlign: "center" }}>
+              {popupInfo.type === "line" ? (
+                <Link to={"/railway/" + popupInfo.railwayCode}>
+                  {popupInfo.railwayName}
+                </Link>
+              ) : (
+                <Link to={"/station/" + popupInfo.stationCode}>
+                  {popupInfo.stationName}
+                </Link>
+              )}
+            </Box>
+          </Popup>
+        )}
+      </Map>
     </Container>
   );
 };
