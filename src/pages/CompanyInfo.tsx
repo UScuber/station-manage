@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -6,6 +7,7 @@ import {
   Container,
   Typography,
   useTheme,
+  Checkbox,
 } from "@mui/material";
 import {
   Railway,
@@ -21,13 +23,14 @@ import {
 import {
   CircleProgress,
   CustomLink,
-  FitMapZoom,
   MapCustom,
   ProgressBar,
   StationMapGeojson,
   TabNavigation,
   TabPanel,
 } from "../components";
+import { Popup } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const CompanyStationMap = ({
   companyCode,
@@ -36,6 +39,15 @@ const CompanyStationMap = ({
   companyCode: number;
   stationList: Station[];
 }) => {
+  const [hideStations, setHideStations] = useState(false);
+  const [popupInfo, setPopupInfo] = useState<{
+    lng: number;
+    lat: number;
+    type: "station" | "railway";
+    code: number; // stationCode or railwayCode
+    name: string; // stationName or railwayName
+  } | null>(null);
+
   const railwayPathQuery = useRailPathByCompanyCode(companyCode);
   const railwayPath = railwayPathQuery.data;
 
@@ -47,28 +59,96 @@ const CompanyStationMap = ({
     { lat: 0, lng: 0 }
   );
 
-  const stationsPositionMap = (() => {
-    let codeMap: { [key: number]: { lat: number; lng: number } } = {};
-    stationList.forEach((item) => {
-      codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
-    });
-    return codeMap;
-  })();
+  const stationPosList = useMemo(
+    () =>
+      stationList.map((item) => ({
+        lat: item.latitude,
+        lng: item.longitude,
+      })),
+    [stationList]
+  );
 
   return (
-    <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-      {railwayPath && (
+    <>
+      <Box sx={{ textAlign: "right" }}>
+        <Button
+          color="inherit"
+          onClick={() => setHideStations(!hideStations)}
+          sx={{ padding: 0, display: "inline-block" }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ fontSize: 12, display: "inline-block" }}
+          >
+            駅を非表示
+          </Typography>
+          <Checkbox size="small" checked={hideStations} sx={{ padding: 0 }} />
+        </Button>
+      </Box>
+
+      <MapCustom
+        center={centerPosition}
+        zoom={10}
+        style={{ height: "80vh" }}
+        stationList={stationPosList}
+        interactiveLayerIds={[...(!hideStations ? ["stations"] : []), "lines"]}
+        onClick={(e) => {
+          const feature = e.features?.[0];
+          if (!feature) {
+            setPopupInfo(null);
+            return;
+          }
+          const { lat, lng } = e.lngLat;
+          const props = feature.properties;
+          const layerId = feature.layer.id;
+
+          if (layerId === "stations") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "station",
+              code: props?.stationCode,
+              name: props?.stationName,
+            });
+          } else if (layerId === "lines") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "railway",
+              code: props?.railwayCode,
+              name: props?.railwayName,
+            });
+          }
+        }}
+      >
         <StationMapGeojson
           railwayPath={railwayPath}
           stationList={stationList}
+          hideStations={hideStations}
         />
-      )}
-      <FitMapZoom
-        positions={Object.keys(stationsPositionMap).map(
-          (key) => stationsPositionMap[Number(key)]
+
+        {popupInfo && (
+          <Popup
+            longitude={popupInfo.lng}
+            latitude={popupInfo.lat}
+            onClose={() => setPopupInfo(null)}
+            closeOnClick={false}
+          >
+            <Box sx={{ textAlign: "center" }}>
+              <Link
+                to={
+                  popupInfo.type === "station"
+                    ? `/station/${popupInfo.code}`
+                    : `/railway/${popupInfo.code}`
+                }
+              >
+                {popupInfo.name}
+              </Link>
+            </Box>
+          </Popup>
         )}
-      />
-    </MapCustom>
+      </MapCustom>
+    </>
   );
 };
 

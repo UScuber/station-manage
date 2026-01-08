@@ -1,44 +1,60 @@
-import { CSSProperties, useState } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import Leaflet from "leaflet";
-import { LatLngExpression } from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { CSSProperties, useCallback, useEffect, useRef } from "react";
+import Map, { MapRef } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { calcBounds } from "../utils/map";
 
 export const MapCustom = ({
   center,
   zoom,
   style,
   children,
+  stationList,
+  interactiveLayerIds,
+  onClick,
+  mapRef: mapRefProp,
 }: {
-  center?: LatLngExpression | undefined;
-  zoom?: number | undefined;
+  center: { lat: number; lng: number };
+  zoom?: number;
   style?: CSSProperties;
   children?: React.ReactNode | undefined;
+  stationList?: { lat: number; lng: number }[];
+  interactiveLayerIds?: string[];
+  onClick?: (e: any) => void;
+  mapRef?: React.RefObject<MapRef | null>;
 }) => {
-  return (
-    <MapContainer center={center} zoom={zoom} style={style}>
-      <TileLayer
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {children}
-    </MapContainer>
-  );
-};
+  const internalMapRef = useRef<MapRef | null>(null);
+  const mapRef = mapRefProp || internalMapRef;
 
-export const FitMapZoom = ({
-  positions,
-}: {
-  positions: { lat: number; lng: number }[];
-}) => {
-  const map = useMap();
-  const [first, setFirst] = useState(true);
-  if (first) {
-    const group = Leaflet.featureGroup(
-      positions.map((pos) => Leaflet.marker(pos))
-    );
-    map.fitBounds(group.getBounds());
-    setFirst(false);
-  }
-  return null;
+  const handleFitBounds = useCallback(() => {
+    if (!mapRef.current || !stationList || stationList.length === 0) return;
+    const bounds = calcBounds(stationList);
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 40,
+      duration: 0,
+    });
+  }, [stationList, mapRef]);
+
+  useEffect(() => {
+    handleFitBounds();
+  }, [handleFitBounds]);
+
+  return (
+    <Map
+      initialViewState={{
+        longitude: center.lng,
+        latitude: center.lat,
+        zoom,
+      }}
+      style={style}
+      mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL as string}
+      mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+      interactiveLayerIds={interactiveLayerIds}
+      onClick={onClick}
+      onLoad={handleFitBounds}
+      ref={mapRef}
+    >
+      {children}
+    </Map>
+  );
 };

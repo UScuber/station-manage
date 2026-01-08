@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -12,7 +12,8 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { CircleMarker, FeatureGroup, Polyline, Popup } from "react-leaflet";
+import { Popup } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
@@ -22,9 +23,8 @@ import {
   useStationHistoryListAndInfo,
 } from "../api";
 import { useAuth } from "../auth";
-import { CustomLink, MapCustom } from "../components";
+import { StationMapGeojson, MapCustom, CustomLink } from "../components";
 import NotFound from "./NotFound";
-import getDateString from "../utils/getDateString";
 import getURLSearchParams from "../utils/getURLSearchParams";
 
 type PathData = {
@@ -96,10 +96,75 @@ const HistoryMap = () => {
     dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
   });
 
+  const [popupInfo, setPopupInfo] = useState<{
+    lng: number;
+    lat: number;
+    type: "line" | "point";
+    railwayCode?: number;
+    railwayName?: string;
+    stationCode?: number;
+    stationName?: string;
+  } | null>(null);
+
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
 
   const companyListQuery = useCompanyList();
+
+  const companyList = useMemo(
+    () =>
+      companyListQuery.data
+        ? [{ companyCode: 0, companyName: "JR" }].concat(companyListQuery.data)
+        : [{ companyCode: 0, companyName: "JR" }],
+    [companyListQuery.data]
+  );
+
+  const filteredHistoryList = useMemo(
+    () =>
+      historyList
+        ? historyList
+            .filter(
+              (history) =>
+                (searchParams.dateFrom?.toDate() ?? new Date(0)) <=
+                  history.date &&
+                new Date(
+                  history.date.getFullYear(),
+                  history.date.getMonth(),
+                  history.date.getDay()
+                ) <= (searchParams.dateTo?.toDate() ?? new Date("9999-12-31"))
+            )
+            .filter((history) =>
+              searchParams.comp
+                ? history.companyCode ===
+                  companyList[searchParams.comp].companyCode
+                : searchParams.comp !== undefined
+                ? history.companyCode <= 6 // JR
+                : true
+            )
+        : [],
+    [historyList, searchParams, companyList]
+  );
+
+  const stationPosList = useMemo(
+    () =>
+      filteredHistoryList.map((item) => ({
+        lat: item.latitude,
+        lng: item.longitude,
+      })),
+    [filteredHistoryList]
+  );
+
+  const centerPosition = useMemo(() => {
+    if (filteredHistoryList.length === 0)
+      return { lat: 36.265185, lng: 138.126471 };
+    const lat =
+      filteredHistoryList.reduce((sum, item) => sum + item.latitude, 0) /
+      filteredHistoryList.length;
+    const lng =
+      filteredHistoryList.reduce((sum, item) => sum + item.longitude, 0) /
+      filteredHistoryList.length;
+    return { lat, lng };
+  }, [filteredHistoryList]);
 
   useEffect(() => {
     navigation(`?${getURLSearchParams(searchParams).toString()}`, {
@@ -138,28 +203,6 @@ const HistoryMap = () => {
       </Container>
     );
   }
-
-  const companyList = [{ companyCode: 0, companyName: "JR" }].concat(
-    companyListQuery.data
-  );
-
-  const filteredHistoryList = historyList
-    .filter(
-      (history) =>
-        (searchParams.dateFrom?.toDate() ?? new Date(0)) <= history.date &&
-        new Date(
-          history.date.getFullYear(),
-          history.date.getMonth(),
-          history.date.getDay()
-        ) <= (searchParams.dateTo?.toDate() ?? new Date("9999-12-31"))
-    )
-    .filter((history) =>
-      searchParams.comp
-        ? history.companyCode === companyList[searchParams.comp].companyCode
-        : searchParams.comp !== undefined
-        ? history.companyCode <= 6 // JR
-        : true
-    );
 
   return (
     <Container>
@@ -244,49 +287,82 @@ const HistoryMap = () => {
           </Typography>
         </CustomLink>
       </Box>
-
       <MapCustom
-        center={[36.265185, 138.126471]}
+        center={centerPosition}
         zoom={6}
         style={{ height: "90vh" }}
+        stationList={stationPosList}
+        interactiveLayerIds={["lines", "stations"]}
+        onClick={(e) => {
+          const feature = e.features?.[0];
+          if (!feature) {
+            setPopupInfo(null);
+            return;
+          }
+          const { lat, lng } = e.lngLat;
+          const props = feature.properties;
+          const layerId = feature.layer.id;
+
+          if (layerId === "lines") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "line",
+              railwayCode: props?.railwayCode,
+              railwayName: props?.railwayName,
+            });
+          } else if (layerId === "stations") {
+            setPopupInfo({
+              lng,
+              lat,
+              type: "point",
+              stationCode: props?.stationCode,
+              stationName: props?.stationName,
+            });
+          }
+        }}
       >
-        {splitHistoryList(filteredHistoryList).map((item) => (
-          <FeatureGroup
-            pathOptions={{ color: "#" + item.railwayColor }}
-            key={item.key}
+        <StationMapGeojson
+          railwayPath={splitHistoryList(filteredHistoryList).map((item) => ({
+            type: "Feature" as const,
+            geometry: {
+              type: "MultiLineString" as const,
+              coordinates: [item.path.map((p) => [p[1], p[0]])],
+            },
+            properties: {
+              railwayCode: item.railwayCode,
+              railwayName: item.railwayName,
+              railwayColor: item.railwayColor,
+              companyCode: -1,
+              companyName: "",
+              railwayKana: "",
+              formalName: "",
+            },
+          }))}
+          stationList={filteredHistoryList}
+          hideStations={!showPoint}
+        />
+
+        {popupInfo && (
+          <Popup
+            longitude={popupInfo.lng}
+            latitude={popupInfo.lat}
+            onClose={() => setPopupInfo(null)}
+            closeOnClick={false}
           >
-            <Popup>
-              <Box sx={{ textAlign: "center" }}>
-                <Link to={"/railway/" + item.railwayCode}>
-                  {item.railwayName}
+            <Box sx={{ textAlign: "center" }}>
+              {popupInfo.type === "line" ? (
+                <Link to={"/railway/" + popupInfo.railwayCode}>
+                  {popupInfo.railwayName}
                 </Link>
-              </Box>
-            </Popup>
-            <Polyline weight={5} positions={item.path} />
-          </FeatureGroup>
-        ))}
-        {showPoint &&
-          filteredHistoryList.map((info) => (
-            <CircleMarker
-              center={[info.latitude, info.longitude]}
-              pathOptions={{
-                color: "black",
-                weight: 2,
-                fillColor: "white",
-                fillOpacity: 1,
-              }}
-              radius={6}
-              key={`${info.stationCode}|${info.date}|${info.state}`}
-            >
-              <Popup>
-                <Box sx={{ textAlign: "center" }}>
-                  <Link to={"/station/" + info.stationCode}>
-                    {info.stationName}
-                  </Link>
-                </Box>
-              </Popup>
-            </CircleMarker>
-          ))}
+              ) : (
+                <Link to={"/station/" + popupInfo.stationCode}>
+                  {popupInfo.stationName}
+                </Link>
+              )}
+            </Box>
+          </Popup>
+        )}
       </MapCustom>
     </Container>
   );

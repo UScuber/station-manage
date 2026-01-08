@@ -7,7 +7,9 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { CircleMarker, FeatureGroup, Polyline, Popup } from "react-leaflet";
+import { Popup } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { useMemo, useState } from "react";
 import {
   Railway,
   Station,
@@ -20,82 +22,145 @@ import {
 } from "../api";
 import {
   CustomLink,
-  FitMapZoom,
   MapCustom,
+  StationMapGeojson,
   ProgressBar,
   TabNavigation,
   TabPanel,
 } from "../components";
 
 const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
-  const centerPosition = stationList.reduce(
-    (totPos, item) => ({
-      lat: totPos.lat + item.latitude / stationList.length,
-      lng: totPos.lng + item.longitude / stationList.length,
-    }),
-    { lat: 0, lng: 0 }
+  const centerPosition = useMemo(
+    () =>
+      stationList.reduce(
+        (totPos, item) => ({
+          lat: totPos.lat + item.latitude / stationList.length,
+          lng: totPos.lng + item.longitude / stationList.length,
+        }),
+        { lat: 0, lng: 0 }
+      ),
+    [stationList]
   );
 
-  const stationsPositionMap = (() => {
+  const stationPosList = useMemo(
+    () =>
+      stationList.map((item) => ({
+        lat: item.latitude,
+        lng: item.longitude,
+      })),
+    [stationList]
+  );
+
+  const stationsPositionMap = useMemo(() => {
     let codeMap: { [key: number]: { lat: number; lng: number } } = {};
     stationList.forEach((item) => {
       codeMap[item.stationCode] = { lat: item.latitude, lng: item.longitude };
     });
     return codeMap;
-  })();
+  }, [stationList]);
+
+  const [popupInfo, setPopupInfo] = useState<{
+    lng: number;
+    lat: number;
+    stationCode: number;
+    stationName: string;
+    railwayCode: number;
+    railwayName: string;
+    isStation: boolean;
+  } | null>(null);
+
+  const lineFeatures = useMemo(
+    () =>
+      stationList.flatMap((item) =>
+        item.left.map((code) => ({
+          type: "Feature" as const,
+          geometry: {
+            type: "MultiLineString" as const,
+            coordinates: [
+              [
+                [item.longitude, item.latitude] as [number, number],
+                [
+                  stationsPositionMap[code].lng,
+                  stationsPositionMap[code].lat,
+                ] as [number, number],
+              ],
+            ],
+          },
+          properties: {
+            railwayCode: item.railwayCode,
+            railwayName: item.railwayName,
+            railwayColor: item.railwayColor,
+            companyCode: item.companyCode,
+            companyName: "",
+            railwayKana: "",
+            formalName: "",
+          },
+        }))
+      ),
+    [stationList, stationsPositionMap]
+  );
 
   return (
-    <MapCustom center={centerPosition} zoom={10} style={{ height: "80vh" }}>
-      {stationList.map((item) => (
-        <FeatureGroup
-          pathOptions={{ color: "#" + (item.railwayColor ?? "808080") }}
-          key={item.stationCode}
+    <MapCustom
+      center={centerPosition}
+      zoom={10}
+      style={{ height: "80vh" }}
+      stationList={stationPosList}
+      interactiveLayerIds={["stations", "lines"]}
+      onClick={(e) => {
+        const feature = e.features?.[0];
+        if (!feature) {
+          setPopupInfo(null);
+          return;
+        }
+        const { lat, lng } = e.lngLat;
+        const props = feature.properties;
+        const layerId = feature.layer.id;
+
+        if (layerId === "stations") {
+          setPopupInfo({
+            lng,
+            lat,
+            stationCode: props?.stationCode,
+            stationName: props?.stationName,
+            railwayCode: props?.railwayCode,
+            railwayName: props?.railwayName,
+            isStation: true,
+          });
+        } else if (layerId === "lines") {
+          setPopupInfo({
+            lng,
+            lat,
+            stationCode: 0,
+            stationName: "",
+            railwayCode: props?.railwayCode,
+            railwayName: props?.railwayName,
+            isStation: false,
+          });
+        }
+      }}
+    >
+      <StationMapGeojson railwayPath={lineFeatures} stationList={stationList} />
+      {popupInfo && (
+        <Popup
+          longitude={popupInfo.lng}
+          latitude={popupInfo.lat}
+          onClose={() => setPopupInfo(null)}
+          closeOnClick={false}
         >
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>
-              <Link to={"/railway/" + item.railwayCode}>
-                {item.railwayName}
+          <Box sx={{ textAlign: "center" }}>
+            {popupInfo.isStation ? (
+              <Link to={"/station/" + popupInfo.stationCode}>
+                {popupInfo.stationName}
               </Link>
-            </Box>
-          </Popup>
-          {item.left.map((code) => (
-            <Polyline
-              key={code}
-              weight={8}
-              positions={[
-                stationsPositionMap[item.stationCode],
-                stationsPositionMap[code],
-              ]}
-            />
-          ))}
-        </FeatureGroup>
-      ))}
-      {stationList.map((item) => (
-        <CircleMarker
-          center={[item.latitude, item.longitude]}
-          pathOptions={{
-            color: "black",
-            weight: 2,
-            fillColor: "white",
-            fillOpacity: 1,
-          }}
-          radius={6}
-          key={item.stationCode}
-        >
-          <Popup>
-            <Box sx={{ textAlign: "center" }}>
-              <Link to={"/station/" + item.stationCode}>
-                {item.stationName}
+            ) : (
+              <Link to={"/railway/" + popupInfo.railwayCode}>
+                {popupInfo.railwayName}
               </Link>
-            </Box>
-          </Popup>
-        </CircleMarker>
-      ))}
-      <FitMapZoom
-        positions={Object.keys(stationsPositionMap).map(
-          (key) => stationsPositionMap[Number(key)]
-        )}
-      />
+            )}
+          </Box>
+        </Popup>
+      )}
     </MapCustom>
   );
 };
