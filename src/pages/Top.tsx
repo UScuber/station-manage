@@ -98,9 +98,9 @@ const Top = () => {
         </Typography>
         <Typography variant="body2">
           Station
-          Manageは、日本の鉄道駅の訪問記録(乗りつぶし)を管理・可視化するためのウェブアプリケーションです。
+          Manageは、日本の鉄道駅の訪問記録(乗りつぶし)を管理・可視化するためのウェブアプリケーションです
           <br />
-          訪れた駅や通過した駅を記録し、路線や都道府県ごとの制覇率を進捗として確認したり、地図上で履歴を振り返ることができます。
+          訪れた駅や通過した駅を記録し、路線や都道府県ごとの制覇率を進捗として確認したり、地図上で履歴を振り返ることができます
         </Typography>
 
         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
@@ -110,15 +110,15 @@ const Top = () => {
           <ul>
             <li>
               <b>List / Search:</b>{" "}
-              全国の駅を検索し、訪問状況を確認・記録できます。
+              全国の駅を検索し、訪問状況を確認・記録できます
             </li>
             <li>
               <b>History / Map:</b>{" "}
-              これまでの訪問履歴をリストや地図上で確認できます（ログイン必須）。
+              これまでの訪問履歴をリストや地図上で確認できます(ログイン必須です)
             </li>
             <li>
               <b>Railway / Company / Prefecture:</b>{" "}
-              路線、鉄道会社、都道府県ごとの駅一覧と制覇率を確認できます。
+              路線、鉄道会社、都道府県ごとの駅一覧と制覇率を確認できます
             </li>
           </ul>
         </Typography>
@@ -126,7 +126,7 @@ const Top = () => {
         {!isAuthenticated ? (
           <Box sx={{ mt: 4, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
-              訪問履歴の保存にはログインが必要です。
+              訪問履歴の保存にはログインが必要です
             </Typography>
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
               <Button
@@ -145,7 +145,7 @@ const Top = () => {
         ) : (
           <Box sx={{ mt: 4, textAlign: "center" }}>
             <Typography variant="body2">
-              現在ログイン中です。上部のリンクから機能をご利用ください。
+              現在ログイン中です。上部のリンクから機能をご利用ください
             </Typography>
             <Button variant="outlined" component={Link} to="/profile">
               プロフィールを確認

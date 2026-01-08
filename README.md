@@ -17,3 +17,13 @@
 - **Framework**: Express
 - **Database**: SQLite (better-sqlite3)
  
+
+### 環境変数
+
+.envファイルを設定する
+
+```
+VITE_API_BASEURL="api_baseurl(http://localhost:3001)"
+MAPBOX_ACCESS_TOKEN="mapbox_access_token"
+VITE_MAPBOX_STYLE_URL="mapbox_style_url"
+```
