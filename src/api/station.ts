@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "./axios";
 import {
   Company,
@@ -31,16 +31,15 @@ export const useStationInfo = (
 
 // 駅グループに属する駅の駅情報を取得
 export const useStationsInfoByGroupCode = (code: number | undefined) => {
-  return useQuery<Station[]>({
+  return useQuery<StationWithVisit[]>({
     queryKey: ["GroupStations", code],
     queryFn: async () => {
-      const { data } = await axios.get<Station[]>(
+      const { data } = await axios.get<StationWithVisit[]>(
         "/api/stationsByGroupCode/" + code
       );
       return data;
     },
     enabled: code !== undefined,
-    staleTime: Infinity,
   });
 };
 
@@ -297,6 +296,21 @@ export const useRailPath = (railwayCode: number | undefined) => {
     enabled: railwayCode !== undefined,
     staleTime: Infinity,
   });
+};
+
+// 複数路線の線路のpathを一括取得
+export const useRailPathsByRailwayCodes = (railwayCodes: number[]) => {
+  const queries = useQueries({
+    queries: railwayCodes.map((code) => ({
+      queryKey: ["RailPath", code],
+      queryFn: async () => {
+        const { data } = await axios.get<PathData>("/api/railpaths/" + code);
+        return data;
+      },
+      staleTime: Infinity,
+    })),
+  });
+  return queries.filter((q) => q.data).map((q) => q.data!);
 };
 
 // 会社に属する全路線の線路のpathを取得

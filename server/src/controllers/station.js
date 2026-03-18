@@ -134,7 +134,11 @@ exports.stationGroup = (req, res) => {
   if(!data.length){
     throw new InvalidValueError("Invalid value");
   }else{
-    set_cache_control(res);
+    const userId = usersManager.getUserData(req).userId;
+    data = attachVisitType(data, userId);
+    if(!userId){
+      set_cache_control(res);
+    }
     res.json(data);
   }
 };

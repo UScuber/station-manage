@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Box,
@@ -8,14 +8,16 @@ import {
   Container,
   Typography,
 } from "@mui/material";
-import Map, { Layer, Popup, Source } from "react-map-gl/mapbox";
+import { Popup } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Station,
   StationGroup,
   StationGroupDate,
+  StationWithVisit,
   useLatestStationGroupHistory,
   useLatestStationHistory,
+  useRailPathsByRailwayCodes,
   useSearchKNearestStationGroups,
   useSendStationGroupStateMutation,
   useStationGroupInfo,
@@ -27,15 +29,20 @@ import {
   AroundTime,
   CustomSubmitFormGroup,
   GroupHistoryTable,
+  MapCustom,
+  NearStationGroupGeojson,
   RespStationName,
+  StationMapGeojson,
   TabNavigation,
   TabPanel,
 } from "../components";
 
 const StationMap = ({
   groupStationData,
+  stationList,
 }: {
   groupStationData: StationGroup;
+  stationList: StationWithVisit[];
 }) => {
   const [hideStations, setHideStations] = useState(false);
   const [popupInfo, setPopupInfo] = useState<{
@@ -51,37 +58,11 @@ const StationMap = ({
   );
   const nearStations = nearStationsQuery.data;
 
-  const stationFeatures = nearStations
-    ? nearStations.map((item) => ({
-        type: "Feature" as const,
-        geometry: {
-          type: "Point" as const,
-          coordinates: [item.longitude, item.latitude],
-        },
-        properties: {
-          stationGroupCode: item.stationGroupCode,
-          stationName: item.stationName,
-        },
-      }))
-    : [];
-
-  const allFeatures = [
-    {
-      type: "Feature" as const,
-      geometry: {
-        type: "Point" as const,
-        coordinates: [groupStationData.longitude, groupStationData.latitude],
-      },
-      properties: {
-        stationGroupCode: groupStationData.stationGroupCode,
-        stationName: groupStationData.stationName,
-        isMain: true,
-      },
-    },
-    ...(stationFeatures || []).filter(
-      (f) => f.properties.stationGroupCode !== groupStationData.stationGroupCode
-    ),
-  ];
+  const railwayCodes = useMemo(
+    () => [...new Set(stationList.map((s) => s.railwayCode))],
+    [stationList]
+  );
+  const railPaths = useRailPathsByRailwayCodes(railwayCodes);
 
   return (
     <>
@@ -101,16 +82,15 @@ const StationMap = ({
         </Button>
       </Box>
 
-      <Map
-        initialViewState={{
-          longitude: groupStationData.longitude,
-          latitude: groupStationData.latitude,
-          zoom: 15,
-        }}
+      <MapCustom
+        center={{ lat: groupStationData.latitude, lng: groupStationData.longitude }}
+        zoom={15}
         style={{ height: "60vh" }}
-        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
-        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
-        interactiveLayerIds={!hideStations ? ["stations"] : []}
+        interactiveLayerIds={
+          !hideStations
+            ? ["stations", "lines", "near-stations"]
+            : ["lines", "near-stations"]
+        }
         onClick={(e) => {
           const feature = e.features?.[0];
           if (!feature) {
@@ -118,40 +98,30 @@ const StationMap = ({
             return;
           }
           const { lat, lng } = e.lngLat;
-          const props = feature.properties;
-          setPopupInfo({
-            lng,
-            lat,
-            stationGroupCode: props?.stationGroupCode,
-            stationName: props?.stationName,
-          });
+
+          if (feature.layer?.id === "near-stations") {
+            const props = feature.properties;
+            setPopupInfo({
+              lng,
+              lat,
+              stationGroupCode: props?.stationGroupCode,
+              stationName: props?.stationName,
+            });
+            return;
+          }
+          setPopupInfo(null);
         }}
       >
-        {!hideStations && (
-          <Source
-            type="geojson"
-            data={{
-              type: "FeatureCollection",
-              features: allFeatures,
-            }}
-          >
-            <Layer
-              id="stations"
-              type="circle"
-              paint={{
-                "circle-radius": 6,
-                "circle-color": [
-                  "case",
-                  ["boolean", ["get", "isMain"], false],
-                  "#ff0000",
-                  "#007aff",
-                ],
-                "circle-stroke-width": 1,
-                "circle-stroke-color": "#fff",
-              }}
-            />
-          </Source>
-        )}
+        <StationMapGeojson
+          railwayPath={railPaths}
+          stationList={stationList}
+          hideStations={hideStations}
+        />
+
+        <NearStationGroupGeojson
+          mainGroup={groupStationData}
+          nearGroups={nearStations}
+        />
 
         {popupInfo && (
           <Popup
@@ -167,7 +137,7 @@ const StationMap = ({
             </Box>
           </Popup>
         )}
-      </Map>
+      </MapCustom>
     </>
   );
 };
@@ -354,7 +324,7 @@ const StationGroupInfo = () => {
         </TabPanel>
 
         <TabPanel label="マップ">
-          <StationMap groupStationData={groupStationData} />
+          <StationMap groupStationData={groupStationData} stationList={stationList} />
         </TabPanel>
       </TabNavigation>
     </Container>
