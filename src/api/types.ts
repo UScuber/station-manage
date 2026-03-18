@@ -5,6 +5,19 @@ export enum RecordState {
   Pass,
 }
 
+// 訪問種別 enum（値は優先度順）
+export enum VisitType {
+  None = 0,      // 履歴なし
+  Pass = 1,      // 通過
+  Get = 2,       // 乗降り
+  GateExit = 3,  // 降りて改札下車
+}
+
+// 訪問状態（履歴の集約結果、駅単位）
+export type VisitInfo = {
+  visitType: VisitType;
+};
+
 export type Station = {
   stationCode: number;
   stationName: string;
@@ -99,7 +112,10 @@ export type StationHistory = {
   state: number;
 };
 
-export type StationHistoryDetail = Station & StationHistory;
+// 駅情報 + 訪問状態
+export type StationWithVisit = Station & VisitInfo;
+
+export type StationHistoryDetail = Station & StationHistory & VisitInfo;
 
 export type StationHistoryData = {
   stationGroupCode: number;

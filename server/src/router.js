@@ -119,6 +119,9 @@ app.get("/api/railpaths/:railwayCode", accessLog, Station.railPath);
 // 会社に属する全路線の線路のpathを取得
 app.get("/api/pathslist/:companyCode", accessLog, Station.railPathList);
 
+// 全路線の線路のpathを取得
+app.get("/api/allRailPaths", accessLog, Station.allRailPaths);
+
 // 時刻表と列車走行位置のURLを取得
 app.get("/api/timetableURL/:stationCode", accessLog, Station.timetableURL);
 

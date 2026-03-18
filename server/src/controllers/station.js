@@ -8,9 +8,12 @@ const {
 const {
   insert_next_stations,
   set_cache_control,
+  attachVisitType,
 } = require("../components/lib");
 const { export_stationURL } = require("../components/export-sql");
 const { import_stationURL } = require("../components/import-sql");
+
+
 
 
 
@@ -232,7 +235,11 @@ exports.railwayStations = (req, res) => {
   if(!data.length){
     throw new InvalidValueError("Invalid value");
   }else{
-    set_cache_control(res);
+    const userId = usersManager.getUserData(req).userId;
+    data = attachVisitType(data, userId);
+    if(!userId){
+      set_cache_control(res);
+    }
     res.json(data);
   }
 };
@@ -394,7 +401,11 @@ exports.companyStations = (req, res) => {
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
-    set_cache_control(res);
+    const userId = usersManager.getUserData(req).userId;
+    data = attachVisitType(data, userId);
+    if(!userId){
+      set_cache_control(res);
+    }
     res.json(data);
   }
 };
@@ -492,7 +503,11 @@ exports.prefStations = (req, res) => {
   if(!data){
     throw new InvalidValueError("Invalid value");
   }else{
-    set_cache_control(res);
+    const userId = usersManager.getUserData(req).userId;
+    data = attachVisitType(data, userId);
+    if(!userId){
+      set_cache_control(res);
+    }
     res.json(data);
   }
 };
@@ -777,6 +792,32 @@ exports.railPathList = (req, res) => {
             AND Railways.companyCode = ?
       `).all(code);
     }
+
+    data = railwayList.map(elem =>
+      get_railway_path_geojson(elem.railwayCode, elem));
+  }catch(err){
+    throw new ServerError("Server Error", err);
+  }
+
+  set_cache_control(res);
+  res.json(data);
+};
+
+
+// 全路線の線路のpathを取得
+// /api/allRailPaths
+exports.allRailPaths = (req, res) => {
+  let data;
+  try{
+    const railwayList = db.prepare(`
+      SELECT
+        Railways.*,
+        Companies.companyName,
+        Companies.formalName AS companyFormalName
+      FROM Railways
+      INNER JOIN Companies
+        ON Railways.companyCode = Companies.companyCode
+    `).all();
 
     data = railwayList.map(elem =>
       get_railway_path_geojson(elem.railwayCode, elem));

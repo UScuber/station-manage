@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import {
   Railway,
-  Station,
+  StationWithVisit,
   StationProgress,
   useCompanyInfo,
   useCompanyProgress,
@@ -37,7 +37,7 @@ const CompanyStationMap = ({
   stationList,
 }: {
   companyCode: number;
-  stationList: Station[];
+  stationList: StationWithVisit[];
 }) => {
   const [hideStations, setHideStations] = useState(false);
   const [popupInfo, setPopupInfo] = useState<{

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -18,24 +18,24 @@ import {
   StationHistory,
   useLatestStationHistory,
   useRailPath,
-  useSearchKNearestStationGroups,
   useSendStationStateMutation,
   useStationInfo,
   useStationsInfoByRailwayCode,
 } from "../api";
-import { calcBounds } from "../utils/map";
 import { useAuth } from "../auth";
 import {
   AccessButton,
   AroundTime,
   CustomSubmitFormStation,
   HistoryListTable,
+  MapCustom,
   RespStationName,
+  StationMapGeojson,
   TimetableURL,
   TabNavigation,
   TabPanel,
 } from "../components";
-import Map, { Layer, MapRef, Popup, Source } from "react-map-gl/mapbox";
+import { Popup } from "react-map-gl/mapbox";
 
 const NextStationName = styled(Typography)(({ theme }) => ({
   fontSize: 20,
@@ -96,33 +96,20 @@ type StationMapProperties = (
 const StationMap = ({ info }: { info: Station | undefined }) => {
   const [hideStations, setHideStations] = useState(false);
   const [popupInfo, setPopupInfo] = useState<StationMapProperties | null>(null);
-  const mapRef = useRef<MapRef | null>(null);
-
-  const nearStationsQuery = useSearchKNearestStationGroups(
-    info ? { lat: info.latitude, lng: info.longitude } : undefined,
-    5
-  );
-  const nearStations = nearStationsQuery.data;
 
   const stationsListQuery = useStationsInfoByRailwayCode(info?.railwayCode);
   const stationList = stationsListQuery.data;
   const railwayPathQuery = useRailPath(info?.railwayCode);
   const railwayPath = railwayPathQuery.data;
 
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const bounds = calcBounds(
+  const stationPosList = useMemo(
+    () =>
       stationList?.map((item) => ({
         lat: item.latitude,
         lng: item.longitude,
-      })) || [{ lat: info?.latitude || 0, lng: info?.longitude || 0 }]
-    );
-
-    mapRef.current.fitBounds(bounds, {
-      padding: 40,
-      duration: 600,
-    });
-  }, []);
+      })) || (info ? [{ lat: info.latitude, lng: info.longitude }] : []),
+    [stationList, info]
+  );
 
   if (!info) {
     return (
@@ -132,20 +119,6 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
       </Box>
     );
   }
-
-  const stationFeatures = stationList?.map((item) => ({
-    type: "Feature" as const,
-    geometry: {
-      type: "Point" as const,
-      coordinates: [item.longitude, item.latitude],
-    },
-    properties: {
-      stationCode: item.stationCode,
-      stationName: item.stationName,
-    },
-  }));
-
-  const lineFeatures = railwayPath ? [railwayPath] : [];
 
   return (
     <>
@@ -165,19 +138,14 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
         </Button>
       </Box>
 
-      <Map
-        initialViewState={{
-          longitude: info.longitude,
-          latitude: info.latitude,
-          zoom: 15,
-        }}
+      <MapCustom
+        center={{ lat: info.latitude, lng: info.longitude }}
+        zoom={15}
         style={{ height: "60vh" }}
-        mapStyle={import.meta.env.VITE_MAPBOX_STYLE_URL}
-        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+        stationList={stationPosList}
         interactiveLayerIds={
-          !hideStations ? ["station", "railway"] : ["railway"]
+          !hideStations ? ["stations", "lines"] : ["lines"]
         }
-        ref={mapRef}
         onClick={(e) => {
           const feature = e.features?.[0];
           if (!feature) {
@@ -187,7 +155,7 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
 
           const { lat, lng } = e.lngLat;
 
-          if (feature.layer?.id === "station") {
+          if (feature.layer?.id === "stations") {
             const { stationCode, stationName } = feature.properties as {
               stationCode: string;
               stationName: string;
@@ -201,7 +169,7 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
             });
             return;
           }
-          if (feature.layer?.id === "railway") {
+          if (feature.layer?.id === "lines") {
             const { railwayCode, railwayName } = feature.properties as {
               railwayCode: string;
               railwayName: string;
@@ -219,47 +187,11 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
           setPopupInfo(null);
         }}
       >
-        <Source
-          type="geojson"
-          data={{
-            type: "FeatureCollection",
-            features: lineFeatures,
-          }}
-        >
-          <Layer
-            id="railway"
-            type="line"
-            layout={{
-              "line-join": "round",
-              "line-cap": "round",
-            }}
-            paint={{
-              "line-color": "#007aff",
-              "line-width": 4,
-            }}
-          />
-        </Source>
-
-        {!hideStations && stationFeatures && (
-          <Source
-            type="geojson"
-            data={{
-              type: "FeatureCollection",
-              features: stationFeatures,
-            }}
-          >
-            <Layer
-              id="station"
-              type="circle"
-              paint={{
-                "circle-radius": 4,
-                "circle-color": "#ffffff",
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "#000000",
-              }}
-            />
-          </Source>
-        )}
+        <StationMapGeojson
+          railwayPath={railwayPath}
+          stationList={stationList}
+          hideStations={hideStations}
+        />
         {popupInfo && (
           <Popup
             longitude={popupInfo.lng}
@@ -283,7 +215,7 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
             )}
           </Popup>
         )}
-      </Map>
+      </MapCustom>
     </>
   );
 };

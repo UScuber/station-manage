@@ -12,7 +12,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { useMemo, useState } from "react";
 import {
   Railway,
-  Station,
+  StationWithVisit,
   StationProgress,
   usePrefName,
   usePrefProgress,
@@ -29,7 +29,7 @@ import {
   TabPanel,
 } from "../components";
 
-const PrefStationMap = ({ stationList }: { stationList: Station[] }) => {
+const PrefStationMap = ({ stationList }: { stationList: StationWithVisit[] }) => {
   const centerPosition = useMemo(
     () =>
       stationList.reduce(

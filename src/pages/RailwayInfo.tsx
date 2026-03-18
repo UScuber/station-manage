@@ -10,7 +10,7 @@ import {
   Checkbox,
 } from "@mui/material";
 import {
-  Station,
+  StationWithVisit,
   StationDate,
   useLatestStationHistoryListByRailwayCode,
   useRailPath,
@@ -36,7 +36,7 @@ const StationItem = ({
   info,
   latestDate,
 }: {
-  info: Station;
+  info: StationWithVisit;
   latestDate: StationDate | undefined;
 }): React.ReactElement => {
   const { isAuthenticated } = useAuth();
@@ -93,7 +93,7 @@ const StationList = ({
   stationList,
   latestHistoryList,
 }: {
-  stationList: Station[];
+  stationList: StationWithVisit[];
   latestHistoryList: StationDate[] | undefined;
 }) => {
   const indices = Object.fromEntries(
@@ -163,7 +163,7 @@ const RailwayMap = ({
   stationList,
 }: {
   railwayCode: number;
-  stationList: Station[];
+  stationList: StationWithVisit[];
 }) => {
   const [hideStations, setHideStations] = useState(false);
   const [popupInfo, setPopupInfo] = useState<{

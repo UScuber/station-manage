@@ -19,11 +19,13 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import {
   StationHistoryDetail,
+  useAllRailPaths,
   useCompanyList,
   useStationHistoryListAndInfo,
 } from "../api";
 import { useAuth } from "../auth";
 import { StationMapGeojson, MapCustom, CustomLink } from "../components";
+import { Layer, Source } from "react-map-gl/mapbox";
 import NotFound from "./NotFound";
 import getURLSearchParams from "../utils/getURLSearchParams";
 
@@ -108,6 +110,9 @@ const HistoryMap = () => {
 
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
+
+  const allRailPathsQuery = useAllRailPaths();
+  const allRailPaths = allRailPathsQuery.data;
 
   const companyListQuery = useCompanyList();
 
@@ -322,6 +327,28 @@ const HistoryMap = () => {
           }
         }}
       >
+        {allRailPaths && (
+          <Source
+            type="geojson"
+            data={{
+              type: "FeatureCollection",
+              features: allRailPaths,
+            }}
+          >
+            <Layer
+              id="all-rail-paths"
+              type="line"
+              layout={{
+                "line-join": "round",
+                "line-cap": "round",
+              }}
+              paint={{
+                "line-color": "#888888",
+                "line-width": 2,
+              }}
+            />
+          </Source>
+        )}
         <StationMapGeojson
           railwayPath={splitHistoryList(filteredHistoryList).map((item) => ({
             type: "Feature" as const,

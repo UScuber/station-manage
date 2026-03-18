@@ -8,6 +8,7 @@ import {
   Railway,
   Station,
   StationGroup,
+  StationWithVisit,
   TimetableLinks,
 } from "./types";
 
@@ -90,19 +91,18 @@ export const useRailwayList = () => {
 // 路線に属する駅の駅情報を取得
 export const useStationsInfoByRailwayCode = (
   code: number | undefined,
-  onSuccessFn?: (data: Station[]) => unknown
+  onSuccessFn?: (data: StationWithVisit[]) => unknown
 ) => {
-  return useQuery<Station[]>({
+  return useQuery<StationWithVisit[]>({
     queryKey: ["RailwayStations", code],
     queryFn: async () => {
-      const { data } = await axios.get<Station[]>(
+      const { data } = await axios.get<StationWithVisit[]>(
         "/api/railwayStations/" + code
       );
       onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
-    staleTime: Infinity,
   });
 };
 
@@ -148,16 +148,15 @@ export const useRailwaysInfoByCompanyCode = (code: number | undefined) => {
 
 // 会社に属する路線の駅情報を全取得
 export const useStationsInfoByCompanyCode = (code: number | undefined) => {
-  return useQuery<Station[]>({
+  return useQuery<StationWithVisit[]>({
     queryKey: ["CompanyStations", code],
     queryFn: async () => {
-      const { data } = await axios.get<Station[]>(
+      const { data } = await axios.get<StationWithVisit[]>(
         "/api/companyStations/" + code
       );
       return data;
     },
     enabled: code !== undefined,
-    staleTime: Infinity,
   });
 };
 
@@ -176,14 +175,13 @@ export const useRailwaysInfoByPrefCode = (code: number | undefined) => {
 
 // 県に属する路線の駅情報を全取得
 export const useStationsInfoByPrefCode = (code: number | undefined) => {
-  return useQuery<Station[]>({
+  return useQuery<StationWithVisit[]>({
     queryKey: ["PrefStations", code],
     queryFn: async () => {
-      const { data } = await axios.get<Station[]>("/api/prefStations/" + code);
+      const { data } = await axios.get<StationWithVisit[]>("/api/prefStations/" + code);
       return data;
     },
     enabled: code !== undefined,
-    staleTime: Infinity,
   });
 };
 
@@ -312,6 +310,18 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
       return data;
     },
     enabled: companyCode !== undefined,
+    staleTime: Infinity,
+  });
+};
+
+// 全路線の線路のpathを取得
+export const useAllRailPaths = () => {
+  return useQuery<PathData[]>({
+    queryKey: ["AllRailPaths"],
+    queryFn: async () => {
+      const { data } = await axios.get<PathData[]>("/api/allRailPaths");
+      return data;
+    },
     staleTime: Infinity,
   });
 };

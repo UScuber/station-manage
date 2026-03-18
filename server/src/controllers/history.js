@@ -5,8 +5,7 @@ const {
   InvalidValueError,
   ServerError,
 } = require("../components/custom-errors");
-const { convert_date } = require("../components/lib");
-const { insert_next_stations } = require("../components/lib");
+const { convert_date, insert_next_stations, attachVisitType } = require("../components/lib");
 const { export_sql } = require("../components/export-sql");
 const { import_sql, check_json_format } = require("../components/import-sql");
 
@@ -381,6 +380,7 @@ exports.stationHistoryDetail = (req, res) => {
     `).all(userId);
 
     data = data.map(station => insert_next_stations(station, station.stationCode));
+    data = attachVisitType(data, userId);
   }catch(err){
     throw new ServerError("Server Error", err);
   }

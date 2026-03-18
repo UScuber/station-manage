@@ -1,5 +1,6 @@
-import { PathData, Station } from "../api";
+import { PathData, StationWithVisit, VisitType } from "../api";
 import { Layer, Source } from "react-map-gl/mapbox";
+import { VISIT_TYPE_STYLE } from "../constants/visitType";
 
 const StationMapGeojson = ({
   railwayPath,
@@ -7,7 +8,7 @@ const StationMapGeojson = ({
   hideStations = false,
 }: {
   railwayPath?: PathData | PathData[];
-  stationList?: Station[];
+  stationList?: StationWithVisit[];
   hideStations?: boolean;
 }) => {
   const lineFeatures = railwayPath
@@ -25,6 +26,7 @@ const StationMapGeojson = ({
     properties: {
       stationCode: item.stationCode,
       stationName: item.stationName,
+      visitType: item.visitType ?? VisitType.None,
     },
   }));
 
@@ -68,13 +70,45 @@ const StationMapGeojson = ({
                 ["linear"],
                 ["zoom"],
                 7,
-                2,
+                [
+                  "match",
+                  ["get", "visitType"],
+                  VisitType.GateExit, 2 * VISIT_TYPE_STYLE[VisitType.GateExit].sizeScale,
+                  VisitType.Get, 2 * VISIT_TYPE_STYLE[VisitType.Get].sizeScale,
+                  2,
+                ],
                 16,
-                6,
+                [
+                  "match",
+                  ["get", "visitType"],
+                  VisitType.GateExit, 6 * VISIT_TYPE_STYLE[VisitType.GateExit].sizeScale,
+                  VisitType.Get, 6 * VISIT_TYPE_STYLE[VisitType.Get].sizeScale,
+                  6,
+                ],
               ],
-              "circle-color": "#ffffff",
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "#000000",
+              "circle-color": [
+                "match",
+                ["get", "visitType"],
+                VisitType.GateExit, VISIT_TYPE_STYLE[VisitType.GateExit].color,
+                VisitType.Get, VISIT_TYPE_STYLE[VisitType.Get].color,
+                VisitType.Pass, VISIT_TYPE_STYLE[VisitType.Pass].color,
+                VISIT_TYPE_STYLE[VisitType.None].color,
+              ],
+              "circle-stroke-width": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                7, 1,
+                16, 2,
+              ],
+              "circle-stroke-color": [
+                "match",
+                ["get", "visitType"],
+                VisitType.GateExit, VISIT_TYPE_STYLE[VisitType.GateExit].strokeColor,
+                VisitType.Get, VISIT_TYPE_STYLE[VisitType.Get].strokeColor,
+                VisitType.Pass, VISIT_TYPE_STYLE[VisitType.Pass].strokeColor,
+                VISIT_TYPE_STYLE[VisitType.None].strokeColor,
+              ],
             }}
           />
         </Source>
