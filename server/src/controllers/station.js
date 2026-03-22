@@ -13,7 +13,7 @@ const { import_stationURL } = require("../components/import-sql");
 // 駅情報取得
 // /api/station/:stationCode
 exports.station = async (request, reply) => {
-  const code = request.params.stationCode;
+  const stationCode = request.params.stationCode;
   let data = db.prepare(`
     SELECT
       Stations.*,
@@ -36,12 +36,12 @@ exports.station = async (request, reply) => {
       ON Stations.railwayCode = Railways.railwayCode
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
-  `).get(code);
+  `).get(stationCode);
 
   if (!data) {
     return reply.code(404).send({ error: "Not found" });
   }
-  data = insert_next_stations(data, code);
+  data = insert_next_stations(data, stationCode);
   reply.header("Cache-Control", CACHE_CONTROL_VALUE);
   return data;
 };
@@ -50,7 +50,7 @@ exports.station = async (request, reply) => {
 // 駅グループの情報取得
 // /api/stationGroup/:stationGroupCode
 exports.groupStations = async (request, reply) => {
-  const code = request.params.stationGroupCode;
+  const stationGroupCode = request.params.stationGroupCode;
   const data = db.prepare(`
     SELECT
       StationGroups.*,
@@ -62,7 +62,7 @@ exports.groupStations = async (request, reply) => {
     INNER JOIN Prefectures
       ON StationGroups.prefCode = Prefectures.code
     GROUP BY Stations.stationGroupCode
-  `).get(code);
+  `).get(stationGroupCode);
 
   if (!data) {
     return reply.code(404).send({ error: "Not found" });
@@ -75,7 +75,7 @@ exports.groupStations = async (request, reply) => {
 // 駅グループに属する駅の駅情報を取得
 // /api/stationsByGroupCode/:stationGroupCode
 exports.stationGroup = async (request, reply) => {
-  const code = request.params.stationGroupCode;
+  const stationGroupCode = request.params.stationGroupCode;
   let data = db.prepare(`
     SELECT
       Stations.*,
@@ -93,7 +93,7 @@ exports.stationGroup = async (request, reply) => {
       ON Stations.railwayCode = Railways.railwayCode
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
-  `).all(code);
+  `).all(stationGroupCode);
 
   if (!data.length) {
     return reply.code(404).send({ error: "Not found" });
@@ -112,7 +112,7 @@ exports.stationGroup = async (request, reply) => {
 // 路線情報取得
 // /api/railway/:railwayCode
 exports.railway = async (request, reply) => {
-  const code = request.params.railwayCode;
+  const railwayCode = request.params.railwayCode;
   const data = db.prepare(`
     SELECT
       Railways.*,
@@ -122,7 +122,7 @@ exports.railway = async (request, reply) => {
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
         AND Railways.railwayCode = ?
-  `).get(code);
+  `).get(railwayCode);
 
   if (!data) {
     return reply.code(404).send({ error: "Not found" });
@@ -153,7 +153,7 @@ exports.railways = async (request, reply) => {
 // 路線に属する駅の駅情報を取得
 // /api/railwayStations/:railwayCode
 exports.railwayStations = async (request, reply) => {
-  const code = request.params.railwayCode;
+  const railwayCode = request.params.railwayCode;
   let data = db.prepare(`
     SELECT
       Stations.*,
@@ -175,7 +175,7 @@ exports.railwayStations = async (request, reply) => {
       ON Stations.railwayCode = Railways.railwayCode
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
-  `).all(code);
+  `).all(railwayCode);
 
   if (!data.length) {
     return reply.code(404).send({ error: "Not found" });
@@ -194,9 +194,9 @@ exports.railwayStations = async (request, reply) => {
 // 会社情報取得
 // /api/company/:companyCode
 exports.company = async (request, reply) => {
-  const code = request.params.companyCode;
+  const companyCode = request.params.companyCode;
   let data;
-  if (code === 0) {
+  if (companyCode === 0) {
     data = {
       companyCode: 0,
       companyName: "JR",
@@ -206,7 +206,7 @@ exports.company = async (request, reply) => {
     data = db.prepare(`
       SELECT * FROM Companies
       WHERE companyCode = ?
-    `).get(code);
+    `).get(companyCode);
   }
 
   if (!data) {
@@ -233,9 +233,9 @@ exports.companies = async (request, reply) => {
 // 会社に属する路線の路線情報を取得
 // /api/companyRailways/:companyCode
 exports.companyRailways = async (request, reply) => {
-  const code = request.params.companyCode;
+  const companyCode = request.params.companyCode;
   let data;
-  if (code === 0) {
+  if (companyCode === 0) {
     data = db.prepare(`
       SELECT * FROM Railways
       WHERE companyCode <= ?
@@ -246,7 +246,7 @@ exports.companyRailways = async (request, reply) => {
       SELECT * FROM Railways
       WHERE companyCode = ?
       ORDER BY railwayCode
-    `).all(code);
+    `).all(companyCode);
   }
 
   reply.header("Cache-Control", CACHE_CONTROL_VALUE);
@@ -257,9 +257,9 @@ exports.companyRailways = async (request, reply) => {
 // 会社に属する路線の駅情報を全取得
 // /api/companyStations/:companyCode
 exports.companyStations = async (request, reply) => {
-  const code = request.params.companyCode;
+  const companyCode = request.params.companyCode;
   let data;
-  if (code === 0) {
+  if (companyCode === 0) {
     data = db.prepare(`
       SELECT
         Stations.*,
@@ -304,7 +304,7 @@ exports.companyStations = async (request, reply) => {
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
-    `).all(code);
+    `).all(companyCode);
   }
 
   data = data.map(station => insert_next_stations(station, station.stationCode));
@@ -321,7 +321,7 @@ exports.companyStations = async (request, reply) => {
 // 県に属する路線の路線情報を取得
 // /api/prefRailways/:prefCode
 exports.prefRailways = async (request, reply) => {
-  const code = request.params.prefCode;
+  const prefCode = request.params.prefCode;
   const data = db.prepare(`
     SELECT
       Railways.railwayCode,
@@ -340,7 +340,7 @@ exports.prefRailways = async (request, reply) => {
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
     GROUP BY Railways.railwayCode
-  `).all(code);
+  `).all(prefCode);
 
   reply.header("Cache-Control", CACHE_CONTROL_VALUE);
   return data;
@@ -350,7 +350,7 @@ exports.prefRailways = async (request, reply) => {
 // 県に属する路線の駅情報を全取得
 // /api/prefStations/:prefCode
 exports.prefStations = async (request, reply) => {
-  const code = request.params.prefCode;
+  const prefCode = request.params.prefCode;
   let data = db.prepare(`
     SELECT
       Stations.*,
@@ -383,7 +383,7 @@ exports.prefStations = async (request, reply) => {
       ON Railways.companyCode = Companies.companyCode
     INNER JOIN Prefectures
       ON StationGroups.prefCode = Prefectures.code
-  `).all(code);
+  `).all(prefCode);
 
   data = data.map(station => insert_next_stations(station, station.stationCode));
 
@@ -525,14 +525,14 @@ exports.searchKNearestStationGroups = async (request, reply) => {
 // 都道府県名を取得
 // /api/pref/:prefCode
 exports.prefecture = async (request, reply) => {
-  const code = request.params.prefCode;
+  const prefCode = request.params.prefCode;
   const data = db.prepare(`
     SELECT
       Prefectures.code AS prefCode,
       Prefectures.name AS prefName
     FROM Prefectures
     WHERE code = ?
-  `).get(code);
+  `).get(prefCode);
 
   reply.header("Cache-Control", CACHE_CONTROL_VALUE);
   return data;
@@ -581,7 +581,7 @@ const get_railway_path_geojson = (railwayCode, properties) => {
 // 路線の線路のpathを取得
 // /api/railpaths/:railwayCode
 exports.railPath = async (request, reply) => {
-  const code = request.params.railwayCode;
+  const railwayCode = request.params.railwayCode;
   const railwayInfo = db.prepare(`
     SELECT
       Railways.*,
@@ -591,8 +591,8 @@ exports.railPath = async (request, reply) => {
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
         AND Railways.railwayCode = ?
-  `).get(code);
-  const data = get_railway_path_geojson(code, railwayInfo);
+  `).get(railwayCode);
+  const data = get_railway_path_geojson(railwayCode, railwayInfo);
 
   reply.header("Cache-Control", CACHE_CONTROL_VALUE);
   return data;
@@ -602,9 +602,9 @@ exports.railPath = async (request, reply) => {
 // 会社に属する全路線の線路のpathを取得
 // /api/pathslist/:companyCode
 exports.railPathList = async (request, reply) => {
-  const code = request.params.companyCode;
+  const companyCode = request.params.companyCode;
   let railwayList;
-  if (code === 0) {
+  if (companyCode === 0) {
     railwayList = db.prepare(`
       SELECT
         Railways.*,
@@ -625,7 +625,7 @@ exports.railPathList = async (request, reply) => {
       INNER JOIN Companies
         ON Railways.companyCode = Companies.companyCode
           AND Railways.companyCode = ?
-    `).all(code);
+    `).all(companyCode);
   }
 
   const data = railwayList.map(elem =>
@@ -660,15 +660,15 @@ exports.allRailPaths = async (request, reply) => {
 // 時刻表と列車走行位置のURLを取得
 // /api/timetableURL/:stationCode
 exports.timetableURL = async (request, reply) => {
-  const code = request.params.stationCode;
+  const stationCode = request.params.stationCode;
   const timetable = db.prepare(`
     SELECT direction, url FROM TimetableLinks
     WHERE stationCode = ?
-  `).all(code);
+  `).all(stationCode);
   const trainPos = db.prepare(`
     SELECT url FROM TrainPosLinks
     WHERE stationCode = ?
-  `).get(code);
+  `).get(stationCode);
 
   return {
     timetable: timetable,

@@ -8,7 +8,7 @@ const { import_sql, check_json_format } = require("../components/import-sql");
 // 駅の最新のアクセス日時を取得
 // /api/latestStationHistory/:stationCode
 exports.latestStationHistory = async (request, reply) => {
-  const code = request.params.stationCode;
+  const stationCode = request.params.stationCode;
   const userId = request.userId;
 
   const stmt = db.prepare(`
@@ -16,8 +16,8 @@ exports.latestStationHistory = async (request, reply) => {
     WHERE stationCode = ? AND state = ? AND userId = ?
   `);
   return {
-    getDate: stmt.get(code, RecordState.Get, userId)?.date ?? null,
-    passDate: stmt.get(code, RecordState.Pass, userId)?.date ?? null,
+    getDate: stmt.get(stationCode, RecordState.Get, userId)?.date ?? null,
+    passDate: stmt.get(stationCode, RecordState.Pass, userId)?.date ?? null,
   };
 };
 
@@ -25,7 +25,7 @@ exports.latestStationHistory = async (request, reply) => {
 // 路線に属する駅の最新のアクセス日時を取得
 // /api/latestRailwayStationHistory/:railwayCode
 exports.latestStationHistoryList = async (request, reply) => {
-  const code = request.params.railwayCode;
+  const railwayCode = request.params.railwayCode;
   const userId = request.userId;
 
   const stmt = db.prepare(`
@@ -38,8 +38,8 @@ exports.latestStationHistoryList = async (request, reply) => {
         AND LatestStationHistory.state = ?
         AND LatestStationHistory.userId = ?
   `);
-  const getList = stmt.all(code, RecordState.Get, userId);
-  const passList = stmt.all(code, RecordState.Pass, userId);
+  const getList = stmt.all(railwayCode, RecordState.Get, userId);
+  const passList = stmt.all(railwayCode, RecordState.Pass, userId);
   return getList.map((getDate, idx) => ({
     getDate: getDate.date ?? null,
     passDate: passList[idx].date ?? null,
@@ -50,7 +50,7 @@ exports.latestStationHistoryList = async (request, reply) => {
 // 駅グループの最新のアクセス日時を取得
 // /api/latestStationGroupHistory/:stationGroupCode
 exports.latestStationGroupHistory = async (request, reply) => {
-  const code = request.params.stationGroupCode;
+  const stationGroupCode = request.params.stationGroupCode;
   const userId = request.userId;
 
   const stmt = db.prepare(`
@@ -58,24 +58,20 @@ exports.latestStationGroupHistory = async (request, reply) => {
     WHERE stationGroupCode = ? AND userId = ?
   `);
   return {
-    date: stmt.get(code, userId)?.date ?? null,
+    date: stmt.get(stationGroupCode, userId)?.date ?? null,
   };
 };
 
 
-// 全体の乗降/通過の履歴を区間取得
-// /api/stationHistory
-exports.stationHistoryList = async (request, reply) => {
-  const off = request.query.off;
-  const len = request.query.len;
-  const name = request.query.name ?? "";
-  const type = request.query.type;
-  const dateFrom = convert_date(request.query.dateFrom) ? convert_date(request.query.dateFrom).substr(0, 10) + " 00:00:00" : undefined;
-  const dateTo = convert_date(request.query.dateTo) ? convert_date(request.query.dateTo).substr(0, 10) + " 23:59:59" : undefined;
-  const userId = request.userId;
+const buildHistoryFilter = (query, userId) => {
+  const name = query.name ?? "";
+  const type = query.type;
+  const convertedFrom = convert_date(query.dateFrom);
+  const convertedTo = convert_date(query.dateTo);
+  const dateFrom = convertedFrom ? convertedFrom.substr(0, 10) + " 00:00:00" : undefined;
+  const dateTo = convertedTo ? convertedTo.substr(0, 10) + " 23:59:59" : undefined;
 
   let nameCondition = "";
-  const params = [userId];
   const nameParams = [];
 
   if (type === "station" && name !== "") {
@@ -89,7 +85,17 @@ exports.stationHistoryList = async (request, reply) => {
     nameParams.push(name);
   }
 
-  params.push(dateFrom, dateTo, ...nameParams, len, off);
+  return { nameCondition, params: [userId, dateFrom, dateTo, ...nameParams] };
+};
+
+
+// 全体の乗降/通過の履歴を区間取得
+// /api/stationHistory
+exports.stationHistoryList = async (request, reply) => {
+  const off = request.query.off;
+  const len = request.query.len;
+  const userId = request.userId;
+  const { nameCondition, params } = buildHistoryFilter(request.query, userId);
 
   let data = db.prepare(`
     SELECT
@@ -123,7 +129,7 @@ exports.stationHistoryList = async (request, reply) => {
     ORDER BY StationHistory.date DESC
     LIMIT ?
     OFFSET ?
-  `).all(...params);
+  `).all(...params, len, off);
 
   data = data.map(station => insert_next_stations(station, station.stationCode));
   return data;
@@ -133,28 +139,8 @@ exports.stationHistoryList = async (request, reply) => {
 // 全体の乗降/通過の履歴の個数を取得
 // /api/stationHistoryCount
 exports.stationHistoryCount = async (request, reply) => {
-  const name = request.query.name ?? "";
-  const type = request.query.type;
-  const dateFrom = convert_date(request.query.dateFrom) ? convert_date(request.query.dateFrom).substr(0, 10) + " 00:00:00" : undefined;
-  const dateTo = convert_date(request.query.dateTo) ? convert_date(request.query.dateTo).substr(0, 10) + " 23:59:59" : undefined;
   const userId = request.userId;
-
-  let nameCondition = "";
-  const params = [userId];
-  const nameParams = [];
-
-  if (type === "station" && name !== "") {
-    nameCondition = "AND StationGroups.stationName = ?";
-    nameParams.push(name);
-  } else if (type === "railway" && name !== "") {
-    nameCondition = "AND Railways.railwayName = ?";
-    nameParams.push(name);
-  } else if (type === "company" && name !== "") {
-    nameCondition = "AND Companies.companyName = ?";
-    nameParams.push(name);
-  }
-
-  params.push(dateFrom, dateTo, ...nameParams);
+  const { nameCondition, params } = buildHistoryFilter(request.query, userId);
 
   const data = db.prepare(`
     SELECT COUNT(*) AS count FROM StationHistory
@@ -220,21 +206,21 @@ exports.stationHistoryDetail = async (request, reply) => {
 // 駅の履歴を取得
 // /api/stationHistory/:stationCode
 exports.stationHistory = async (request, reply) => {
-  const code = request.params.stationCode;
+  const stationCode = request.params.stationCode;
   const userId = request.userId;
 
   return db.prepare(`
     SELECT stationCode, date, state FROM StationHistory
     WHERE stationCode = ? AND userId = ?
     ORDER BY date DESC
-  `).all(code, userId);
+  `).all(stationCode, userId);
 };
 
 
 // 駅グループ全体の履歴を取得(各駅の行動も含める)
 // /api/stationGroupHistory/:stationGroupCode
 exports.stationGroupHistory = async (request, reply) => {
-  const code = request.params.stationGroupCode;
+  const stationGroupCode = request.params.stationGroupCode;
   const userId = request.userId;
 
   return db.prepare(`
@@ -263,7 +249,7 @@ exports.stationGroupHistory = async (request, reply) => {
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
     ORDER BY date DESC
-  `).all(code, userId, code, userId);
+  `).all(stationGroupCode, userId, stationGroupCode, userId);
 };
 
 
@@ -335,13 +321,13 @@ exports.latestStationGroupHistoryList = async (request, reply) => {
 // 路線の駅の個数と乗降/通過した駅の個数を取得
 // /api/railwayProgress/:railwayCode
 exports.railwayProgress = async (request, reply) => {
-  const code = request.params.railwayCode;
+  const railwayCode = request.params.railwayCode;
   const userId = request.userId;
 
   const stationNum = db.prepare(`
     SELECT COUNT(*) AS num FROM Stations
     WHERE railwayCode = ?
-  `).get(code);
+  `).get(railwayCode);
 
   const getOrPassStationNum = db.prepare(`
     SELECT COUNT(DISTINCT
@@ -356,7 +342,7 @@ exports.railwayProgress = async (request, reply) => {
     LEFT JOIN LatestStationHistory
       ON Stations.stationCode = LatestStationHistory.stationCode
         AND LatestStationHistory.userId = ?
-  `).get(code, userId);
+  `).get(railwayCode, userId);
 
   return { stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num };
 };
@@ -365,7 +351,7 @@ exports.railwayProgress = async (request, reply) => {
 // 会社の各路線の駅の個数と乗降/通過した駅の個数を取得
 // /api/railwayProgressList/:companyCode
 exports.railwayProgressList = async (request, reply) => {
-  const code = request.params.companyCode;
+  const companyCode = request.params.companyCode;
   const userId = request.userId;
 
   const stationNumList = db.prepare(`
@@ -375,7 +361,7 @@ exports.railwayProgressList = async (request, reply) => {
         AND Railways.companyCode = ?
     GROUP BY Stations.railwayCode
     ORDER BY Stations.railwayCode
-  `).all(code);
+  `).all(companyCode);
 
   const getOrPassStationNumList = db.prepare(`
     SELECT COUNT(DISTINCT
@@ -392,7 +378,7 @@ exports.railwayProgressList = async (request, reply) => {
         AND LatestStationHistory.userId = ?
     GROUP BY Stations.railwayCode
     ORDER BY Stations.railwayCode
-  `).all(code, userId);
+  `).all(companyCode, userId);
 
   return stationNumList.map((elem, idx) => ({
     stationNum: elem.num,
@@ -404,7 +390,7 @@ exports.railwayProgressList = async (request, reply) => {
 // 指定された都道府県に駅がが存在する路線の駅の個数と乗降/通過した駅の個数を取得
 // /api/prefRailwayProgressList/:prefCode
 exports.railwayProgressListByPref = async (request, reply) => {
-  const code = request.params.prefCode;
+  const prefCode = request.params.prefCode;
   const userId = request.userId;
 
   const stationNumList = db.prepare(`
@@ -420,7 +406,7 @@ exports.railwayProgressListByPref = async (request, reply) => {
       ON Stations.railwayCode = RailData.railwayCode
     GROUP BY Stations.railwayCode
     ORDER BY Stations.railwayCode
-  `).all(code);
+  `).all(prefCode);
 
   const getOrPassStationNumList = db.prepare(`
     WITH RailData AS (
@@ -443,7 +429,7 @@ exports.railwayProgressListByPref = async (request, reply) => {
         AND LatestStationHistory.userId = ?
     GROUP BY Stations.railwayCode
     ORDER BY Stations.railwayCode
-  `).all(code, userId);
+  `).all(prefCode, userId);
 
   return stationNumList.map((elem, idx) => ({
     stationNum: elem.num,
@@ -491,7 +477,7 @@ exports.railwayProgressListAll = async (request, reply) => {
 // 会社の駅の個数と乗降/通過した駅の個数を取得
 // /api/companyProgress/:companyCode
 exports.companyProgress = async (request, reply) => {
-  const code = request.params.companyCode;
+  const companyCode = request.params.companyCode;
   const userId = request.userId;
 
   const stationNum = db.prepare(`
@@ -499,7 +485,7 @@ exports.companyProgress = async (request, reply) => {
     INNER JOIN Railways
       ON Stations.railwayCode = Railways.railwayCode
         AND Railways.companyCode = ?
-  `).get(code);
+  `).get(companyCode);
 
   const getOrPassStationNum = db.prepare(`
     SELECT COUNT(DISTINCT
@@ -514,7 +500,7 @@ exports.companyProgress = async (request, reply) => {
     LEFT JOIN LatestStationHistory
       ON Stations.stationCode = LatestStationHistory.stationCode
         AND LatestStationHistory.userId = ?
-  `).get(code, userId);
+  `).get(companyCode, userId);
 
   return { stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num };
 };
@@ -559,7 +545,7 @@ exports.companyProgressList = async (request, reply) => {
 // 都道府県の駅の個数と乗降/通過した駅の個数を取得(駅グループを1つとはしない)
 // /api/prefProgress/:prefCode
 exports.prefProgress = async (request, reply) => {
-  const code = request.params.prefCode;
+  const prefCode = request.params.prefCode;
   const userId = request.userId;
 
   const stationNum = db.prepare(`
@@ -567,7 +553,7 @@ exports.prefProgress = async (request, reply) => {
     INNER JOIN StationGroups
       ON Stations.stationGroupCode = StationGroups.stationGroupCode
         AND StationGroups.prefCode = ?
-  `).get(code);
+  `).get(prefCode);
 
   const getOrPassStationNum = db.prepare(`
     SELECT COUNT(DISTINCT
@@ -582,7 +568,7 @@ exports.prefProgress = async (request, reply) => {
     LEFT JOIN LatestStationHistory
       ON LatestStationHistory.stationCode = Stations.stationCode
         AND LatestStationHistory.userId = ?
-  `).get(code, userId);
+  `).get(prefCode, userId);
 
   return { stationNum: stationNum.num, getOrPassStationNum: getOrPassStationNum.num };
 };

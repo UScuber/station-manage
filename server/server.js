@@ -23,6 +23,9 @@ fastify.register(require("@fastify/rate-limit"), {
 // 認証プラグイン
 fastify.register(require("./src/plugins/auth"));
 
+// ヘルスチェック
+fastify.get("/api/health", async () => "OK");
+
 // ルート登録
 fastify.register(require("./src/routes/station"), { prefix: "/api" });
 fastify.register(require("./src/routes/history"), { prefix: "/api" });
