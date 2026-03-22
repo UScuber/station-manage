@@ -64,7 +64,7 @@ export const useLogoutMutation = (onSuccessFn?: () => unknown) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data } = await axios.get<string>("/api/logout");
+      const { data } = await axios.post<string>("/api/logout");
       return data;
     },
     onSuccess: (data: string, variables: User) => {

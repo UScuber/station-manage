@@ -40,8 +40,8 @@ class Users {
   // 新規
   signup(userName, userEmail, password){
     const userId = this.genSessionId();
-    const rounds = crypto.randomInt(6, 10);
-    const hash = bcrypt.hashSync(password, rounds);
+    const BCRYPT_ROUNDS = 12;
+    const hash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
     const sessionId = this.genSessionId();
 
     try{
@@ -156,7 +156,7 @@ class Users {
   }
 
   genSessionId(){
-    return (crypto.randomUUID() + crypto.randomUUID()).replaceAll("-", "");
+    return crypto.randomBytes(32).toString("hex");
   }
 };
 

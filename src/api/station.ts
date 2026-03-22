@@ -366,13 +366,11 @@ export const useUpdateTimetableURLMutation = (
       mode: string;
       url: string;
     }) => {
-      const { data } = await axios.get<string>("/api/updateTimetableURL", {
-        params: {
-          code: req.stationCode,
-          direction: req.direction,
-          mode: req.mode,
-          url: req.url,
-        },
+      const { data } = await axios.put<string>("/api/timetableURL", {
+        code: req.stationCode,
+        direction: req.direction,
+        mode: req.mode,
+        url: req.url,
       });
       return data;
     },
@@ -403,11 +401,9 @@ export const useUpdateTrainPosURLMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (req: { stationCode: number; url: string }) => {
-      const { data } = await axios.get<string>("/api/updateTrainPosURL", {
-        params: {
-          code: req.stationCode,
-          url: req.url,
-        },
+      const { data } = await axios.put<string>("/api/trainPosURL", {
+        code: req.stationCode,
+        url: req.url,
       });
       return data;
     },

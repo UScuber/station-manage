@@ -1,127 +1,88 @@
 const { Users } = require("../components/user");
-const { db, usersManager } = require("../components/db");
-const {
-  AuthError,
-  InputError,
-  InvalidValueError,
-  ServerError,
-} = require("../components/custom-errors");
+const { db, usersManager } = require("../db/connection");
 
-
+const SESSION_COOKIE_OPTIONS = {
+  maxAge: Users.expirationTime / 1000,
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Lax",
+  path: "/",
+};
 
 usersManager.watch();
 
 
 // 新規登録
 // /api/signup
-exports.signup = (req, res) => {
-  const userName = req.body.userName;
-  const userEmail = req.body.userEmail;
-  const password = req.body.password;
+exports.signup = async (request, reply) => {
+  const { userName, userEmail, password } = request.body;
 
-  if(!userName || !userEmail || !password){
-    throw new InputError("Invalid input");
+  const userData = db.prepare(`
+    SELECT * FROM Users
+    WHERE userEmail = ?
+  `).get(userEmail);
+  if (userData) {
+    return { auth: false };
   }
-  try{
-    const userData = db.prepare(`
-      SELECT * FROM Users
-      WHERE userEmail = ?
-    `).get(userEmail);
-    if(userData){
-      res.json({ auth: false });
-      return;
-    }
-  }catch(err){
-    throw new ServerError("Server Error", err);
-  }
+
   const sessionId = usersManager.signup(userName, userEmail, password);
-  if(!sessionId){
-    throw new ServerError("Server Error");
+  if (!sessionId) {
+    return reply.code(500).send({ error: "Internal Server Error" });
   }
-  res.cookie("sessionId", sessionId, {
-    maxAge: Users.expirationTime,
-    httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
-  });
-  res.json({ auth: true });
+  reply.setCookie("sessionId", sessionId, SESSION_COOKIE_OPTIONS);
+  return { auth: true };
 };
 
 
 // ログイン
 // /api/login
-exports.login = (req, res) => {
-  const userEmail = req.body.userEmail;
-  const password = req.body.password;
+exports.login = async (request, reply) => {
+  const { userEmail, password } = request.body;
 
-  if(!userEmail || !password){
-    throw new InputError("Invalid input");
+  const userData = db.prepare(`
+    SELECT * FROM Users
+    WHERE userEmail = ?
+  `).get(userEmail);
+  if (!userData) {
+    return reply.code(400).send({ error: "Invalid input" });
   }
-  try{
-    const userData = db.prepare(`
-      SELECT * FROM Users
-      WHERE userEmail = ?
-    `).get(userEmail);
-    if(!userData){
-      throw new InvalidValueError("Invalid input");
-    }
-  }catch(err){
-    throw new ServerError("Server Error", err);
-  }
+
   const sessionId = usersManager.login(userEmail, password);
-  if(!sessionId){
-    res.json({ auth: false });
-    return;
+  if (!sessionId) {
+    return { auth: false };
   }
 
-  res.cookie("sessionId", sessionId, {
-    maxAge: Users.expirationTime,
-    httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
-  });
-  res.json({ auth: true });
+  reply.setCookie("sessionId", sessionId, SESSION_COOKIE_OPTIONS);
+  return { auth: true };
 };
 
 
 // check
 // /api/status
-exports.status = (req, res) => {
-  const userData = usersManager.getUserData(req);
-  if(userData.auth){
-    res.cookie("sessionId", req.cookies.sessionId, {
-      maxAge: Users.expirationTime,
-      httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
-    });
+exports.status = async (request, reply) => {
+  const sessionId = request.cookies.sessionId;
+  if (!sessionId) {
+    return { auth: false, userEmail: null, userName: null, role: null };
   }
-  res.json({
-    auth: userData.auth,
+  const userData = usersManager.status(sessionId);
+  if (!userData) {
+    return { auth: false, userEmail: null, userName: null, role: null };
+  }
+  reply.setCookie("sessionId", sessionId, SESSION_COOKIE_OPTIONS);
+  return {
+    auth: true,
     userEmail: userData.userEmail,
     userName: userData.userName,
     role: userData.role,
-  });
+  };
 };
 
 
 // logout
 // /api/logout
-exports.logout = (req, res) => {
-  const sessionId = req.cookies.sessionId;
-  if(!sessionId){
-    throw new InputError("Invalid input");
-  }
-  const userId = usersManager.getUserData(req).userId;
-  if(!userId){
-    throw new AuthError("Unauthorized");
-  }
+exports.logout = async (request, reply) => {
+  const sessionId = request.cookies.sessionId;
   usersManager.logout(sessionId);
-  res.cookie("sessionId", "", {
-    maxAge: 0,
-    httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
-  });
-  res.end("OK");
+  reply.setCookie("sessionId", "", { ...SESSION_COOKIE_OPTIONS, maxAge: 0 });
+  return reply.send("OK");
 };

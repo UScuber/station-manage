@@ -1,4 +1,4 @@
-const { db } = require("./db");
+const { db } = require("../db/connection");
 
 
 const is_valid_date_str = (date) => /^\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}$/.test(date);
@@ -33,13 +33,7 @@ const insert_next_stations = (elem, code) => {
   return elem;
 };
 
-const set_cache_control = (res) => {
-  res.setHeader("Cache-Control", [
-    "max-age=" + 60*60*24*7, // 1 week
-    "stale-while-revalidate=" + 60*60*24*7, // 1 week
-    "stale-if-error=" + 60*60*24*7, // 1 week
-  ]);
-};
+const CACHE_CONTROL_VALUE = "max-age=604800, stale-while-revalidate=604800, stale-if-error=604800";
 
 /**
  * 駅リストに visitType を付加する
@@ -131,7 +125,10 @@ const attachVisitType = (stationList, userId) => {
   });
 };
 
+const escapeLikePattern = (str) => str.replace(/[%_]/g, "\\$&");
+
 exports.convert_date = convert_date;
 exports.insert_next_stations = insert_next_stations;
-exports.set_cache_control = set_cache_control;
+exports.CACHE_CONTROL_VALUE = CACHE_CONTROL_VALUE;
 exports.attachVisitType = attachVisitType;
+exports.escapeLikePattern = escapeLikePattern;

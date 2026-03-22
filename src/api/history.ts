@@ -355,12 +355,10 @@ export const useSendStationStateMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (req: StationHistory) => {
-      const { data } = await axios.get<string>("/api/postStationDate", {
-        params: {
-          code: req.stationCode,
-          state: req.state,
-          date: convert_date(req.date),
-        },
+      const { data } = await axios.post<string>("/api/stationDate", {
+        code: req.stationCode,
+        state: req.state,
+        date: convert_date(req.date),
       });
       return data;
     },
@@ -407,11 +405,9 @@ export const useSendStationGroupStateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (req: StationGroupHistory) => {
-      const { data } = await axios.get<string>("/api/postStationGroupDate", {
-        params: {
-          code: req.stationGroupCode,
-          date: convert_date(req.date),
-        },
+      const { data } = await axios.post<string>("/api/stationGroupDate", {
+        code: req.stationGroupCode,
+        date: convert_date(req.date),
       });
       return data;
     },
@@ -439,8 +435,8 @@ export const useDeleteStationHistoryMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (req: StationHistory) => {
-      const { data } = await axios.get<string>("/api/deleteStationDate", {
-        params: {
+      const { data } = await axios.delete<string>("/api/stationDate", {
+        data: {
           code: req.stationCode,
           state: req.state,
           date: convert_date(req.date),
@@ -493,8 +489,8 @@ export const useDeleteStationGroupHistoryMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (req: StationGroupHistory) => {
-      const { data } = await axios.get<string>("/api/deleteStationGroupState", {
-        params: {
+      const { data } = await axios.delete<string>("/api/stationGroupDate", {
+        data: {
           code: req.stationGroupCode,
           date: convert_date(req.date),
         },
