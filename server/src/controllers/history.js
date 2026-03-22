@@ -1,5 +1,6 @@
 const { db } = require("../db/connection");
 const { convert_date, insert_next_stations, attachVisitType, escapeLikePattern } = require("../components/lib");
+const { RecordState } = require("../constants");
 const { export_sql } = require("../components/export-sql");
 const { import_sql, check_json_format } = require("../components/import-sql");
 
@@ -15,8 +16,8 @@ exports.latestStationHistory = async (request, reply) => {
     WHERE stationCode = ? AND state = ? AND userId = ?
   `);
   return {
-    getDate: stmt.get(code, 0, userId)?.date ?? null,
-    passDate: stmt.get(code, 1, userId)?.date ?? null,
+    getDate: stmt.get(code, RecordState.Get, userId)?.date ?? null,
+    passDate: stmt.get(code, RecordState.Pass, userId)?.date ?? null,
   };
 };
 
@@ -37,8 +38,8 @@ exports.latestStationHistoryList = async (request, reply) => {
         AND LatestStationHistory.state = ?
         AND LatestStationHistory.userId = ?
   `);
-  const getList = stmt.all(code, 0, userId);
-  const passList = stmt.all(code, 1, userId);
+  const getList = stmt.all(code, RecordState.Get, userId);
+  const passList = stmt.all(code, RecordState.Pass, userId);
   return getList.map((getDate, idx) => ({
     getDate: getDate.date ?? null,
     passDate: passList[idx].date ?? null,
@@ -240,7 +241,7 @@ exports.stationGroupHistory = async (request, reply) => {
       SELECT
       StationGroupHistory.stationGroupCode,
         StationGroupHistory.date,
-        2 AS state,
+        ${RecordState.GroupVisit} AS state,
         '' AS railwayName,
         '' AS railwayColor,
         NULL AS stationCode

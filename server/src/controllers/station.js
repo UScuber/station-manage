@@ -5,6 +5,7 @@ const {
   attachVisitType,
   escapeLikePattern,
 } = require("../components/lib");
+const { JR_COMPANY_CODE_MAX } = require("../constants");
 const { export_stationURL } = require("../components/export-sql");
 const { import_stationURL } = require("../components/import-sql");
 
@@ -237,9 +238,9 @@ exports.companyRailways = async (request, reply) => {
   if (code === 0) {
     data = db.prepare(`
       SELECT * FROM Railways
-      WHERE companyCode <= 6
+      WHERE companyCode <= ?
       ORDER BY railwayCode
-    `).all();
+    `).all(JR_COMPANY_CODE_MAX);
   } else {
     data = db.prepare(`
       SELECT * FROM Railways
@@ -273,14 +274,14 @@ exports.companyStations = async (request, reply) => {
       FROM Stations
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
-          AND Railways.companyCode <= 6
+          AND Railways.companyCode <= ?
       INNER JOIN Companies
         ON Railways.companyCode = Companies.companyCode
       INNER JOIN StationGroups
         ON Stations.stationGroupCode = StationGroups.stationGroupCode
       INNER JOIN Prefectures
         ON StationGroups.prefCode = Prefectures.code
-    `).all();
+    `).all(JR_COMPANY_CODE_MAX);
   } else {
     data = db.prepare(`
       SELECT
@@ -612,8 +613,8 @@ exports.railPathList = async (request, reply) => {
       FROM Railways
       INNER JOIN Companies
         ON Railways.companyCode = Companies.companyCode
-          AND Railways.companyCode <= 6
-    `).all();
+          AND Railways.companyCode <= ?
+    `).all(JR_COMPANY_CODE_MAX);
   } else {
     railwayList = db.prepare(`
       SELECT

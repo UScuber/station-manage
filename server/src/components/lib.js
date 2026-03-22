@@ -1,4 +1,5 @@
 const { db } = require("../db/connection");
+const { RecordState, VisitType } = require("../constants");
 
 
 const is_valid_date_str = (date) => /^\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}$/.test(date);
@@ -43,7 +44,7 @@ const CACHE_CONTROL_VALUE = "max-age=604800, stale-while-revalidate=604800, stal
  */
 const attachVisitType = (stationList, userId) => {
   if(!userId || stationList.length === 0){
-    return stationList.map(s => ({ ...s, visitType: 0 }));
+    return stationList.map(s => ({ ...s, visitType: VisitType.None }));
   }
 
   const stationCodes = stationList.map(s => s.stationCode);
@@ -59,8 +60,8 @@ const attachVisitType = (stationList, userId) => {
   const historyMap = {};
   for(const h of latestHistories){
     if(!historyMap[h.stationCode]) historyMap[h.stationCode] = { hasGet: false, hasPass: false };
-    if(h.state === 0) historyMap[h.stationCode].hasGet = true;
-    if(h.state === 1) historyMap[h.stationCode].hasPass = true;
+    if(h.state === RecordState.Get) historyMap[h.stationCode].hasGet = true;
+    if(h.state === RecordState.Pass) historyMap[h.stationCode].hasPass = true;
   }
 
   // 乗降りがある駅のstationCodeリスト
@@ -91,7 +92,7 @@ const attachVisitType = (stationList, userId) => {
       const getPlaceholders = getStationCodes.map(() => '?').join(',');
       const stationHistories = db.prepare(`
         SELECT stationCode, date FROM StationHistory
-        WHERE userId = ? AND state = 0 AND stationCode IN (${getPlaceholders})
+        WHERE userId = ? AND state = ${RecordState.Get} AND stationCode IN (${getPlaceholders})
       `).all(userId, ...getStationCodes);
 
       const twentyFourHours = 24 * 60 * 60 * 1000;
@@ -113,12 +114,12 @@ const attachVisitType = (stationList, userId) => {
 
   return stationList.map(s => {
     const h = historyMap[s.stationCode];
-    let visitType = 0;
+    let visitType = VisitType.None;
     if(h){
       if(h.hasGet){
-        visitType = gateExitStations.has(s.stationCode) ? 3 : 2;
+        visitType = gateExitStations.has(s.stationCode) ? VisitType.GateExit : VisitType.Get;
       }else if(h.hasPass){
-        visitType = 1;
+        visitType = VisitType.Pass;
       }
     }
     return { ...s, visitType };

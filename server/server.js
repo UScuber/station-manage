@@ -32,9 +32,17 @@ fastify.register(require("./src/routes/user"), { prefix: "/api" });
 fastify.setErrorHandler((error, request, reply) => {
   request.log.error(error);
   const statusCode = error.statusCode || 500;
-  reply.code(statusCode).send({
-    error: statusCode >= 500 ? "Internal Server Error" : error.message,
-  });
+
+  let message;
+  if (statusCode >= 500) {
+    message = "Internal Server Error";
+  } else if (error.validation) {
+    message = "Bad Request";
+  } else {
+    message = error.message;
+  }
+
+  reply.code(statusCode).send({ error: message });
 });
 
 const PORT = process.env.PORT || 3001;
