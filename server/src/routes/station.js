@@ -343,6 +343,7 @@ module.exports = async function (fastify) {
     "/importStationURL",
     {
       onRequest: [fastify.authenticateAdmin],
+      bodyLimit: 50 * 1024 * 1024, // 50MB
     },
     Station.importStationURL,
   );

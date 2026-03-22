@@ -360,7 +360,7 @@ module.exports = async function (fastify) {
     "/importHistory",
     {
       onRequest: [fastify.authenticate],
-      bodyLimit: 50 * 1024 * 1024, // 50MB（このルートだけ）
+      bodyLimit: 50 * 1024 * 1024, // 50MB
     },
     History.importHistory,
   );

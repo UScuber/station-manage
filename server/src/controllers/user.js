@@ -1,10 +1,14 @@
+const bcrypt = require("bcrypt");
 const { Users } = require("../components/user");
 const { db, usersManager } = require("../db/connection");
+
+// タイミング攻撃対策: ユーザー未存在時にもbcrypt比較と同等の時間を消費させるためのダミーハッシュ
+const DUMMY_HASH = bcrypt.hashSync("dummy", 10);
 
 const SESSION_COOKIE_OPTIONS = {
   maxAge: Users.expirationTime / 1000,
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: true,
   sameSite: "Lax",
   path: "/",
 };
@@ -44,7 +48,8 @@ exports.login = async (request, reply) => {
     WHERE userEmail = ?
   `).get(userEmail);
   if (!userData) {
-    return reply.code(400).send({ error: "Invalid input" });
+    bcrypt.compareSync(password, DUMMY_HASH);
+    return { auth: false };
   }
 
   const sessionId = usersManager.login(userEmail, password);
