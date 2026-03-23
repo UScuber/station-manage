@@ -4,7 +4,7 @@ import { Auth, User } from "./types";
 
 // 新規登録
 export const useSignupMutation = (
-  callbackFn?: (authorized: boolean) => unknown
+  callbackFn?: (authorized: boolean) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -27,7 +27,8 @@ export const useSignupMutation = (
 
 // ログイン
 export const useLoginMutation = (
-  onSuccessFn?: (authorized: boolean) => unknown
+  onSuccessFn?: () => unknown,
+  onErrorFn?: (message: string) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -37,12 +38,16 @@ export const useLoginMutation = (
       });
       return data;
     },
-    onSuccess: (data: Auth, variables: User) => {
-      onSuccessFn && onSuccessFn(data.auth);
+    onSuccess: () => {
+      onSuccessFn && onSuccessFn();
       queryClient.invalidateQueries({ queryKey: ["UserData"] });
     },
-    onError: (err: Error) => {
-      console.error(err);
+    onError: (err) => {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error
+          ? err.response.data.error
+          : "ログインに失敗しました";
+      onErrorFn && onErrorFn(message);
     },
   });
 };

@@ -29,18 +29,20 @@ const Login = () => {
 
   const navigation = useNavigate();
   const { login, isAuthenticated } = useAuth();
-  const loginMutation = login((authorized) => {
-    if (authorized) {
+  const loginMutation = login(
+    () => {
       navigation("/", {
         state: { message: "ログインに成功しました", url: "/", type: "success" },
         replace: true,
       });
       loginedRef.current = true;
-    } else {
-      setHelperText("ログインに失敗しました");
-    }
-    setLoading(false);
-  });
+      setLoading(false);
+    },
+    (message) => {
+      setHelperText(message);
+      setLoading(false);
+    },
+  );
 
   const onSubmitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,7 +53,7 @@ const Login = () => {
     const email = emailRef.current.value;
     if (
       /^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/.test(
-        email
+        email,
       )
     ) {
       setEmailHelperText("");

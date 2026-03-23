@@ -10,17 +10,19 @@ const date_string = (date) => {
     minute: "2-digit",
     second: "2-digit",
   };
-  return new Date(date).toLocaleString("ja-JP", date_options).replaceAll("/", "-");
+  return new Date(date)
+    .toLocaleString("ja-JP", date_options)
+    .replaceAll("/", "-");
 };
 
 class Users {
-  constructor(db){
+  constructor(db) {
     this.db = db;
   }
 
   static {
-    this.expirationTime = 1000*60*60*24 * 20; // [ms] (20 days)
-    this.sessionCheckInterval = 1000*60*15; // [ms] (15 min.)
+    this.expirationTime = 1000 * 60 * 60 * 24 * 20; // [ms] (20 days)
+    this.sessionCheckInterval = 1000 * 60 * 15; // [ms] (15 min.)
     // role
     this.roleFlags = Object.freeze({
       none: 0,
@@ -29,29 +31,37 @@ class Users {
   }
 
   // admin権限を持ってるか判定
-  static hasAdmin(role){
+  static hasAdmin(role) {
     return role === this.roleFlags.admin;
   }
 
-  hasAdmin(role){
+  hasAdmin(role) {
     return Users.hasAdmin(role);
   }
 
   // 新規
-  signup(userName, userEmail, password){
+  signup(userName, userEmail, password) {
     const userId = this.genSessionId();
     const BCRYPT_ROUNDS = 12;
     const hash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
     const sessionId = this.genSessionId();
 
-    try{
-      this.db.prepare(`
+    try {
+      this.db
+        .prepare(
+          `
         INSERT INTO Users VALUES(?, ?, ?, ?, ?)
-      `).run(userId, userName, userEmail, 0, hash);
-      this.db.prepare(`
+      `,
+        )
+        .run(userId, userName, userEmail, 0, hash);
+      this.db
+        .prepare(
+          `
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
-      `).run(userId, sessionId, date_string(new Date()));
-    }catch(err){
+      `,
+        )
+        .run(userId, sessionId, date_string(new Date()));
+    } catch (err) {
       console.error(err);
       return undefined;
     }
@@ -60,20 +70,28 @@ class Users {
   }
 
   // 既存
-  login(userEmail, password){
+  login(userEmail, password) {
     const new_sessionId = this.genSessionId();
-    try{
-      const userData = this.db.prepare(`
+    try {
+      const userData = this.db
+        .prepare(
+          `
         SELECT * FROM Users
         WHERE userEmail = ?
-      `).get(userEmail);
-      if(!bcrypt.compareSync(password, userData.hash)){
+      `,
+        )
+        .get(userEmail);
+      if (!bcrypt.compareSync(password, userData.hash)) {
         return undefined; // unauthorized
       }
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
-      `).run(userData.userId, new_sessionId, date_string(new Date()));
-    }catch(err){
+      `,
+        )
+        .run(userData.userId, new_sessionId, date_string(new Date()));
+    } catch (err) {
       console.error(err);
       return undefined;
     }
@@ -81,35 +99,13 @@ class Users {
     return new_sessionId;
   }
 
-  // user情報をcookieから
-  getUserData(req){
-    const sessionId = req.cookies.sessionId;
-    if(!sessionId){
-      return {
-        auth: false,
-        userId: undefined,
-        userName: undefined,
-        userEmail: undefined,
-        role: undefined,
-        isAdmin: false,
-      };
-    }
-    const userData = this.status(sessionId);
-    return {
-      auth: userData !== undefined,
-      userId: userData?.userId,
-      userName: userData?.userName,
-      userEmail: userData?.userEmail,
-      role: userData?.role,
-      isAdmin: this.hasAdmin(userData?.role),
-    };
-  }
-
   // login状態を判定
-  status(sessionId){
+  status(sessionId) {
     let userData;
-    try{
-      userData = this.db.prepare(`
+    try {
+      userData = this.db
+        .prepare(
+          `
         SELECT
           Users.userId,
           Users.userName,
@@ -119,45 +115,59 @@ class Users {
         INNER JOIN Sessions
           ON Users.userId = Sessions.userId
             AND Sessions.sessionId = ?
-      `).get(sessionId);
-      if(!userData){
+      `,
+        )
+        .get(sessionId);
+      if (!userData) {
         return undefined;
       }
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         UPDATE Sessions SET updatedDate = datetime(?)
         WHERE userId = ? AND sessionId = ?
-      `).run(date_string(new Date()), userData.userId, sessionId);
-    }catch(err){
+      `,
+        )
+        .run(date_string(new Date()), userData.userId, sessionId);
+    } catch (err) {
       console.error(err);
       return undefined;
     }
     return userData;
   }
 
-  logout(sessionId){
-    try{
-      this.db.prepare(`
+  logout(sessionId) {
+    try {
+      this.db
+        .prepare(
+          `
         DELETE FROM Sessions
         WHERE sessionId = ?
-      `).run(sessionId);
-    }catch(err){
+      `,
+        )
+        .run(sessionId);
+    } catch (err) {
       console.error(err);
     }
   }
 
   // 一定期間が経過したsessionを消す
-  watch(){
+  watch() {
     setInterval(() => {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         DELETE FROM Sessions
         WHERE updatedDate < datetime(?)
-      `).run(date_string(new Date().getTime() - this.expirationTime));
+      `,
+        )
+        .run(date_string(new Date().getTime() - this.expirationTime));
     }, this.sessionCheckInterval);
   }
 
-  genSessionId(){
+  genSessionId() {
     return crypto.randomBytes(32).toString("hex");
   }
-};
+}
 
 exports.Users = Users;

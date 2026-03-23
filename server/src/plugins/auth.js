@@ -1,6 +1,7 @@
 const fp = require("fastify-plugin");
 const { usersManager } = require("../db/connection");
 const { Users } = require("../components/user");
+const { AuthError, ForbiddenError } = require("../components/custom-errors");
 
 module.exports = fp(async function (fastify) {
   // リクエストに userId, userRole を追加するデコレータ
@@ -11,14 +12,14 @@ module.exports = fp(async function (fastify) {
   fastify.decorateRequest("isAdmin", false);
 
   // 認証必須のルート用 onRequest フック
-  fastify.decorate("authenticate", async (request, reply) => {
+  fastify.decorate("authenticate", async (request) => {
     const sessionId = request.cookies.sessionId;
     if (!sessionId) {
-      return reply.code(401).send({ error: "Unauthorized" });
+      throw new AuthError("Unauthorized");
     }
     const userData = usersManager.status(sessionId);
     if (!userData) {
-      return reply.code(401).send({ error: "Unauthorized" });
+      throw new AuthError("Unauthorized");
     }
     request.userId = userData.userId;
     request.userName = userData.userName;
@@ -28,11 +29,10 @@ module.exports = fp(async function (fastify) {
   });
 
   // 管理者権限必須のルート用フック
-  fastify.decorate("authenticateAdmin", async (request, reply) => {
+  fastify.decorate("authenticateAdmin", async (request) => {
     await fastify.authenticate(request, reply);
-    if (reply.sent) return;
     if (!request.isAdmin) {
-      return reply.code(403).send({ error: "Forbidden" });
+      throw new ForbiddenError("Forbidden");
     }
   });
 

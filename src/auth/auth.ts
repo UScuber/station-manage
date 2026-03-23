@@ -1,7 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { UseMutationResult } from "@tanstack/react-query";
 import {
-  Auth,
   User,
   useLoginMutation,
   useLogoutMutation,
@@ -10,13 +8,14 @@ import {
 } from "../api";
 
 export type AuthInfo = {
-  signup: (onSuccessFn?: (authorized: boolean) => unknown) => any;
+  signup: (
+    onSuccessFn?: (authorized: boolean) => unknown,
+  ) => ReturnType<typeof useSignupMutation>;
   login: (
-    onSuccessFn?: (authorized: boolean) => unknown
-  ) => UseMutationResult<Auth, Error, User, unknown>;
-  logout: (
-    onSuccessFn?: () => unknown
-  ) => UseMutationResult<string, Error, User, unknown>;
+    onSuccessFn?: () => unknown,
+    onErrorFn?: (message: string) => unknown,
+  ) => ReturnType<typeof useLoginMutation>;
+  logout: (onSuccessFn?: () => unknown) => ReturnType<typeof useLogoutMutation>;
   isLoading: boolean;
   isAuthenticated: boolean;
   user: User | undefined;

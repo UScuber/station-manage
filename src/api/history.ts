@@ -28,14 +28,14 @@ const convert_date = (date: Date) => {
 // 駅の最新のアクセス日時を取得
 export const useLatestStationHistory = (
   code: number | undefined,
-  onSuccessFn?: (data: StationDate) => unknown
+  onSuccessFn?: (data: StationDate) => unknown,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationDate>({
     queryKey: ["LatestStationHistory", code],
     queryFn: async () => {
       const { data } = await axios.get<StationDate>(
-        "/api/latestStationHistory/" + code
+        "/api/latestStationHistory/" + code,
       );
       onSuccessFn && onSuccessFn(data);
       return data;
@@ -46,14 +46,14 @@ export const useLatestStationHistory = (
 
 // 路線に属する駅の最新のアクセス日時を取得
 export const useLatestStationHistoryListByRailwayCode = (
-  code: number | undefined
+  code: number | undefined,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationDate[]>({
     queryKey: ["LatestStationHistoryList", code],
     queryFn: async () => {
       const { data } = await axios.get<StationDate[]>(
-        "/api/latestRailwayStationHistory/" + code
+        "/api/latestRailwayStationHistory/" + code,
       );
       return data;
     },
@@ -64,14 +64,14 @@ export const useLatestStationHistoryListByRailwayCode = (
 // 駅グループの最新のアクセス日時を取得
 export const useLatestStationGroupHistory = (
   code: number | undefined,
-  onSuccessFn?: (data: StationGroupDate) => unknown
+  onSuccessFn?: (data: StationGroupDate) => unknown,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationGroupDate>({
     queryKey: ["LatestStationGroupHistory", code],
     queryFn: async () => {
       const { data } = await axios.get<StationGroupDate>(
-        "/api/latestStationGroupHistory/" + code
+        "/api/latestStationGroupHistory/" + code,
       );
       onSuccessFn && onSuccessFn(data);
       return data;
@@ -87,7 +87,7 @@ export const useStationHistoryList = (
   name?: string,
   type?: string,
   dateFrom?: Date | null,
-  dateTo?: Date | null
+  dateTo?: Date | null,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationHistoryDetail[]>({
@@ -112,7 +112,7 @@ export const useStationHistoryList = (
             dateFrom: dateFrom ? convert_date(dateFrom) : undefined,
             dateTo: dateTo ? convert_date(dateTo) : undefined,
           },
-        }
+        },
       );
       return data;
     },
@@ -125,7 +125,7 @@ export const useStationHistoryCount = (
   name?: string,
   type?: string,
   dateFrom?: Date | null,
-  dateTo?: Date | null
+  dateTo?: Date | null,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<number>({
@@ -152,7 +152,7 @@ export const useStationHistoryListAndInfo = () => {
     queryKey: ["StationHistoryDetail"],
     queryFn: async () => {
       const { data } = await axios.get<StationHistoryDetail[]>(
-        "/api/stationHistoryAndInfo"
+        "/api/stationHistoryAndInfo",
       );
       return data;
     },
@@ -163,14 +163,14 @@ export const useStationHistoryListAndInfo = () => {
 // 駅の履歴を取得
 export const useStationAllHistory = (
   code: number | undefined,
-  onSuccessFn?: (data: StationHistory[]) => unknown
+  onSuccessFn?: (data: StationHistory[]) => unknown,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationHistory[]>({
     queryKey: ["StationHistory", code],
     queryFn: async () => {
       const { data } = await axios.get<StationHistory[]>(
-        "/api/stationHistory/" + code
+        "/api/stationHistory/" + code,
       );
       onSuccessFn && onSuccessFn(data);
       return data;
@@ -182,14 +182,14 @@ export const useStationAllHistory = (
 // 駅グループ全体の履歴を取得(各駅の行動も含める)
 export const useStationGroupAllHistory = (
   code: number | undefined,
-  onSuccessFn?: (data: StationHistoryData[]) => unknown
+  onSuccessFn?: (data: StationHistoryData[]) => unknown,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationHistoryData[]>({
     queryKey: ["StationGroupHistory", code],
     queryFn: async () => {
       const { data } = await axios.get<StationHistoryData[]>(
-        "/api/stationGroupHistory/" + code
+        "/api/stationGroupHistory/" + code,
       );
       onSuccessFn && onSuccessFn(data);
       return data;
@@ -220,7 +220,7 @@ export const useSearchStationGroupListHistory = ({
             len: length,
             name: name,
           },
-        }
+        },
       );
       return data;
     },
@@ -235,7 +235,7 @@ export const useRailwayProgress = (code: number | undefined) => {
     queryKey: ["RailwayProgress", code],
     queryFn: async () => {
       const { data } = await axios.get<StationProgress>(
-        "/api/railwayProgress/" + code
+        "/api/railwayProgress/" + code,
       );
       return data;
     },
@@ -245,14 +245,14 @@ export const useRailwayProgress = (code: number | undefined) => {
 
 // 会社の各路線の駅の個数と乗降/通過した駅の個数を取得
 export const useRailwayProgressListByCompanyCode = (
-  code: number | undefined
+  code: number | undefined,
 ) => {
   const { isAuthenticated } = useAuth();
   return useQuery<StationProgress[]>({
     queryKey: ["RailwayProgressList", code],
     queryFn: async () => {
       const { data } = await axios.get<StationProgress[]>(
-        "/api/railwayProgressList/" + code
+        "/api/railwayProgressList/" + code,
       );
       return data;
     },
@@ -267,7 +267,7 @@ export const useRailwayProgressListByPrefCode = (code: number | undefined) => {
     queryKey: ["RailwayProgressListByPref", code],
     queryFn: async () => {
       const { data } = await axios.get<StationProgress[]>(
-        "/api/prefRailwayProgressList/" + code
+        "/api/prefRailwayProgressList/" + code,
       );
       return data;
     },
@@ -282,7 +282,7 @@ export const useRailwayProgressList = () => {
     queryKey: ["RailwayProgressListAll"],
     queryFn: async () => {
       const { data } = await axios.get<StationProgress[]>(
-        "/api/railwayProgressList"
+        "/api/railwayProgressList",
       );
       return data;
     },
@@ -297,7 +297,7 @@ export const useCompanyProgress = (code: number | undefined) => {
     queryKey: ["CompanyProgress", code],
     queryFn: async () => {
       const { data } = await axios.get<StationProgress>(
-        "/api/companyProgress/" + code
+        "/api/companyProgress/" + code,
       );
       return data;
     },
@@ -312,7 +312,7 @@ export const useCompanyProgressList = () => {
     queryKey: ["CompanyProgressList"],
     queryFn: async () => {
       const { data } = await axios.get<StationProgress[]>(
-        "/api/companyProgress"
+        "/api/companyProgress",
       );
       return data;
     },
@@ -327,7 +327,7 @@ export const usePrefProgress = (code: number | undefined) => {
     queryKey: ["PrefProgress", code],
     queryFn: async () => {
       const { data } = await axios.get<StationProgress>(
-        "/api/prefProgress/" + code
+        "/api/prefProgress/" + code,
       );
       return data;
     },
@@ -348,9 +348,44 @@ export const usePrefProgressList = () => {
   });
 };
 
+const invalidateStationHistoryQueries = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  variables: { stationCode: number; stationGroupCode: number },
+) => {
+  queryClient.invalidateQueries({
+    queryKey: ["LatestStationHistory", variables.stationCode],
+  });
+  queryClient.invalidateQueries({ queryKey: ["LatestStationHistoryList"] });
+  queryClient.invalidateQueries({
+    queryKey: ["LatestStationGroupHistory", variables.stationGroupCode],
+  });
+  queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
+  queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
+  queryClient.invalidateQueries({ queryKey: ["StationHistoryDetail"] });
+  queryClient.invalidateQueries({
+    queryKey: ["StationHistory", variables.stationCode],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["StationGroupHistory", variables.stationGroupCode],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["LatestStationGroupHistoryList"],
+  });
+  queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
+  queryClient.invalidateQueries({ queryKey: ["RailwayProgressList"] });
+  queryClient.invalidateQueries({
+    queryKey: ["RailwayProgressListByPref"],
+  });
+  queryClient.invalidateQueries({ queryKey: ["RailwayProgressListAll"] });
+  queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
+  queryClient.invalidateQueries({ queryKey: ["CompanyProgressList"] });
+  queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
+  queryClient.invalidateQueries({ queryKey: ["PrefProgressList"] });
+};
+
 // 乗降/通過の情報を追加
 export const useSendStationStateMutation = (
-  onErrorFn?: (err: Error, variables: StationHistory) => any
+  onErrorFn?: (err: Error, variables: StationHistory) => any,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -363,35 +398,7 @@ export const useSendStationStateMutation = (
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationHistory", variables.stationCode],
-      });
-      queryClient.invalidateQueries({ queryKey: ["LatestStationHistoryList"] });
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationGroupHistory", variables.stationGroupCode],
-      });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryDetail"] });
-      queryClient.invalidateQueries({
-        queryKey: ["StationHistory", variables.stationCode],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["StationGroupHistory", variables.stationGroupCode],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationGroupHistoryList"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgressList"] });
-      queryClient.invalidateQueries({
-        queryKey: ["RailwayProgressListByPref"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgressListAll"] });
-      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["CompanyProgressList"] });
-      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["PrefProgressList"] });
+      invalidateStationHistoryQueries(queryClient, variables);
     },
     onError: (err: Error, variables: StationHistory) => {
       onErrorFn && onErrorFn(err, variables);
@@ -430,7 +437,7 @@ export const useSendStationGroupStateMutation = () => {
 
 // 乗降/通過の履歴を削除
 export const useDeleteStationHistoryMutation = (
-  onSuccessFn?: (data: string, variables: StationHistory) => unknown
+  onSuccessFn?: (data: string, variables: StationHistory) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -445,35 +452,7 @@ export const useDeleteStationHistoryMutation = (
       return data;
     },
     onSuccess: (data: string, variables: StationHistory) => {
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationHistory", variables.stationCode],
-      });
-      queryClient.invalidateQueries({ queryKey: ["LatestStationHistoryList"] });
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationGroupHistory", variables.stationGroupCode],
-      });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryDetail"] });
-      queryClient.invalidateQueries({
-        queryKey: ["StationHistory", variables.stationCode],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["StationGroupHistory", variables.stationGroupCode],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationGroupHistoryList"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgressList"] });
-      queryClient.invalidateQueries({
-        queryKey: ["RailwayProgressListByPref"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgressListAll"] });
-      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["CompanyProgressList"] });
-      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["PrefProgressList"] });
+      invalidateStationHistoryQueries(queryClient, variables);
       onSuccessFn && onSuccessFn(data, variables);
     },
     onError: (err: Error) => {
@@ -484,7 +463,7 @@ export const useDeleteStationHistoryMutation = (
 
 // 立ち寄りの履歴を削除
 export const useDeleteStationGroupHistoryMutation = (
-  onSuccessFn?: (data: string, variables: StationGroupHistory) => unknown
+  onSuccessFn?: (data: string, variables: StationGroupHistory) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -517,13 +496,12 @@ export const useDeleteStationGroupHistoryMutation = (
 
 // 履歴のエクスポート
 export const useExportHistoryMutation = (
-  onSuccessFn?: (data: string) => unknown
+  onSuccessFn?: (data: string) => unknown,
 ) => {
   return useMutation({
     mutationFn: async () => {
-      const { data } = await axios.post<ExportHistoryJSON>(
-        "/api/exportHistory"
-      );
+      const { data } =
+        await axios.post<ExportHistoryJSON>("/api/exportHistory");
       return JSON.stringify(data);
     },
     onSuccess: (data: string) => {
@@ -537,7 +515,7 @@ export const useExportHistoryMutation = (
 
 // 履歴のインポート
 export const useImportHistoryMutation = (
-  onSuccessFn?: (data: string) => unknown
+  onSuccessFn?: (data: string) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
