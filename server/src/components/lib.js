@@ -36,81 +36,77 @@ const insert_next_stations = (elem, code) => {
 
 const CACHE_CONTROL_VALUE = "max-age=604800, stale-while-revalidate=604800, stale-if-error=604800";
 
-/**
- * 駅リストに visitType を付加する
- * @param {Array} stationList - stationCode, stationGroupCode を含む駅データの配列
- * @param {string|null} userId - ユーザーID（未ログインなら null）
- * @returns {Array} visitType が付加された駅データの配列
- */
-const attachVisitType = (stationList, userId) => {
-  if(!userId || stationList.length === 0){
-    return stationList.map(s => ({ ...s, visitType: VisitType.None }));
-  }
-
-  const stationCodes = stationList.map(s => s.stationCode);
+const buildHistoryMap = (userId, stationCodes) => {
   const placeholders = stationCodes.map(() => '?').join(',');
-
-  // 各駅の乗降り(state=0)/通過(state=1)の有無を取得
   const latestHistories = db.prepare(`
     SELECT stationCode, state FROM LatestStationHistory
     WHERE userId = ? AND stationCode IN (${placeholders})
   `).all(userId, ...stationCodes);
 
-  // stationCode -> { hasGet, hasPass }
   const historyMap = {};
   for(const h of latestHistories){
     if(!historyMap[h.stationCode]) historyMap[h.stationCode] = { hasGet: false, hasPass: false };
     if(h.state === RecordState.Get) historyMap[h.stationCode].hasGet = true;
     if(h.state === RecordState.Pass) historyMap[h.stationCode].hasPass = true;
   }
+  return historyMap;
+};
 
-  // 乗降りがある駅のstationCodeリスト
-  const getStationCodes = stationCodes.filter(c => historyMap[c]?.hasGet);
+const findGateExitStations = (userId, stationList, getStationCodes) => {
+  if(getStationCodes.length === 0) return new Set();
 
-  // 改札下車判定
-  let gateExitStations = new Set();
-  if(getStationCodes.length > 0){
-    const codeToGroup = {};
-    for(const s of stationList){
-      codeToGroup[s.stationCode] = s.stationGroupCode;
-    }
+  const codeToGroup = {};
+  for(const s of stationList){
+    codeToGroup[s.stationCode] = s.stationGroupCode;
+  }
 
-    const getGroupCodes = [...new Set(getStationCodes.map(c => codeToGroup[c]))];
+  const getGroupCodes = [...new Set(getStationCodes.map(c => codeToGroup[c]))];
+  const groupHistories = db.prepare(`
+    SELECT stationGroupCode, date FROM StationGroupHistory
+    WHERE userId = ? AND stationGroupCode IN (${getGroupCodes.map(() => '?').join(',')})
+  `).all(userId, ...getGroupCodes);
 
-    const groupHistories = db.prepare(`
-      SELECT stationGroupCode, date FROM StationGroupHistory
-      WHERE userId = ? AND stationGroupCode IN (${getGroupCodes.map(() => '?').join(',')})
-    `).all(userId, ...getGroupCodes);
+  const groupDateMap = {};
+  for(const gh of groupHistories){
+    if(!groupDateMap[gh.stationGroupCode]) groupDateMap[gh.stationGroupCode] = [];
+    groupDateMap[gh.stationGroupCode].push(new Date(gh.date).getTime());
+  }
 
-    const groupDateMap = {};
-    for(const gh of groupHistories){
-      if(!groupDateMap[gh.stationGroupCode]) groupDateMap[gh.stationGroupCode] = [];
-      groupDateMap[gh.stationGroupCode].push(new Date(gh.date).getTime());
-    }
+  const gateExitStations = new Set();
+  if(Object.keys(groupDateMap).length === 0) return gateExitStations;
 
-    if(Object.keys(groupDateMap).length > 0){
-      const getPlaceholders = getStationCodes.map(() => '?').join(',');
-      const stationHistories = db.prepare(`
-        SELECT stationCode, date FROM StationHistory
-        WHERE userId = ? AND state = ${RecordState.Get} AND stationCode IN (${getPlaceholders})
-      `).all(userId, ...getStationCodes);
+  const getPlaceholders = getStationCodes.map(() => '?').join(',');
+  const stationHistories = db.prepare(`
+    SELECT stationCode, date FROM StationHistory
+    WHERE userId = ? AND state = ${RecordState.Get} AND stationCode IN (${getPlaceholders})
+  `).all(userId, ...getStationCodes);
 
-      const twentyFourHours = 24 * 60 * 60 * 1000;
-      for(const sh of stationHistories){
-        const groupCode = codeToGroup[sh.stationCode];
-        const groupDates = groupDateMap[groupCode];
-        if(!groupDates) continue;
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  for(const sh of stationHistories){
+    const groupCode = codeToGroup[sh.stationCode];
+    const groupDates = groupDateMap[groupCode];
+    if(!groupDates) continue;
 
-        const getTime = new Date(sh.date).getTime();
-        for(const gd of groupDates){
-          if(getTime - twentyFourHours <= gd && gd <= getTime + twentyFourHours){
-            gateExitStations.add(sh.stationCode);
-            break;
-          }
-        }
+    const getTime = new Date(sh.date).getTime();
+    for(const gd of groupDates){
+      if(getTime - twentyFourHours <= gd && gd <= getTime + twentyFourHours){
+        gateExitStations.add(sh.stationCode);
+        break;
       }
     }
   }
+  return gateExitStations;
+};
+
+const attachVisitType = (stationList, userId) => {
+  if(!userId || stationList.length === 0){
+    return stationList.map(s => ({ ...s, visitType: VisitType.None }));
+  }
+
+  const stationCodes = stationList.map(s => s.stationCode);
+  const historyMap = buildHistoryMap(userId, stationCodes);
+  const getStationCodes = stationCodes.filter(c => historyMap[c]?.hasGet);
+  const gateExitStations = findGateExitStations(userId, stationList, getStationCodes);
 
   return stationList.map(s => {
     const h = historyMap[s.stationCode];

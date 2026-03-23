@@ -32,7 +32,7 @@ module.exports = async function (fastify) {
         },
       },
     },
-    Station.groupStations,
+    Station.stationGroup,
   );
 
   // stationsByGroupCode は optionalAuth（未ログインでも取得可能だが、ログイン時は visitType 付与）
@@ -50,7 +50,7 @@ module.exports = async function (fastify) {
         },
       },
     },
-    Station.stationGroup,
+    Station.stationsByGroupCode,
   );
 
   fastify.get(

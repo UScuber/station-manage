@@ -49,7 +49,7 @@ exports.station = async (request, reply) => {
 
 // 駅グループの情報取得
 // /api/stationGroup/:stationGroupCode
-exports.groupStations = async (request, reply) => {
+exports.stationGroup = async (request, reply) => {
   const stationGroupCode = request.params.stationGroupCode;
   const data = db.prepare(`
     SELECT
@@ -74,7 +74,7 @@ exports.groupStations = async (request, reply) => {
 
 // 駅グループに属する駅の駅情報を取得
 // /api/stationsByGroupCode/:stationGroupCode
-exports.stationGroup = async (request, reply) => {
+exports.stationsByGroupCode = async (request, reply) => {
   const stationGroupCode = request.params.stationGroupCode;
   let data = db.prepare(`
     SELECT

@@ -1,4 +1,5 @@
 const History = require("../controllers/history");
+const Progress = require("../controllers/progress");
 
 module.exports = async function (fastify) {
   // --- 認証必須API ---
@@ -169,7 +170,7 @@ module.exports = async function (fastify) {
         },
       },
     },
-    History.railwayProgress,
+    Progress.railwayProgress,
   );
 
   fastify.get(
@@ -184,7 +185,7 @@ module.exports = async function (fastify) {
         },
       },
     },
-    History.railwayProgressList,
+    Progress.railwayProgressList,
   );
 
   fastify.get(
@@ -201,7 +202,7 @@ module.exports = async function (fastify) {
         },
       },
     },
-    History.railwayProgressListByPref,
+    Progress.railwayProgressListByPref,
   );
 
   fastify.get(
@@ -209,7 +210,7 @@ module.exports = async function (fastify) {
     {
       onRequest: [fastify.authenticate],
     },
-    History.railwayProgressListAll,
+    Progress.railwayProgressListAll,
   );
 
   fastify.get(
@@ -224,7 +225,7 @@ module.exports = async function (fastify) {
         },
       },
     },
-    History.companyProgress,
+    Progress.companyProgress,
   );
 
   fastify.get(
@@ -232,7 +233,7 @@ module.exports = async function (fastify) {
     {
       onRequest: [fastify.authenticate],
     },
-    History.companyProgressList,
+    Progress.companyProgressList,
   );
 
   fastify.get(
@@ -249,7 +250,7 @@ module.exports = async function (fastify) {
         },
       },
     },
-    History.prefProgress,
+    Progress.prefProgress,
   );
 
   fastify.get(
@@ -257,96 +258,59 @@ module.exports = async function (fastify) {
     {
       onRequest: [fastify.authenticate],
     },
-    History.prefProgressList,
+    Progress.prefProgressList,
   );
 
   // --- 副作用のあるAPI（POST/DELETE） ---
 
-  fastify.post(
-    "/stationDate",
-    {
-      onRequest: [fastify.authenticate],
-      schema: {
-        body: {
-          type: "object",
-          required: ["code", "date", "state"],
-          properties: {
-            code: { type: "integer" },
-            date: {
-              type: "string",
-              pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
-            },
-            state: { type: "integer", minimum: 0, maximum: 1 },
-          },
+  const stationDateSchema = {
+    body: {
+      type: "object",
+      required: ["code", "date", "state"],
+      properties: {
+        code: { type: "integer" },
+        date: {
+          type: "string",
+          pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
         },
+        state: { type: "integer", minimum: 0, maximum: 1 },
       },
     },
-    History.postStationDate,
-  );
+  };
 
-  fastify.post(
-    "/stationGroupDate",
-    {
-      onRequest: [fastify.authenticate],
-      schema: {
-        body: {
-          type: "object",
-          required: ["code", "date"],
-          properties: {
-            code: { type: "integer" },
-            date: {
-              type: "string",
-              pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
-            },
-          },
+  const stationGroupDateSchema = {
+    body: {
+      type: "object",
+      required: ["code", "date"],
+      properties: {
+        code: { type: "integer" },
+        date: {
+          type: "string",
+          pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
         },
       },
     },
-    History.postStationGroupDate,
-  );
+  };
 
-  fastify.delete(
-    "/stationDate",
-    {
-      onRequest: [fastify.authenticate],
-      schema: {
-        body: {
-          type: "object",
-          required: ["code", "date", "state"],
-          properties: {
-            code: { type: "integer" },
-            date: {
-              type: "string",
-              pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
-            },
-            state: { type: "integer", minimum: 0, maximum: 1 },
-          },
-        },
-      },
-    },
-    History.deleteStationDate,
-  );
+  fastify.post("/stationDate", {
+    onRequest: [fastify.authenticate],
+    schema: stationDateSchema,
+  }, History.postStationDate);
 
-  fastify.delete(
-    "/stationGroupDate",
-    {
-      onRequest: [fastify.authenticate],
-      schema: {
-        body: {
-          type: "object",
-          required: ["code", "date"],
-          properties: {
-            code: { type: "integer" },
-            date: {
-              type: "string",
-              pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
-            },
-          },
-        },
-      },
-    },
-    History.deleteStationGroupDate,
-  );
+  fastify.post("/stationGroupDate", {
+    onRequest: [fastify.authenticate],
+    schema: stationGroupDateSchema,
+  }, History.postStationGroupDate);
+
+  fastify.delete("/stationDate", {
+    onRequest: [fastify.authenticate],
+    schema: stationDateSchema,
+  }, History.deleteStationDate);
+
+  fastify.delete("/stationGroupDate", {
+    onRequest: [fastify.authenticate],
+    schema: stationGroupDateSchema,
+  }, History.deleteStationGroupDate);
 
   fastify.post(
     "/exportHistory",

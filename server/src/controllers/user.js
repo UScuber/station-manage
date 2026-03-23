@@ -21,11 +21,11 @@ usersManager.watch();
 exports.signup = async (request, reply) => {
   const { userName, userEmail, password } = request.body;
 
-  const userData = db.prepare(`
-    SELECT * FROM Users
+  const exists = db.prepare(`
+    SELECT 1 FROM Users
     WHERE userEmail = ?
   `).get(userEmail);
-  if (userData) {
+  if (exists) {
     return { auth: false };
   }
 
