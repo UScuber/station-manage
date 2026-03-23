@@ -30,7 +30,7 @@ module.exports = fp(async function (fastify) {
 
   // 管理者権限必須のルート用フック
   fastify.decorate("authenticateAdmin", async (request) => {
-    await fastify.authenticate(request, reply);
+    await fastify.authenticate(request);
     if (!request.isAdmin) {
       throw new ForbiddenError("Forbidden");
     }

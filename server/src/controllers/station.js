@@ -682,6 +682,10 @@ exports.timetableURL = async (request, reply) => {
 exports.updateTimetableURL = async (request, reply) => {
   const { code, direction, mode, url } = request.body;
 
+  if (mode === "update" && !url) {
+    return reply.code(400).send({ error: "Bad Request" });
+  }
+
   if (mode === "update") {
     db.prepare(`
       INSERT INTO TimetableLinks VALUES(?, ?, ?)

@@ -1,22 +1,11 @@
 const { db } = require("../db/connection");
 const { RecordState, VisitType } = require("../constants");
-
-const is_valid_date_str = (date) =>
-  /^\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}$/.test(date);
+const { format } = require("date-fns");
 
 const convert_date = (date) => {
-  if (!(date instanceof Date) && !is_valid_date_str(date)) return undefined;
-  const date_options = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  };
-  return new Date(date)
-    .toLocaleString("ja-JP", date_options)
-    .replaceAll("/", "-");
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return undefined;
+  return format(d, "yyyy-MM-dd HH:mm:ss");
 };
 
 const insert_next_stations = (elem, code) => {

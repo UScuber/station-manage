@@ -198,7 +198,7 @@ export const useSearchStationGroupList = ({
     queryKey: ["StationGroupList", offset, length, name],
     queryFn: async () => {
       const { data } = await axios.get<StationGroup[]>(
-        `/api/searchStationGroupList?`,
+        "/api/searchStationGroupList",
         {
           params: {
             off: offset,

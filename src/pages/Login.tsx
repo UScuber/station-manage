@@ -69,7 +69,7 @@ const Login = () => {
     else if (
       !/[a-zA-Z0-9!;:@'"\+\{\}\[\]~\|\^\-=\(\)_\?\.,<>#\$%&`\*]+/.test(pass)
     )
-      setEmailHelperText("使用できるのは英大小文字、半角数字、記号のみです");
+      setPassHelperText("使用できるのは英大小文字、半角数字、記号のみです");
     else {
       setPassHelperText("");
       count++;

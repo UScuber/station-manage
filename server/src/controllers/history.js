@@ -335,7 +335,7 @@ const insertStationDate = db.transaction((code, date, state, userId) => {
 exports.postStationDate = async (request, reply) => {
   const { code, date, state } = request.body;
   const userId = request.userId;
-  insertStationDate(code, date, state, userId);
+  insertStationDate(code, convert_date(date), state, userId);
   return reply.send("OK");
 };
 
@@ -367,7 +367,7 @@ const insertStationGroupDate = db.transaction((code, date, userId) => {
 exports.postStationGroupDate = async (request, reply) => {
   const { code, date } = request.body;
   const userId = request.userId;
-  insertStationGroupDate(code, date, userId);
+  insertStationGroupDate(code, convert_date(date), userId);
   return reply.send("OK");
 };
 
@@ -393,7 +393,7 @@ const removeStationDate = db.transaction((code, date, state, userId) => {
 exports.deleteStationDate = async (request, reply) => {
   const { code, date, state } = request.body;
   const userId = request.userId;
-  removeStationDate(code, date, state, userId);
+  removeStationDate(code, convert_date(date), state, userId);
   return reply.send("OK");
 };
 
@@ -419,7 +419,7 @@ const removeStationGroupDate = db.transaction((code, date, userId) => {
 exports.deleteStationGroupDate = async (request, reply) => {
   const { code, date } = request.body;
   const userId = request.userId;
-  removeStationGroupDate(code, date, userId);
+  removeStationGroupDate(code, convert_date(date), userId);
   return reply.send("OK");
 };
 

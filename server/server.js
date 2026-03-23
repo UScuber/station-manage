@@ -5,7 +5,10 @@ if (!process.env.REACT_URL) {
   process.exit(1);
 }
 
-const fastify = require("fastify")({ logger: true });
+const fastify = require("fastify")({
+  logger: true,
+  ajv: { plugins: [require("ajv-formats")] },
+});
 
 // セキュリティプラグイン
 fastify.register(require("@fastify/helmet"));
@@ -13,6 +16,7 @@ fastify.register(require("@fastify/cookie"));
 fastify.register(require("@fastify/cors"), {
   origin: process.env.REACT_URL,
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 });
 fastify.register(require("@fastify/rate-limit"), {
   global: true,

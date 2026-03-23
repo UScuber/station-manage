@@ -68,8 +68,8 @@ module.exports = async function (fastify) {
             len: { type: "integer", minimum: 1, maximum: 200 },
             name: { type: "string", default: "" },
             type: { type: "string", enum: ["station", "railway", "company"] },
-            dateFrom: { type: "string" },
-            dateTo: { type: "string" },
+            dateFrom: { type: "string", format: "date-time" },
+            dateTo: { type: "string", format: "date-time" },
           },
         },
       },
@@ -87,8 +87,8 @@ module.exports = async function (fastify) {
           properties: {
             name: { type: "string", default: "" },
             type: { type: "string", enum: ["station", "railway", "company"] },
-            dateFrom: { type: "string" },
-            dateTo: { type: "string" },
+            dateFrom: { type: "string", format: "date-time" },
+            dateTo: { type: "string", format: "date-time" },
           },
         },
       },
@@ -269,10 +269,7 @@ module.exports = async function (fastify) {
       required: ["code", "date", "state"],
       properties: {
         code: { type: "integer" },
-        date: {
-          type: "string",
-          pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
-        },
+        date: { type: "string", format: "date-time" },
         state: { type: "integer", minimum: 0, maximum: 1 },
       },
     },
@@ -284,10 +281,7 @@ module.exports = async function (fastify) {
       required: ["code", "date"],
       properties: {
         code: { type: "integer" },
-        date: {
-          type: "string",
-          pattern: "^\\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2}:\\d{2}$",
-        },
+        date: { type: "string", format: "date-time" },
       },
     },
   };

@@ -13,16 +13,7 @@ import {
 } from "./types";
 
 const convert_date = (date: Date) => {
-  return new Date(date)
-    .toLocaleString("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    })
-    .replaceAll("/", "-");
+  return new Date(date).toISOString();
 };
 
 // 駅の最新のアクセス日時を取得
