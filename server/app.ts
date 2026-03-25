@@ -22,6 +22,7 @@ import userRoutes from "./src/modules/user/route";
 
 interface BuildAppOptions {
   logger?: boolean;
+  rateLimit?: boolean;
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
@@ -38,11 +39,13 @@ export function buildApp(options: BuildAppOptions = {}) {
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
-  fastify.register(rateLimit, {
-    global: true,
-    max: 500,
-    timeWindow: "1 minute",
-  });
+  if (options.rateLimit !== false) {
+    fastify.register(rateLimit, {
+      global: true,
+      max: 500,
+      timeWindow: "1 minute",
+    });
+  }
 
   // 認証プラグイン
   fastify.register(authPlugin);
