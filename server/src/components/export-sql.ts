@@ -6,123 +6,156 @@ import type {
   ExportStationGroupHistoryInfo,
 } from "../types";
 
-interface StationQueryRow extends ExportStationHistoryInfo {
+interface StationHistoryRow extends ExportStationHistoryInfo {
   stationCode: number;
-  getDate: string | null;
-  passDate: string | null;
+  date: string;
+  state: number;
 }
 
-interface StationGroupQueryRow extends ExportStationGroupHistoryInfo {
+interface StationGroupHistoryRow extends ExportStationGroupHistoryInfo {
   stationGroupCode: number;
+  date: string;
 }
 
 // 履歴を出力する
 export const export_sql = (db: DatabaseInstance, userId: string) => {
-  const station_history: ExportStationHistory[] = [];
-  const station_group_history: ExportStationGroupHistory[] = [];
+  const stationRows = db
+    .prepare<[string], StationHistoryRow>(
+      `
+    SELECT
+      StationHistory.date,
+      StationHistory.state,
+      Stations.stationCode,
+      Stations.stationGroupCode,
+      Stations.railwayCode,
+      Stations.latitude,
+      Stations.longitude,
+      StationGroups.stationName,
+      Railways.railwayName,
+      Companies.companyName
+    FROM StationHistory
+    INNER JOIN Stations
+      ON StationHistory.stationCode = Stations.stationCode
+    INNER JOIN StationGroups
+      ON Stations.stationGroupCode = StationGroups.stationGroupCode
+    INNER JOIN Railways
+      ON Stations.railwayCode = Railways.railwayCode
+    INNER JOIN Companies
+      ON Railways.companyCode = Companies.companyCode
+    WHERE StationHistory.userId = ?
+    ORDER BY Stations.stationCode
+  `,
+    )
+    .all(userId);
 
-  db.transaction(() => {
-    const res = db
-      .prepare<[string], StationQueryRow>(
-        `
-      SELECT
-        Stations.*,
-        StationGroups.stationName,
-        Railways.railwayName,
-        Companies.companyName
-      FROM StationHistory
-      INNER JOIN Stations
-        ON StationHistory.stationCode = Stations.stationCode
-          AND userId = ?
-      INNER JOIN StationGroups
-        ON Stations.stationGroupCode = StationGroups.stationGroupCode
-      INNER JOIN Railways
-        ON Stations.railwayCode = Railways.railwayCode
-      INNER JOIN Companies
-        ON Railways.companyCode = Companies.companyCode
-      GROUP BY StationHistory.stationCode
-    `,
-      )
-      .all(userId);
-
-    for (const item of res) {
-      const history = db
-        .prepare<[number, string], { date: string; state: number }>(
-          `
-        SELECT date, state FROM StationHistory
-        WHERE stationCode = ? AND userId = ?
-      `,
-        )
-        .all(item.stationCode, userId);
-
-      const { stationCode: _, getDate: __, passDate: ___, ...info } = item;
-      station_history.push({ history, info });
+  const stationMap = new Map<number, ExportStationHistory>();
+  for (const row of stationRows) {
+    const existing = stationMap.get(row.stationCode);
+    if (existing) {
+      existing.history.push({ date: row.date, state: row.state });
+    } else {
+      stationMap.set(row.stationCode, {
+        history: [{ date: row.date, state: row.state }],
+        info: {
+          stationGroupCode: row.stationGroupCode,
+          railwayCode: row.railwayCode,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          stationName: row.stationName,
+          railwayName: row.railwayName,
+          companyName: row.companyName,
+        },
+      });
     }
-  })();
+  }
+  const station_history = [...stationMap.values()];
 
-  db.transaction(() => {
-    const res = db
-      .prepare<[string], StationGroupQueryRow>(
-        `
-      SELECT StationGroups.* FROM StationGroupHistory
-      INNER JOIN StationGroups
-        ON StationGroupHistory.stationGroupCode = StationGroups.stationGroupCode
-          AND userId = ?
-      GROUP BY StationGroupHistory.stationGroupCode
-    `,
-      )
-      .all(userId);
+  const groupRows = db
+    .prepare<[string], StationGroupHistoryRow>(
+      `
+    SELECT
+      StationGroupHistory.date,
+      StationGroups.stationGroupCode,
+      StationGroups.stationName,
+      StationGroups.kana,
+      StationGroups.latitude,
+      StationGroups.longitude,
+      StationGroups.prefCode
+    FROM StationGroupHistory
+    INNER JOIN StationGroups
+      ON StationGroupHistory.stationGroupCode = StationGroups.stationGroupCode
+    WHERE StationGroupHistory.userId = ?
+    ORDER BY StationGroups.stationGroupCode
+  `,
+    )
+    .all(userId);
 
-    for (const item of res) {
-      const history = db
-        .prepare<[number], { date: string }>(
-          `
-        SELECT date FROM StationGroupHistory
-        WHERE stationGroupCode = ?
-      `,
-        )
-        .all(item.stationGroupCode);
-
-      const { stationGroupCode: _, ...info } = item;
-      station_group_history.push({ history, info });
+  const groupMap = new Map<number, ExportStationGroupHistory>();
+  for (const row of groupRows) {
+    const existing = groupMap.get(row.stationGroupCode);
+    if (existing) {
+      existing.history.push({ date: row.date });
+    } else {
+      groupMap.set(row.stationGroupCode, {
+        history: [{ date: row.date }],
+        info: {
+          stationName: row.stationName,
+          kana: row.kana,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          prefCode: row.prefCode,
+        },
+      });
     }
-  })();
+  }
+  const station_group_history = [...groupMap.values()];
 
   return { station_history, station_group_history };
 };
 
 // 駅の情報のURLを出力する
 export const export_stationURL = (db: DatabaseInstance) => {
-  const stations = db
-    .prepare<[], { stationCode: number }>(
+  const timetableRows = db
+    .prepare<[], { stationCode: number; direction: string; url: string }>(
       `
-    SELECT stationCode FROM Stations
+    SELECT Stations.stationCode, TimetableLinks.direction, TimetableLinks.url
+    FROM Stations
+    INNER JOIN TimetableLinks ON Stations.stationCode = TimetableLinks.stationCode
   `,
     )
     .all();
+
+  const timetableMap = new Map<number, { direction: string; url: string }[]>();
+  for (const row of timetableRows) {
+    if (!timetableMap.has(row.stationCode))
+      timetableMap.set(row.stationCode, []);
+    timetableMap
+      .get(row.stationCode)!
+      .push({ direction: row.direction, url: row.url });
+  }
+
+  const trainPosRows = db
+    .prepare<[], { stationCode: number; url: string }>(
+      `
+    SELECT stationCode, url FROM TrainPosLinks
+  `,
+    )
+    .all();
+
+  const trainPosMap = new Map<number, string>();
+  for (const row of trainPosRows) {
+    trainPosMap.set(row.stationCode, row.url);
+  }
+
+  const stations = db
+    .prepare<[], { stationCode: number }>("SELECT stationCode FROM Stations")
+    .all();
+
   const data = stations.map((station) => ({
     stationCode: station.stationCode,
-    timetable: db
-      .prepare<[number], { direction: string; url: string }>(
-        `
-        SELECT direction, url FROM TimetableLinks
-        WHERE stationCode = ?
-      `,
-      )
-      .all(station.stationCode),
-    trainPosURL:
-      (
-        db
-          .prepare<[number], { url: string }>(
-            `
-        SELECT url FROM TrainPosLinks
-        WHERE stationCode = ?
-      `,
-          )
-          .get(station.stationCode)
-      )?.url ?? null,
+    timetable: timetableMap.get(station.stationCode) ?? [],
+    trainPosURL: trainPosMap.get(station.stationCode) ?? null,
   }));
-  return {
-    data: data,
-  };
+
+  return { data };
 };

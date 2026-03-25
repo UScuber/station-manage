@@ -1,6 +1,6 @@
 import { db } from "../../db/connection";
 import { convert_date } from "../../shared/date";
-import { insert_next_stations } from "../../shared/station";
+import { insert_next_stations, batchNextStations } from "../../shared/station";
 import { attachVisitType } from "../../shared/visit-type";
 import { export_sql } from "../../components/export-sql";
 import { import_sql } from "../../components/import-sql";
@@ -36,7 +36,12 @@ export const getStationHistoryCount = (query: HistoryFilterQuery, userId: string
 
 export const getStationHistoryDetail = (userId: string) => {
   const data = historyRepo.findStationHistoryDetail(userId);
-  const result = data.map(station => insert_next_stations(station, station.stationCode));
+  const nextMap = batchNextStations(data.map(s => s.stationCode));
+  const result = data.map(station => ({
+    ...station,
+    left: nextMap[station.stationCode]?.left ?? [],
+    right: nextMap[station.stationCode]?.right ?? [],
+  }));
   return attachVisitType(result, userId);
 };
 

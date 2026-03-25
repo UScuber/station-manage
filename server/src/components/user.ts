@@ -22,6 +22,7 @@ export class Users {
 
   static expirationTime = 1000 * 60 * 60 * 24 * 20; // [ms] (20 days)
   static sessionCheckInterval = 1000 * 60 * 15; // [ms] (15 min.)
+  private static DUMMY_HASH = bcrypt.hashSync("dummy", 10);
   static roleFlags = Object.freeze({
     none: 0,
     admin: 1,
@@ -67,28 +68,30 @@ export class Users {
 
   // 既存
   login(userEmail: string, password: string): string | undefined {
-    const new_sessionId = this.genSessionId();
-
     const userData = this.db
       .prepare<[string], { userId: string; hash: string }>(
         `
-        SELECT * FROM Users
+        SELECT userId, hash FROM Users
         WHERE userEmail = ?
       `,
       )
       .get(userEmail);
-    if (!userData || !bcrypt.compareSync(password, userData.hash)) {
-      return undefined; // unauthorized
+
+    const hash = userData?.hash ?? Users.DUMMY_HASH;
+    if (!bcrypt.compareSync(password, hash) || !userData) {
+      return undefined;
     }
+
+    const sessionId = this.genSessionId();
     this.db
       .prepare(
         `
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
       `,
       )
-      .run(userData.userId, new_sessionId, date_string(new Date()));
+      .run(userData.userId, sessionId, date_string(new Date()));
 
-    return new_sessionId;
+    return sessionId;
   }
 
   // login状態を判定

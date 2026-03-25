@@ -135,7 +135,7 @@ const HistoryMap = () => {
                 new Date(
                   history.date.getFullYear(),
                   history.date.getMonth(),
-                  history.date.getDay()
+                  history.date.getDate()
                 ) <= (searchParams.dateTo?.toDate() ?? new Date("9999-12-31"))
             )
             .filter((history) =>

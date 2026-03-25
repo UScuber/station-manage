@@ -373,29 +373,13 @@ export const insertStationGroupDate: Database.Transaction<
     `,
   ).run(code, date, userId);
 
-  const cnt = db
-    .prepare<[number, string], { cnt: number }>(
-      `
-      SELECT COUNT(*) AS cnt FROM LatestStationGroupHistory
-      WHERE stationGroupCode = ? AND userId = ?
+  db.prepare(
+    `
+      INSERT INTO LatestStationGroupHistory VALUES(?, datetime(?), ?)
+      ON CONFLICT(stationGroupCode, userId)
+      DO UPDATE SET date = MAX(IFNULL(date, 0), datetime(?))
     `,
-    )
-    .get(code, userId)!.cnt;
-
-  if (cnt) {
-    db.prepare(
-      `
-        UPDATE LatestStationGroupHistory SET date = MAX(IFNULL(date, 0), datetime(?))
-        WHERE stationGroupCode = ? AND userId = ?
-      `,
-    ).run(date, code, userId);
-  } else {
-    db.prepare(
-      `
-        INSERT INTO LatestStationGroupHistory VALUES(?, datetime(?), ?)
-      `,
-    ).run(code, date, userId);
-  }
+  ).run(code, date, userId, date);
 });
 
 export const removeStationDate: Database.Transaction<
