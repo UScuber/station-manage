@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,7 @@
     "csv-parse": "^6.1.0",
     "exec-sh": "^0.4.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.1"
   }
 }
