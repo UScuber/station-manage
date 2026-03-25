@@ -21,11 +21,9 @@ export default async function (fastify: FastifyInstance) {
   }, async (request, reply) => {
     const result = userService.signup(request.body);
     if (!result.auth) {
-      return result.sessionId === undefined
-        ? { auth: false }
-        : reply.code(500).send({ error: "Internal Server Error" });
+      return { auth: false };
     }
-    reply.setCookie("sessionId", result.sessionId!, SESSION_COOKIE_OPTIONS);
+    reply.setCookie("sessionId", result.sessionId, SESSION_COOKIE_OPTIONS);
     return { auth: true };
   });
 

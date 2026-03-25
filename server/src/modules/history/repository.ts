@@ -24,22 +24,31 @@ export const findLatestStationHistoryByRailway = (
   railwayCode: number,
   userId: string,
 ) => {
-  const stmt = db.prepare<[number, number, string], { date: string | null }>(`
-    SELECT date FROM Stations
+  return db
+    .prepare<
+      [number, number, string, number, string],
+      { getDate: string | null; passDate: string | null }
+    >(
+      `
+    SELECT
+      GetHistory.date AS getDate,
+      PassHistory.date AS passDate
+    FROM Stations
     INNER JOIN Railways
       ON Stations.railwayCode = Railways.railwayCode
         AND Stations.railwayCode = ?
-    LEFT JOIN LatestStationHistory
-      ON Stations.stationCode = LatestStationHistory.stationCode
-        AND LatestStationHistory.state = ?
-        AND LatestStationHistory.userId = ?
-  `);
-  const getList = stmt.all(railwayCode, RecordState.Get, userId);
-  const passList = stmt.all(railwayCode, RecordState.Pass, userId);
-  return getList.map((getDate, idx) => ({
-    getDate: getDate.date ?? null,
-    passDate: passList[idx].date ?? null,
-  }));
+    LEFT JOIN LatestStationHistory AS GetHistory
+      ON Stations.stationCode = GetHistory.stationCode
+        AND GetHistory.state = ?
+        AND GetHistory.userId = ?
+    LEFT JOIN LatestStationHistory AS PassHistory
+      ON Stations.stationCode = PassHistory.stationCode
+        AND PassHistory.state = ?
+        AND PassHistory.userId = ?
+    ORDER BY Stations.stationCode
+  `,
+    )
+    .all(railwayCode, RecordState.Get, userId, RecordState.Pass, userId);
 };
 
 export const findLatestStationGroupHistory = (

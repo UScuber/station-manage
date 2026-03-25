@@ -41,31 +41,26 @@ export class Users {
   }
 
   // 新規
-  signup(userName: string, userEmail: string, password: string): string | undefined {
+  signup(userName: string, userEmail: string, password: string): string {
     const userId = this.genSessionId();
     const BCRYPT_ROUNDS = 12;
     const hash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
     const sessionId = this.genSessionId();
 
-    try {
-      this.db
-        .prepare(
-          `
+    this.db
+      .prepare(
+        `
         INSERT INTO Users VALUES(?, ?, ?, ?, ?)
       `,
-        )
-        .run(userId, userName, userEmail, 0, hash);
-      this.db
-        .prepare(
-          `
+      )
+      .run(userId, userName, userEmail, 0, hash);
+    this.db
+      .prepare(
+        `
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
       `,
-        )
-        .run(userId, sessionId, date_string(new Date()));
-    } catch (err) {
-      console.error(err);
-      return undefined;
-    }
+      )
+      .run(userId, sessionId, date_string(new Date()));
 
     return sessionId;
   }
@@ -73,40 +68,34 @@ export class Users {
   // 既存
   login(userEmail: string, password: string): string | undefined {
     const new_sessionId = this.genSessionId();
-    try {
-      const userData = this.db
-        .prepare<[string], { userId: string; hash: string }>(
-          `
+
+    const userData = this.db
+      .prepare<[string], { userId: string; hash: string }>(
+        `
         SELECT * FROM Users
         WHERE userEmail = ?
       `,
-        )
-        .get(userEmail);
-      if (!userData || !bcrypt.compareSync(password, userData.hash)) {
-        return undefined; // unauthorized
-      }
-      this.db
-        .prepare(
-          `
+      )
+      .get(userEmail);
+    if (!userData || !bcrypt.compareSync(password, userData.hash)) {
+      return undefined; // unauthorized
+    }
+    this.db
+      .prepare(
+        `
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
       `,
-        )
-        .run(userData.userId, new_sessionId, date_string(new Date()));
-    } catch (err) {
-      console.error(err);
-      return undefined;
-    }
+      )
+      .run(userData.userId, new_sessionId, date_string(new Date()));
 
     return new_sessionId;
   }
 
   // login状態を判定
   status(sessionId: string): UserData | undefined {
-    let userData: UserData | undefined;
-    try {
-      userData = this.db
-        .prepare<[string], UserData>(
-          `
+    const userData = this.db
+      .prepare<[string], UserData>(
+        `
         SELECT
           Users.userId,
           Users.userName,
@@ -117,39 +106,31 @@ export class Users {
           ON Users.userId = Sessions.userId
             AND Sessions.sessionId = ?
       `,
-        )
-        .get(sessionId);
-      if (!userData) {
-        return undefined;
-      }
-      this.db
-        .prepare(
-          `
+      )
+      .get(sessionId);
+    if (!userData) {
+      return undefined;
+    }
+    this.db
+      .prepare(
+        `
         UPDATE Sessions SET updatedDate = datetime(?)
         WHERE userId = ? AND sessionId = ?
       `,
-        )
-        .run(date_string(new Date()), userData.userId, sessionId);
-    } catch (err) {
-      console.error(err);
-      return undefined;
-    }
+      )
+      .run(date_string(new Date()), userData.userId, sessionId);
     return userData;
   }
 
   logout(sessionId: string): void {
-    try {
-      this.db
-        .prepare(
-          `
+    this.db
+      .prepare(
+        `
         DELETE FROM Sessions
         WHERE sessionId = ?
       `,
-        )
-        .run(sessionId);
-    } catch (err) {
-      console.error(err);
-    }
+      )
+      .run(sessionId);
   }
 
   // 一定期間が経過したsessionを消す

@@ -1,7 +1,7 @@
 // https://github.com/necojackarc/extensible-custom-error?tab=MIT-1-ov-file
 
 class CustomError extends Error {
-  statusCode: number = 500;
+  declare statusCode: number;
 
   constructor(message?: string | Error, ...args: unknown[]) {
     let errorToWrap: Error | undefined;
@@ -64,6 +64,10 @@ class CustomError extends Error {
       stackTraceWithoutConstructors,
       stackTraceSoFar,
     );
+  }
+
+  static {
+    this.prototype.statusCode = 500;
   }
 }
 

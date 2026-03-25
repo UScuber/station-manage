@@ -8,7 +8,7 @@ const DUMMY_HASH = bcrypt.hashSync("dummy", 10);
 
 usersManager.watch();
 
-export const signup = (body: SignupBody): { auth: boolean; sessionId?: string } => {
+export const signup = (body: SignupBody): { auth: false } | { auth: true; sessionId: string } => {
   const { userName, userEmail, password } = body;
 
   const exists = db
@@ -19,9 +19,6 @@ export const signup = (body: SignupBody): { auth: boolean; sessionId?: string } 
   }
 
   const sessionId = usersManager.signup(userName, userEmail, password);
-  if (!sessionId) {
-    return { auth: false };
-  }
   return { auth: true, sessionId };
 };
 

@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { StationCodeParams, UpdateTimetableURLBody, UpdateTrainPosURLBody } from "./schema";
+import { ImportStationURLBody, StationCodeParams, UpdateTimetableURLBody, UpdateTrainPosURLBody } from "./schema";
 import * as adminService from "./service";
 
 export default async function (fastify: FastifyInstance) {
@@ -38,8 +38,9 @@ export default async function (fastify: FastifyInstance) {
   });
 
   // 時刻表と走行位置のURLのimport（管理者専用）
-  fastify.post<{ Body: Parameters<typeof adminService.importStationURL>[0] }>("/importStationURL", {
+  fastify.post<{ Body: ImportStationURLBody }>("/importStationURL", {
     onRequest: [fastify.authenticateAdmin],
+    schema: { body: ImportStationURLBody },
     bodyLimit: 50 * 1024 * 1024, // 50MB
   }, async (request, reply) => {
     adminService.importStationURL(request.body);
