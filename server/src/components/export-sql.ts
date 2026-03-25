@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { DatabaseInstance } from "../db/connection";
 import type {
   ExportStationHistory,
   ExportStationHistoryInfo,
@@ -17,7 +17,7 @@ interface StationGroupQueryRow extends ExportStationGroupHistoryInfo {
 }
 
 // 履歴を出力する
-export const export_sql = (db: Database.Database, userId: string) => {
+export const export_sql = (db: DatabaseInstance, userId: string) => {
   const station_history: ExportStationHistory[] = [];
   const station_group_history: ExportStationGroupHistory[] = [];
 
@@ -92,7 +92,7 @@ export const export_sql = (db: Database.Database, userId: string) => {
 };
 
 // 駅の情報のURLを出力する
-export const export_stationURL = (db: Database.Database) => {
+export const export_stationURL = (db: DatabaseInstance) => {
   const stations = db
     .prepare<[], { stationCode: number }>(
       `

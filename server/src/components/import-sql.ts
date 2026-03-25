@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { DatabaseInstance } from "../db/connection";
 import type {
   ExportHistoryJSON,
   ExportStationHistory,
@@ -20,7 +20,7 @@ interface UnknownHistory {
 
 // 履歴データを取り込む
 export const import_sql = (
-  db: Database.Database,
+  db: DatabaseInstance,
   input_json: ExportHistoryJSON,
   userId: string,
 ): UnknownHistory => {
@@ -168,7 +168,7 @@ export const import_sql = (
 };
 
 export const import_stationURL = (
-  db: Database.Database,
+  db: DatabaseInstance,
   input_json: { data: { stationCode: number; timetable: { direction: string; url: string }[]; trainPosURL: string | null }[] },
 ): void => {
   db.transaction(() => {

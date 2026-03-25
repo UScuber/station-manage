@@ -1,4 +1,4 @@
-import { db } from "../../db/connection";
+import { db, getOrThrow } from "../../db/connection";
 import { JR_COMPANY_CODE_MAX } from "../../constants";
 import type { GeoJSONFeature, RailwayWithCompany } from "../../types";
 
@@ -37,9 +37,8 @@ export const buildRailwayPathGeoJSON = <T extends object>(
 };
 
 export const findRailwayWithCompany = (railwayCode: number) => {
-  return db
-    .prepare<[number], RailwayWithCompany>(
-      `
+  const stmt = db.prepare<[number], RailwayWithCompany>(
+    `
     SELECT
       Railways.*,
       Companies.companyName,
@@ -49,8 +48,8 @@ export const findRailwayWithCompany = (railwayCode: number) => {
       ON Railways.companyCode = Companies.companyCode
         AND Railways.railwayCode = ?
   `,
-    )
-    .get(railwayCode)!;
+  );
+  return getOrThrow(stmt, railwayCode);
 };
 
 export const findRailwayListByCompanyCode = (companyCode: number) => {

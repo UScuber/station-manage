@@ -4,7 +4,6 @@ import * as stationRepo from "./repository";
 
 export const getStation = (stationCode: number) => {
   const data = stationRepo.findStationByCode(stationCode);
-  if (!data) return null;
   return insert_next_stations(data, stationCode);
 };
 

@@ -1,14 +1,15 @@
-import { db } from "../../db/connection";
+import { db, getOrThrow } from "../../db/connection";
 import type { StationDetail } from "../../types";
 
 export const findPrefectureByCode = (prefCode: number) => {
-  return db.prepare(`
+  const stmt = db.prepare(`
     SELECT
       Prefectures.code AS prefCode,
       Prefectures.name AS prefName
     FROM Prefectures
     WHERE code = ?
-  `).get(prefCode);
+  `);
+  return getOrThrow(stmt, prefCode);
 };
 
 export const findAllPrefectures = () => {

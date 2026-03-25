@@ -1,4 +1,4 @@
-import { db } from "../../db/connection";
+import { db, getOrThrow } from "../../db/connection";
 import { JR_COMPANY_CODE_MAX } from "../../constants";
 import type { StationDetail } from "../../types";
 
@@ -10,10 +10,11 @@ export const findCompanyByCode = (companyCode: number) => {
       formalName: "JR",
     };
   }
-  return db.prepare(`
+  const stmt = db.prepare(`
     SELECT * FROM Companies
     WHERE companyCode = ?
-  `).get(companyCode);
+  `);
+  return getOrThrow(stmt, companyCode);
 };
 
 export const findAllCompanies = () => {

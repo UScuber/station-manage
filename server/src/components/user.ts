@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
-import type Database from "better-sqlite3";
+import type { DatabaseInstance } from "../db/connection";
 import type { UserData } from "../types";
 
 const date_string = (date: Date | number): string => {
@@ -18,7 +18,7 @@ const date_string = (date: Date | number): string => {
 };
 
 export class Users {
-  private db: Database.Database;
+  private db: DatabaseInstance;
 
   static expirationTime = 1000 * 60 * 60 * 24 * 20; // [ms] (20 days)
   static sessionCheckInterval = 1000 * 60 * 15; // [ms] (15 min.)
@@ -27,7 +27,7 @@ export class Users {
     admin: 1,
   });
 
-  constructor(db: Database.Database) {
+  constructor(db: DatabaseInstance) {
     this.db = db;
   }
 

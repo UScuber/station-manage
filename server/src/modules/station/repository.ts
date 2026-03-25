@@ -1,8 +1,8 @@
-import { db } from "../../db/connection";
+import { db, getOrThrow } from "../../db/connection";
 import type { StationDetail } from "../../types";
 
 export const findStationByCode = (stationCode: number) => {
-  return db.prepare<[number], StationDetail>(`
+  const stmt = db.prepare<[number], StationDetail>(`
     SELECT
       Stations.*,
       StationGroups.stationName,
@@ -24,11 +24,12 @@ export const findStationByCode = (stationCode: number) => {
       ON Stations.railwayCode = Railways.railwayCode
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
-  `).get(stationCode);
+  `);
+  return getOrThrow(stmt, stationCode);
 };
 
 export const findStationGroupByCode = (stationGroupCode: number) => {
-  return db.prepare(`
+  const stmt = db.prepare(`
     SELECT
       StationGroups.*,
       Prefectures.name AS prefName
@@ -39,7 +40,8 @@ export const findStationGroupByCode = (stationGroupCode: number) => {
     INNER JOIN Prefectures
       ON StationGroups.prefCode = Prefectures.code
     GROUP BY Stations.stationGroupCode
-  `).get(stationGroupCode);
+  `);
+  return getOrThrow(stmt, stationGroupCode);
 };
 
 export const findStationsByGroupCode = (stationGroupCode: number) => {

@@ -1,8 +1,8 @@
-import { db } from "../../db/connection";
+import { db, getOrThrow } from "../../db/connection";
 import type { RailwayWithCompany, StationDetail } from "../../types";
 
 export const findRailwayByCode = (railwayCode: number) => {
-  return db.prepare<[number], RailwayWithCompany>(`
+  const stmt = db.prepare<[number], RailwayWithCompany>(`
     SELECT
       Railways.*,
       Companies.companyName,
@@ -11,7 +11,8 @@ export const findRailwayByCode = (railwayCode: number) => {
     INNER JOIN Companies
       ON Railways.companyCode = Companies.companyCode
         AND Railways.railwayCode = ?
-  `).get(railwayCode);
+  `);
+  return getOrThrow(stmt, railwayCode);
 };
 
 export const findAllRailways = () => {
