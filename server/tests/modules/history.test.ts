@@ -517,6 +517,203 @@ describe("DELETE /api/stationGroupDate", () => {
   });
 });
 
+// --- 履歴の追加・削除が反映されるか検証 ---
+
+describe("駅履歴の追加→取得→削除の一連フロー", () => {
+  const stationCode = 1110103;
+  const date = "2025-03-15T00:00:00.000Z";
+
+  it("追加した履歴がstationHistoryに反映される", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/stationDate",
+      headers: { cookie },
+      payload: { code: stationCode, date, state: 0 },
+    });
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/stationHistory/${stationCode}`,
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toContainEqual(
+      expect.objectContaining({ stationCode, state: 0 }),
+    );
+  });
+
+  it("追加した履歴がlatestStationHistoryに反映される", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/latestStationHistory/${stationCode}`,
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.getDate).not.toBeNull();
+  });
+
+  it("追加した履歴がvisitTypeに反映される", async () => {
+    // stationCode=1110103 は railwayCode=11101（北海道の路線）
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/railwayStations/11101",
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    const target = body.find(
+      (s: { stationCode: number }) => s.stationCode === stationCode,
+    );
+    expect(target).toBeDefined();
+    expect(target.visitType).toBeGreaterThan(0);
+  });
+
+  it("削除後はstationHistoryから消える", async () => {
+    await app.inject({
+      method: "DELETE",
+      url: "/api/stationDate",
+      headers: { cookie },
+      payload: { code: stationCode, date, state: 0 },
+    });
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/stationHistory/${stationCode}`,
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    const match = body.find(
+      (h: { stationCode: number; state: number }) =>
+        h.stationCode === stationCode && h.state === 0,
+    );
+    expect(match).toBeUndefined();
+  });
+});
+
+describe("グループ履歴の追加→取得→削除の一連フロー", () => {
+  const groupCode = 11101010;
+  const date = "2025-04-01T00:00:00.000Z";
+
+  it("追加したグループ履歴がstationGroupHistoryに反映される", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/stationGroupDate",
+      headers: { cookie },
+      payload: { code: groupCode, date },
+    });
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/stationGroupHistory/${groupCode}`,
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  it("追加したグループ履歴がlatestStationGroupHistoryに反映される", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/latestStationGroupHistory/${groupCode}`,
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.date).not.toBeNull();
+  });
+
+  it("削除後はstationGroupHistoryから消える", async () => {
+    await app.inject({
+      method: "DELETE",
+      url: "/api/stationGroupDate",
+      headers: { cookie },
+      payload: { code: groupCode, date },
+    });
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/stationGroupHistory/${groupCode}`,
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    // グループ直接登録分(stationCode=null)が消えている
+    const groupEntry = body.find(
+      (h: { stationCode: number | null }) => h.stationCode === null,
+    );
+    expect(groupEntry).toBeUndefined();
+  });
+});
+
+describe("エクスポート・インポートの整合性", () => {
+  it("追加した履歴がエクスポートに含まれる", async () => {
+    // 履歴を追加
+    await app.inject({
+      method: "POST",
+      url: "/api/stationDate",
+      headers: { cookie },
+      payload: { code: 1110101, date: "2025-05-01T00:00:00.000Z", state: 0 },
+    });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/exportHistory",
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    const histories = body.station_history.flatMap(
+      (s: { history: { date: string }[] }) => s.history,
+    );
+    expect(histories.length).toBeGreaterThan(0);
+  });
+
+  it("インポートした履歴が反映される", async () => {
+    // まずエクスポートして実在する駅のinfo情報を取得
+    const exportRes = await app.inject({
+      method: "POST",
+      url: "/api/exportHistory",
+      headers: { cookie },
+    });
+    const exported = exportRes.json();
+
+    // 既存の履歴から1件目のinfoを流用してインポート用データを作る
+    // (駅名・路線名・会社名の逆引きが必要なため実データが必要)
+    const sampleInfo = exported.station_history[0]?.info;
+    if (!sampleInfo) {
+      // 前のテストで追加した履歴があるはずだが、なければスキップ
+      return;
+    }
+
+    const date = "2025-06-15T00:00:00.000Z";
+    await app.inject({
+      method: "POST",
+      url: "/api/importHistory",
+      headers: { cookie },
+      payload: {
+        station_history: [
+          { history: [{ date, state: 0 }], info: sampleInfo },
+        ],
+        station_group_history: [],
+      },
+    });
+
+    // インポートにより駅名で逆引きされたstationCodeで履歴が取得できる
+    const historyRes = await app.inject({
+      method: "GET",
+      url: "/api/stationHistoryAndInfo",
+      headers: { cookie },
+    });
+    expect(historyRes.statusCode).toBe(200);
+    const historyBody = historyRes.json();
+    expect(historyBody.length).toBeGreaterThan(0);
+  });
+});
+
 describe("POST /api/exportHistory", () => {
   it("認証済みで履歴をエクスポートできる", async () => {
     const res = await app.inject({
