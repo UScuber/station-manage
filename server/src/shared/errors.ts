@@ -1,5 +1,3 @@
-"use strict";
-
 // https://github.com/necojackarc/extensible-custom-error?tab=MIT-1-ov-file
 
 class CustomError extends Error {
