@@ -1,5 +1,7 @@
 /node_modules
-station.db*
+*.db
+*.db-wal
+*.db-shm
 .env
 setup/.env
 info.log
