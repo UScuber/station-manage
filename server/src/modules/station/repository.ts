@@ -1,0 +1,63 @@
+import { db } from "../../db/connection";
+
+export const findStationByCode = (stationCode: number) => {
+  return db.prepare<unknown[], Record<string, unknown>>(`
+    SELECT
+      Stations.*,
+      StationGroups.stationName,
+      StationGroups.kana,
+      Prefectures.code AS prefCode,
+      Prefectures.name AS prefName,
+      Railways.railwayName,
+      Railways.railwayCode,
+      Railways.railwayColor,
+      Companies.companyCode,
+      Companies.companyName AS railwayCompany
+    FROM Stations
+    INNER JOIN StationGroups
+      ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        AND Stations.stationCode = ?
+    INNER JOIN Prefectures
+      ON StationGroups.prefCode = Prefectures.code
+    INNER JOIN Railways
+      ON Stations.railwayCode = Railways.railwayCode
+    INNER JOIN Companies
+      ON Railways.companyCode = Companies.companyCode
+  `).get(stationCode);
+};
+
+export const findStationGroupByCode = (stationGroupCode: number) => {
+  return db.prepare(`
+    SELECT
+      StationGroups.*,
+      Prefectures.name AS prefName
+    FROM Stations
+    INNER JOIN StationGroups
+      ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        AND Stations.stationGroupCode = ?
+    INNER JOIN Prefectures
+      ON StationGroups.prefCode = Prefectures.code
+    GROUP BY Stations.stationGroupCode
+  `).get(stationGroupCode);
+};
+
+export const findStationsByGroupCode = (stationGroupCode: number) => {
+  return db.prepare<unknown[], Record<string, unknown> & { stationCode: number; stationGroupCode: number }>(`
+    SELECT
+      Stations.*,
+      StationGroups.stationName,
+      StationGroups.kana,
+      Railways.railwayName,
+      Railways.railwayColor,
+      Companies.companyCode,
+      Companies.companyName AS railwayCompany
+    FROM Stations
+    INNER JOIN StationGroups
+      ON Stations.stationGroupCode = StationGroups.stationGroupCode
+        AND Stations.stationGroupCode = ?
+    INNER JOIN Railways
+      ON Stations.railwayCode = Railways.railwayCode
+    INNER JOIN Companies
+      ON Railways.companyCode = Companies.companyCode
+  `).all(stationGroupCode);
+};
