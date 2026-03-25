@@ -40,13 +40,29 @@ describe("認証必須エンドポイント", () => {
 // --- 認証済みテスト ---
 
 describe("GET /api/railwayProgress/:railwayCode", () => {
-  it("認証済みで路線進捗を返す", async () => {
+  it("認証済みで路線進捗を返す(stationNumとgetOrPassStationNumが含まれる)", async () => {
+    // 先に履歴を登録しておく
+    await app.inject({
+      method: "POST",
+      url: "/api/stationDate",
+      headers: { cookie },
+      payload: { code: 1110101, date: "2025-01-15T12:00:00.000Z", state: 0 },
+    });
+
     const res = await app.inject({
       method: "GET",
       url: "/api/railwayProgress/11101",
       headers: { cookie },
     });
     expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty("stationNum");
+    expect(body).toHaveProperty("getOrPassStationNum");
+    expect(body.stationNum).toBeTypeOf("number");
+    expect(body.stationNum).toBeGreaterThan(0);
+    expect(body.getOrPassStationNum).toBeTypeOf("number");
+    expect(body.getOrPassStationNum).toBeGreaterThanOrEqual(1);
+    expect(body.getOrPassStationNum).toBeLessThanOrEqual(body.stationNum);
   });
 
   it("不正なパラメータで400を返す", async () => {
@@ -60,7 +76,7 @@ describe("GET /api/railwayProgress/:railwayCode", () => {
 });
 
 describe("GET /api/railwayProgressList/:companyCode", () => {
-  it("認証済みで会社別路線進捗一覧を返す", async () => {
+  it("認証済みで会社別路線進捗一覧を返す(各要素にstationNumとgetOrPassStationNum)", async () => {
     const res = await app.inject({
       method: "GET",
       url: "/api/railwayProgressList/1",
@@ -69,6 +85,14 @@ describe("GET /api/railwayProgressList/:companyCode", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+    for (const item of body) {
+      expect(item).toHaveProperty("stationNum");
+      expect(item).toHaveProperty("getOrPassStationNum");
+      expect(item.stationNum).toBeGreaterThan(0);
+      expect(item.getOrPassStationNum).toBeGreaterThanOrEqual(0);
+      expect(item.getOrPassStationNum).toBeLessThanOrEqual(item.stationNum);
+    }
   });
 
   it("不正なパラメータで400を返す", async () => {
@@ -117,13 +141,19 @@ describe("GET /api/railwayProgressList", () => {
 });
 
 describe("GET /api/companyProgress/:companyCode", () => {
-  it("認証済みで会社進捗を返す", async () => {
+  it("認証済みで会社進捗を返す(stationNumとgetOrPassStationNumが含まれる)", async () => {
     const res = await app.inject({
       method: "GET",
       url: "/api/companyProgress/1",
       headers: { cookie },
     });
     expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty("stationNum");
+    expect(body).toHaveProperty("getOrPassStationNum");
+    expect(body.stationNum).toBeGreaterThan(0);
+    expect(body.getOrPassStationNum).toBeGreaterThanOrEqual(0);
+    expect(body.getOrPassStationNum).toBeLessThanOrEqual(body.stationNum);
   });
 
   it("不正なパラメータで400を返す", async () => {
@@ -137,7 +167,7 @@ describe("GET /api/companyProgress/:companyCode", () => {
 });
 
 describe("GET /api/companyProgress", () => {
-  it("認証済みで全会社進捗一覧を返す", async () => {
+  it("認証済みで全会社進捗一覧を返す(各要素に進捗情報が含まれる)", async () => {
     const res = await app.inject({
       method: "GET",
       url: "/api/companyProgress",
@@ -146,17 +176,29 @@ describe("GET /api/companyProgress", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+    for (const item of body) {
+      expect(item).toHaveProperty("stationNum");
+      expect(item).toHaveProperty("getOrPassStationNum");
+      expect(item.getOrPassStationNum).toBeLessThanOrEqual(item.stationNum);
+    }
   });
 });
 
 describe("GET /api/prefProgress/:prefCode", () => {
-  it("認証済みで都道府県進捗を返す", async () => {
+  it("認証済みで都道府県進捗を返す(stationNumとgetOrPassStationNumが含まれる)", async () => {
     const res = await app.inject({
       method: "GET",
       url: "/api/prefProgress/1",
       headers: { cookie },
     });
     expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty("stationNum");
+    expect(body).toHaveProperty("getOrPassStationNum");
+    expect(body.stationNum).toBeGreaterThan(0);
+    expect(body.getOrPassStationNum).toBeGreaterThanOrEqual(0);
+    expect(body.getOrPassStationNum).toBeLessThanOrEqual(body.stationNum);
   });
 
   it("不正なパラメータで400を返す", async () => {
@@ -170,7 +212,7 @@ describe("GET /api/prefProgress/:prefCode", () => {
 });
 
 describe("GET /api/prefProgress", () => {
-  it("認証済みで全都道府県進捗一覧を返す", async () => {
+  it("認証済みで全都道府県進捗一覧を返す(47都道府県分)", async () => {
     const res = await app.inject({
       method: "GET",
       url: "/api/prefProgress",
@@ -179,5 +221,11 @@ describe("GET /api/prefProgress", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBe(47);
+    for (const item of body) {
+      expect(item).toHaveProperty("stationNum");
+      expect(item).toHaveProperty("getOrPassStationNum");
+      expect(item.getOrPassStationNum).toBeLessThanOrEqual(item.stationNum);
+    }
   });
 });

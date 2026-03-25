@@ -88,6 +88,37 @@ describe("GET /api/searchStationGroupList", () => {
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBe(0);
   });
+
+  it("LIKEパターン特殊文字(%)を含む検索でエラーにならない", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/searchStationGroupList?name=%25test&off=0&len=10",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+  });
+
+  it("LIKEパターン特殊文字(_)を含む検索でエラーにならない", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/searchStationGroupList?name=a_b&off=0&len=10",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+  });
+
+  it("len=1(最小値)で1件だけ返す", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/searchStationGroupList?off=0&len=1",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.length).toBe(1);
+  });
+
 });
 
 describe("GET /api/searchStationGroupCount", () => {
@@ -170,6 +201,16 @@ describe("GET /api/searchNearestStationGroup", () => {
       url: "/api/searchNearestStationGroup?lat=41.7738",
     });
     expect(res.statusCode).toBe(400);
+  });
+
+  it("num=1で1件だけ返す", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/searchNearestStationGroup?lat=41.7738&lng=140.7268&num=1",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.length).toBe(1);
   });
 
   it("numの上限を超えると400を返す", async () => {

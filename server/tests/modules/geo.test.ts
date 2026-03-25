@@ -45,6 +45,27 @@ describe("GET /api/railpaths/:railwayCode", () => {
     expect(res.statusCode).toBe(404);
   });
 
+  it("GeoJSONの座標がMultiLineString形式で数値配列になっている", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/railpaths/11101",
+    });
+    const body = res.json();
+    const coords = body.geometry.coordinates;
+    expect(coords.length).toBeGreaterThan(0);
+    // MultiLineString: [[lng, lat], ...][]
+    for (const line of coords) {
+      expect(Array.isArray(line)).toBe(true);
+      expect(line.length).toBeGreaterThan(0);
+      for (const point of line) {
+        expect(Array.isArray(point)).toBe(true);
+        expect(point.length).toBeGreaterThanOrEqual(2);
+        expect(point[0]).toBeTypeOf("number"); // lng
+        expect(point[1]).toBeTypeOf("number"); // lat
+      }
+    }
+  });
+
   it("不正なパラメータで400を返す", async () => {
     const res = await app.inject({
       method: "GET",
@@ -68,6 +89,17 @@ describe("GET /api/pathslist/:companyCode", () => {
       expect(feature.type).toBe("Feature");
       expect(feature.geometry.type).toBe("MultiLineString");
     }
+  });
+
+  it("存在しない会社コードで空配列を返す", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/pathslist/9999999",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBe(0);
   });
 
   it("companyCode=0でJR全路線のGeoJSONを返す", async () => {

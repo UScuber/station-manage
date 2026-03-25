@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestApp } from "../helper";
+import { createTestApp, loginTestUser } from "../helper";
 import type { FastifyInstance } from "fastify";
 
 let app: FastifyInstance;
+let cookie: string;
 
 beforeAll(async () => {
   app = createTestApp();
   await app.ready();
+  cookie = await loginTestUser(app);
 });
 
 afterAll(async () => {
@@ -118,6 +120,29 @@ describe("GET /api/railwayStations/:railwayCode", () => {
     expect(res.headers["cache-control"]).toBe(
       "max-age=604800, stale-while-revalidate=604800, stale-if-error=604800",
     );
+  });
+
+  it("認証済みの場合visitTypeが数値で設定される", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/railwayStations/11101",
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    for (const station of body) {
+      expect(station).toHaveProperty("visitType");
+      expect(station.visitType).toBeTypeOf("number");
+    }
+  });
+
+  it("認証済みの場合Cache-Controlヘッダーが設定されない", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/railwayStations/11101",
+      headers: { cookie },
+    });
+    expect(res.headers["cache-control"]).toBeUndefined();
   });
 
   it("存在しない路線コードで404を返す", async () => {
