@@ -6,8 +6,7 @@ export default defineConfig({
     environment: "node",
     include: ["tests/**/*.test.ts"],
     setupFiles: ["tests/setup.ts"],
-env: {
-      DB_PATH: "./station-test.db",
+    env: {
       REACT_URL: "http://localhost:3000",
     },
   },
