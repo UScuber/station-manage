@@ -91,7 +91,7 @@ export type Auth = {
   auth: boolean;
   userName: string | undefined;
   userEmail: string | undefined;
-  role: number;
+  isAdmin: boolean;
 };
 
 // history

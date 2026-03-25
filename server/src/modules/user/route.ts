@@ -41,14 +41,14 @@ export default async function (fastify: FastifyInstance) {
   fastify.get("/status", async (request, reply) => {
     const userData = userService.status(request.cookies.sessionId);
     if (!userData) {
-      return { auth: false, userEmail: null, userName: null, role: null };
+      return { auth: false, userEmail: null, userName: null, isAdmin: false };
     }
     reply.setCookie("sessionId", request.cookies.sessionId!, SESSION_COOKIE_OPTIONS);
     return {
       auth: true,
       userEmail: userData.userEmail,
       userName: userData.userName,
-      role: userData.role,
+      isAdmin: Users.hasAdmin(userData.role),
     };
   });
 
