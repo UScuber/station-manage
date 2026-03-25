@@ -64,13 +64,13 @@ export const searchStationGroups = (name: string, off: number, len: number) => {
 
 export const countStationGroups = (name: string): number => {
   if (name === "") {
-    return db.prepare<unknown[], { count: number }>(`
+    return db.prepare<[], { count: number }>(`
       SELECT COUNT(*) AS count FROM StationGroups
     `).get()!.count;
   }
 
   const escaped = escapeLikePattern(name);
-  return db.prepare<unknown[], { count: number }>(`
+  return db.prepare<[string, string, string, string, string, string, string, string], { count: number }>(`
     SELECT COUNT(*) AS count FROM StationGroups
       WHERE stationName = ?
         OR stationName LIKE ? ESCAPE '\\'

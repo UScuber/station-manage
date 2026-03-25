@@ -1,4 +1,5 @@
 import { db } from "../../db/connection";
+import type { StationDetail } from "../../types";
 
 export const findPrefectureByCode = (prefCode: number) => {
   return db.prepare(`
@@ -42,7 +43,7 @@ export const findRailwaysByPrefCode = (prefCode: number) => {
 };
 
 export const findStationsByPrefCode = (prefCode: number) => {
-  return db.prepare<unknown[], Record<string, unknown> & { stationCode: number; stationGroupCode: number }>(`
+  return db.prepare<[number], StationDetail & { formalName: string; railwayKana: string }>(`
     SELECT
       Stations.*,
       StationGroups.stationName,

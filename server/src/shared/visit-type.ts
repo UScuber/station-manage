@@ -8,7 +8,7 @@ const buildHistoryMap = (
 ): Record<number, HistoryMapEntry> => {
   const placeholders = stationCodes.map(() => "?").join(",");
   const latestHistories = db
-    .prepare<unknown[], { stationCode: number; state: number }>(
+    .prepare<[string, ...number[]], { stationCode: number; state: number }>(
       `
     SELECT stationCode, state FROM LatestStationHistory
     WHERE userId = ? AND stationCode IN (${placeholders})
@@ -42,7 +42,7 @@ const findGateExitStations = (
     ...new Set(getStationCodes.map((c) => codeToGroup[c])),
   ];
   const groupHistories = db
-    .prepare<unknown[], { stationGroupCode: number; date: string }>(
+    .prepare<[string, ...number[]], { stationGroupCode: number; date: string }>(
       `
     SELECT stationGroupCode, date FROM StationGroupHistory
     WHERE userId = ? AND stationGroupCode IN (${getGroupCodes.map(() => "?").join(",")})
@@ -62,7 +62,7 @@ const findGateExitStations = (
 
   const getPlaceholders = getStationCodes.map(() => "?").join(",");
   const stationHistories = db
-    .prepare<unknown[], { stationCode: number; date: string }>(
+    .prepare<[string, ...number[]], { stationCode: number; date: string }>(
       `
     SELECT stationCode, date FROM StationHistory
     WHERE userId = ? AND state = ${RecordState.Get} AND stationCode IN (${getPlaceholders})

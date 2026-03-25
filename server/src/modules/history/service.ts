@@ -3,7 +3,8 @@ import { convert_date } from "../../shared/date";
 import { insert_next_stations } from "../../shared/station";
 import { attachVisitType } from "../../shared/visit-type";
 import { export_sql } from "../../components/export-sql";
-import { import_sql, check_json_format } from "../../components/import-sql";
+import { import_sql } from "../../components/import-sql";
+import type { ExportHistoryJSON } from "../../types";
 import * as historyRepo from "./repository";
 import type { HistoryFilterQuery } from "./schema";
 
@@ -76,10 +77,6 @@ export const exportHistory = (userId: string) => {
   return export_sql(db, userId);
 };
 
-export const importHistory = (data: unknown, userId: string): boolean => {
-  if (!check_json_format(data)) {
-    return false;
-  }
+export const importHistory = (data: ExportHistoryJSON, userId: string) => {
   import_sql(db, data, userId);
-  return true;
 };

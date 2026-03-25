@@ -3,14 +3,14 @@ import { db } from "../../db/connection";
 // --- Railway Progress ---
 
 export const countStationsByRailway = (railwayCode: number) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number], { num: number }>(`
     SELECT COUNT(*) AS num FROM Stations
     WHERE railwayCode = ?
   `).get(railwayCode)!.num;
 };
 
 export const countVisitedStationsByRailway = (railwayCode: number, userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number, string], { num: number }>(`
     SELECT COUNT(DISTINCT
       CASE
         WHEN LatestStationHistory.date IS NULL THEN NULL
@@ -27,7 +27,7 @@ export const countVisitedStationsByRailway = (railwayCode: number, userId: strin
 };
 
 export const countStationsGroupedByRailway = (companyCode: number) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number], { num: number }>(`
     SELECT COUNT(*) as num FROM Stations
     INNER JOIN Railways
       ON Stations.railwayCode = Railways.railwayCode
@@ -38,7 +38,7 @@ export const countStationsGroupedByRailway = (companyCode: number) => {
 };
 
 export const countVisitedStationsGroupedByRailway = (companyCode: number, userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number, string], { num: number }>(`
     SELECT COUNT(DISTINCT
       CASE
         WHEN LatestStationHistory.date IS NULL THEN NULL
@@ -57,7 +57,7 @@ export const countVisitedStationsGroupedByRailway = (companyCode: number, userId
 };
 
 export const countStationsGroupedByRailwayForPref = (prefCode: number) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number], { num: number }>(`
     WITH RailData AS (
       SELECT Stations.railwayCode FROM Stations
       INNER JOIN StationGroups
@@ -74,7 +74,7 @@ export const countStationsGroupedByRailwayForPref = (prefCode: number) => {
 };
 
 export const countVisitedStationsGroupedByRailwayForPref = (prefCode: number, userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number, string], { num: number }>(`
     WITH RailData AS (
       SELECT Stations.railwayCode FROM Stations
       INNER JOIN StationGroups
@@ -99,7 +99,7 @@ export const countVisitedStationsGroupedByRailwayForPref = (prefCode: number, us
 };
 
 export const countAllStationsGroupedByRailway = () => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[], { num: number }>(`
     SELECT COUNT(*) as num FROM Stations
     INNER JOIN Railways
       ON Stations.railwayCode = Railways.railwayCode
@@ -109,7 +109,7 @@ export const countAllStationsGroupedByRailway = () => {
 };
 
 export const countAllVisitedStationsGroupedByRailway = (userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[string], { num: number }>(`
     SELECT COUNT(DISTINCT
       CASE
         WHEN LatestStationHistory.date IS NULL THEN NULL
@@ -129,7 +129,7 @@ export const countAllVisitedStationsGroupedByRailway = (userId: string) => {
 // --- Company Progress ---
 
 export const countStationsByCompany = (companyCode: number) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number], { num: number }>(`
     SELECT COUNT(*) AS num FROM Stations
     INNER JOIN Railways
       ON Stations.railwayCode = Railways.railwayCode
@@ -138,7 +138,7 @@ export const countStationsByCompany = (companyCode: number) => {
 };
 
 export const countVisitedStationsByCompany = (companyCode: number, userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number, string], { num: number }>(`
     SELECT COUNT(DISTINCT
       CASE
         WHEN LatestStationHistory.date IS NULL THEN NULL
@@ -155,7 +155,7 @@ export const countVisitedStationsByCompany = (companyCode: number, userId: strin
 };
 
 export const countAllStationsGroupedByCompany = () => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[], { num: number }>(`
     SELECT COUNT(*) AS num FROM Stations
     INNER JOIN Railways
       ON Stations.railwayCode = Railways.railwayCode
@@ -165,7 +165,7 @@ export const countAllStationsGroupedByCompany = () => {
 };
 
 export const countAllVisitedStationsGroupedByCompany = (userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[string], { num: number }>(`
     SELECT COUNT(DISTINCT
       CASE
         WHEN LatestStationHistory.date IS NULL THEN NULL
@@ -185,7 +185,7 @@ export const countAllVisitedStationsGroupedByCompany = (userId: string) => {
 // --- Prefecture Progress ---
 
 export const countStationsByPref = (prefCode: number) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number], { num: number }>(`
     SELECT COUNT(*) AS num FROM Stations
     INNER JOIN StationGroups
       ON Stations.stationGroupCode = StationGroups.stationGroupCode
@@ -194,7 +194,7 @@ export const countStationsByPref = (prefCode: number) => {
 };
 
 export const countVisitedStationsByPref = (prefCode: number, userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[number, string], { num: number }>(`
     SELECT COUNT(DISTINCT
       CASE
         WHEN LatestStationHistory.date IS NULL THEN NULL
@@ -211,7 +211,7 @@ export const countVisitedStationsByPref = (prefCode: number, userId: string) => 
 };
 
 export const countAllStationsGroupedByPref = () => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[], { num: number }>(`
     SELECT COUNT(*) AS num FROM Stations
     INNER JOIN StationGroups
       ON Stations.stationGroupCode = StationGroups.stationGroupCode
@@ -221,7 +221,7 @@ export const countAllStationsGroupedByPref = () => {
 };
 
 export const countAllVisitedStationsGroupedByPref = (userId: string) => {
-  return db.prepare<unknown[], { num: number }>(`
+  return db.prepare<[string], { num: number }>(`
     SELECT COUNT(DISTINCT
       CASE
         WHEN LatestStationHistory.date IS NULL THEN NULL

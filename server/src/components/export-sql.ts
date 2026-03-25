@@ -1,33 +1,29 @@
 import type Database from "better-sqlite3";
+import type {
+  ExportStationHistory,
+  ExportStationHistoryInfo,
+  ExportStationGroupHistory,
+  ExportStationGroupHistoryInfo,
+} from "../types";
+
+interface StationQueryRow extends ExportStationHistoryInfo {
+  stationCode: number;
+  getDate: string | null;
+  passDate: string | null;
+}
+
+interface StationGroupQueryRow extends ExportStationGroupHistoryInfo {
+  stationGroupCode: number;
+}
 
 // 履歴を出力する
 export const export_sql = (db: Database.Database, userId: string) => {
-  const station_history: { history: unknown[]; info: Record<string, unknown> }[] = [];
-  const station_group_history: { history: unknown[]; info: Record<string, unknown> }[] = [];
-
-  const create_station_history = (station: Record<string, unknown>) => {
-    const res = db
-      .prepare(
-        `
-      SELECT date, state FROM StationHistory
-      WHERE stationCode = ? AND userId = ?
-    `,
-      )
-      .all(station.stationCode, userId);
-    if (!res) {
-      console.error("Error");
-      process.exit(1);
-    }
-    delete station.stationCode; // ID以外の情報を参考にする
-    station_history.push({
-      history: res,
-      info: station,
-    });
-  };
+  const station_history: ExportStationHistory[] = [];
+  const station_group_history: ExportStationGroupHistory[] = [];
 
   db.transaction(() => {
     const res = db
-      .prepare<unknown[], Record<string, unknown>>(
+      .prepare<[string], StationQueryRow>(
         `
       SELECT
         Stations.*,
@@ -48,40 +44,25 @@ export const export_sql = (db: Database.Database, userId: string) => {
     `,
       )
       .all(userId);
-    if (!res) {
-      console.error("Error");
-      process.exit(1);
-    }
-    res.forEach((item) => {
-      delete item.getDate;
-      delete item.passDate;
-      create_station_history(item);
-    });
-  })();
 
-  const create_station_group_history = (station: Record<string, unknown>) => {
-    const res = db
-      .prepare(
-        `
-      SELECT date FROM StationGroupHistory
-      WHERE stationGroupCode = ?
-    `,
-      )
-      .all(station.stationGroupCode);
-    if (!res) {
-      console.error("Error");
-      process.exit(1);
+    for (const item of res) {
+      const history = db
+        .prepare<[number, string], { date: string; state: number }>(
+          `
+        SELECT date, state FROM StationHistory
+        WHERE stationCode = ? AND userId = ?
+      `,
+        )
+        .all(item.stationCode, userId);
+
+      const { stationCode: _, getDate: __, passDate: ___, ...info } = item;
+      station_history.push({ history, info });
     }
-    delete station.stationGroupCode; // ID以外の情報を参考にする
-    station_group_history.push({
-      history: res,
-      info: station,
-    });
-  };
+  })();
 
   db.transaction(() => {
     const res = db
-      .prepare<unknown[], Record<string, unknown>>(
+      .prepare<[string], StationGroupQueryRow>(
         `
       SELECT StationGroups.* FROM StationGroupHistory
       INNER JOIN StationGroups
@@ -91,27 +72,29 @@ export const export_sql = (db: Database.Database, userId: string) => {
     `,
       )
       .all(userId);
-    if (!res) {
-      console.error("Error");
-      process.exit(1);
+
+    for (const item of res) {
+      const history = db
+        .prepare<[number], { date: string }>(
+          `
+        SELECT date FROM StationGroupHistory
+        WHERE stationGroupCode = ?
+      `,
+        )
+        .all(item.stationGroupCode);
+
+      const { stationGroupCode: _, ...info } = item;
+      station_group_history.push({ history, info });
     }
-    res.forEach((item) => {
-      delete item.date;
-      create_station_group_history(item);
-    });
   })();
 
-  const result_json = {
-    station_history: station_history,
-    station_group_history: station_group_history,
-  };
-  return result_json;
+  return { station_history, station_group_history };
 };
 
 // 駅の情報のURLを出力する
 export const export_stationURL = (db: Database.Database) => {
   const stations = db
-    .prepare<unknown[], { stationCode: number }>(
+    .prepare<[], { stationCode: number }>(
       `
     SELECT stationCode FROM Stations
   `,
@@ -120,7 +103,7 @@ export const export_stationURL = (db: Database.Database) => {
   const data = stations.map((station) => ({
     stationCode: station.stationCode,
     timetable: db
-      .prepare<unknown[], { direction: string; url: string }>(
+      .prepare<[number], { direction: string; url: string }>(
         `
         SELECT direction, url FROM TimetableLinks
         WHERE stationCode = ?
@@ -130,7 +113,7 @@ export const export_stationURL = (db: Database.Database) => {
     trainPosURL:
       (
         db
-          .prepare<unknown[], { url: string }>(
+          .prepare<[number], { url: string }>(
             `
         SELECT url FROM TrainPosLinks
         WHERE stationCode = ?

@@ -1,7 +1,8 @@
 import { db } from "../../db/connection";
+import type { RailwayWithCompany, StationDetail } from "../../types";
 
 export const findRailwayByCode = (railwayCode: number) => {
-  return db.prepare(`
+  return db.prepare<[number], RailwayWithCompany>(`
     SELECT
       Railways.*,
       Companies.companyName,
@@ -14,7 +15,7 @@ export const findRailwayByCode = (railwayCode: number) => {
 };
 
 export const findAllRailways = () => {
-  return db.prepare(`
+  return db.prepare<[], RailwayWithCompany>(`
     SELECT
       Railways.*,
       Companies.companyName,
@@ -26,7 +27,7 @@ export const findAllRailways = () => {
 };
 
 export const findStationsByRailwayCode = (railwayCode: number) => {
-  return db.prepare<unknown[], Record<string, unknown> & { stationCode: number; stationGroupCode: number }>(`
+  return db.prepare<[number], StationDetail>(`
     SELECT
       Stations.*,
       StationGroups.stationName,

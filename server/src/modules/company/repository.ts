@@ -1,5 +1,6 @@
 import { db } from "../../db/connection";
 import { JR_COMPANY_CODE_MAX } from "../../constants";
+import type { StationDetail } from "../../types";
 
 export const findCompanyByCode = (companyCode: number) => {
   if (companyCode === 0) {
@@ -39,7 +40,7 @@ export const findRailwaysByCompanyCode = (companyCode: number) => {
 
 export const findStationsByCompanyCode = (companyCode: number) => {
   if (companyCode === 0) {
-    return db.prepare<unknown[], Record<string, unknown> & { stationCode: number; stationGroupCode: number }>(`
+    return db.prepare<[number], StationDetail>(`
       SELECT
         Stations.*,
         StationGroups.stationName,
@@ -62,7 +63,7 @@ export const findStationsByCompanyCode = (companyCode: number) => {
         ON StationGroups.prefCode = Prefectures.code
     `).all(JR_COMPANY_CODE_MAX);
   }
-  return db.prepare<unknown[], Record<string, unknown> & { stationCode: number; stationGroupCode: number }>(`
+  return db.prepare<[number], StationDetail>(`
     SELECT
       Stations.*,
       StationGroups.stationName,

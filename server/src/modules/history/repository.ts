@@ -3,10 +3,14 @@ import { db } from "../../db/connection";
 import { RecordState } from "../../constants";
 import { escapeLikePattern } from "../../shared/sql";
 import { convert_date } from "../../shared/date";
+import type { StationHistoryDetail } from "../../types";
 import type { HistoryFilterQuery } from "./schema";
 
-export const findLatestStationHistory = (stationCode: number, userId: string) => {
-  const stmt = db.prepare<unknown[], { date: string }>(`
+export const findLatestStationHistory = (
+  stationCode: number,
+  userId: string,
+) => {
+  const stmt = db.prepare<[number, number, string], { date: string }>(`
     SELECT date FROM LatestStationHistory
     WHERE stationCode = ? AND state = ? AND userId = ?
   `);
@@ -16,8 +20,11 @@ export const findLatestStationHistory = (stationCode: number, userId: string) =>
   };
 };
 
-export const findLatestStationHistoryByRailway = (railwayCode: number, userId: string) => {
-  const stmt = db.prepare<unknown[], { date: string | null }>(`
+export const findLatestStationHistoryByRailway = (
+  railwayCode: number,
+  userId: string,
+) => {
+  const stmt = db.prepare<[number, number, string], { date: string | null }>(`
     SELECT date FROM Stations
     INNER JOIN Railways
       ON Stations.railwayCode = Railways.railwayCode
@@ -35,8 +42,11 @@ export const findLatestStationHistoryByRailway = (railwayCode: number, userId: s
   }));
 };
 
-export const findLatestStationGroupHistory = (stationGroupCode: number, userId: string) => {
-  const stmt = db.prepare<unknown[], { date: string }>(`
+export const findLatestStationGroupHistory = (
+  stationGroupCode: number,
+  userId: string,
+) => {
+  const stmt = db.prepare<[number, string], { date: string }>(`
     SELECT date FROM LatestStationGroupHistory
     WHERE stationGroupCode = ? AND userId = ?
   `);
@@ -45,29 +55,45 @@ export const findLatestStationGroupHistory = (stationGroupCode: number, userId: 
   };
 };
 
-const buildHistoryFilter = (query: HistoryFilterQuery, userId: string) => {
+type HistoryFilterResult = {
+  nameCondition: string;
+  params: [userId: string, dateFrom: string, dateTo: string, ...name: string[]];
+};
+
+const buildHistoryFilter = (
+  query: HistoryFilterQuery,
+  userId: string,
+): HistoryFilterResult => {
   const name = query.name ?? "";
   const type = query.type;
-  const convertedFrom = query.dateFrom ? convert_date(query.dateFrom) : undefined;
-  const convertedTo = query.dateTo ? convert_date(query.dateTo) : undefined;
-  const dateFrom = convertedFrom ? convertedFrom.substr(0, 10) + " 00:00:00" : undefined;
-  const dateTo = convertedTo ? convertedTo.substr(0, 10) + " 23:59:59" : undefined;
+  const dateFrom = query.dateFrom
+    ? convert_date(query.dateFrom).substring(0, 10) + " 00:00:00"
+    : "0000-01-01 00:00:00";
+  const dateTo = query.dateTo
+    ? convert_date(query.dateTo).substring(0, 10) + " 23:59:59"
+    : "9999-12-31 23:59:59";
 
-  let nameCondition = "";
-  const nameParams: string[] = [];
+  const base = [userId, dateFrom, dateTo] as const;
 
   if (type === "station" && name !== "") {
-    nameCondition = "AND StationGroups.stationName = ?";
-    nameParams.push(name);
-  } else if (type === "railway" && name !== "") {
-    nameCondition = "AND Railways.railwayName = ?";
-    nameParams.push(name);
-  } else if (type === "company" && name !== "") {
-    nameCondition = "AND Companies.companyName = ?";
-    nameParams.push(name);
+    return {
+      nameCondition: "AND StationGroups.stationName = ?",
+      params: [...base, name],
+    };
   }
-
-  return { nameCondition, params: [userId, dateFrom, dateTo, ...nameParams] };
+  if (type === "railway" && name !== "") {
+    return {
+      nameCondition: "AND Railways.railwayName = ?",
+      params: [...base, name],
+    };
+  }
+  if (type === "company" && name !== "") {
+    return {
+      nameCondition: "AND Companies.companyName = ?",
+      params: [...base, name],
+    };
+  }
+  return { nameCondition: "", params: [...base] };
 };
 
 export const findStationHistoryList = (
@@ -77,7 +103,9 @@ export const findStationHistoryList = (
   len: number,
 ) => {
   const { nameCondition, params } = buildHistoryFilter(query, userId);
-  return db.prepare<unknown[], Record<string, unknown> & { stationCode: number }>(`
+  return db
+    .prepare<[...typeof params, number, number], StationHistoryDetail>(
+      `
     SELECT
       Stations.*,
       StationGroups.stationName,
@@ -103,18 +131,25 @@ export const findStationHistoryList = (
       ON Railways.companyCode = Companies.companyCode
     INNER JOIN Prefectures
       ON StationGroups.prefCode = Prefectures.code
-    WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
-      AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
+    WHERE StationHistory.date >= datetime(?)
+      AND StationHistory.date <= datetime(?)
       ${nameCondition}
     ORDER BY StationHistory.date DESC
     LIMIT ?
     OFFSET ?
-  `).all(...params, len, off);
+  `,
+    )
+    .all(...params, len, off);
 };
 
-export const countStationHistory = (query: HistoryFilterQuery, userId: string) => {
+export const countStationHistory = (
+  query: HistoryFilterQuery,
+  userId: string,
+) => {
   const { nameCondition, params } = buildHistoryFilter(query, userId);
-  return db.prepare<unknown[], { count: number }>(`
+  return db
+    .prepare<typeof params, { count: number }>(
+      `
     SELECT COUNT(*) AS count FROM StationHistory
     INNER JOIN Stations
       ON StationHistory.stationCode = Stations.stationCode
@@ -127,14 +162,18 @@ export const countStationHistory = (query: HistoryFilterQuery, userId: string) =
       ON Railways.companyCode = Companies.companyCode
     INNER JOIN Prefectures
       ON StationGroups.prefCode = Prefectures.code
-    WHERE StationHistory.date >= datetime(IFNULL(?, '0000-01-01 00:00:00'))
-      AND StationHistory.date <= datetime(IFNULL(?, '9999-12-31 23:59:59'))
+    WHERE StationHistory.date >= datetime(?)
+      AND StationHistory.date <= datetime(?)
       ${nameCondition}
-  `).get(...params)!.count;
+  `,
+    )
+    .get(...params)!.count;
 };
 
 export const findStationHistoryDetail = (userId: string) => {
-  return db.prepare<unknown[], Record<string, unknown> & { stationCode: number; stationGroupCode: number }>(`
+  return db
+    .prepare<[string], StationHistoryDetail>(
+      `
     SELECT
       StationHistory.date,
       StationHistory.state,
@@ -161,19 +200,33 @@ export const findStationHistoryDetail = (userId: string) => {
     INNER JOIN Prefectures
       ON StationGroups.prefCode = Prefectures.code
     ORDER BY date DESC
-  `).all(userId);
+  `,
+    )
+    .all(userId);
 };
 
-export const findStationHistoryByCode = (stationCode: number, userId: string) => {
-  return db.prepare(`
+export const findStationHistoryByCode = (
+  stationCode: number,
+  userId: string,
+) => {
+  return db
+    .prepare(
+      `
     SELECT stationCode, date, state FROM StationHistory
     WHERE stationCode = ? AND userId = ?
     ORDER BY date DESC
-  `).all(stationCode, userId);
+  `,
+    )
+    .all(stationCode, userId);
 };
 
-export const findStationGroupHistoryByCode = (stationGroupCode: number, userId: string) => {
-  return db.prepare(`
+export const findStationGroupHistoryByCode = (
+  stationGroupCode: number,
+  userId: string,
+) => {
+  return db
+    .prepare(
+      `
       SELECT
       StationGroupHistory.stationGroupCode,
         StationGroupHistory.date,
@@ -199,7 +252,9 @@ export const findStationGroupHistoryByCode = (stationGroupCode: number, userId: 
       INNER JOIN Railways
         ON Stations.railwayCode = Railways.railwayCode
     ORDER BY date DESC
-  `).all(stationGroupCode, userId, stationGroupCode, userId);
+  `,
+    )
+    .all(stationGroupCode, userId, stationGroupCode, userId);
 };
 
 export const searchStationGroupHistoryList = (
@@ -209,17 +264,23 @@ export const searchStationGroupHistoryList = (
   len: number,
 ) => {
   if (name === "") {
-    return db.prepare(`
+    return db
+      .prepare(
+        `
       SELECT StationGroups.*, LatestStationGroupHistory.date, 0 AS ord FROM StationGroups
       LEFT JOIN LatestStationGroupHistory
         ON StationGroups.stationGroupCode = LatestStationGroupHistory.stationGroupCode
           AND LatestStationGroupHistory.userId = ?
       LIMIT ? OFFSET ?
-    `).all(userId, len, off);
+    `,
+      )
+      .all(userId, len, off);
   }
 
   const escaped = escapeLikePattern(name);
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     WITH StationData AS (
       SELECT * FROM StationGroups
     )
@@ -254,83 +315,120 @@ export const searchStationGroupHistoryList = (
     GROUP BY Results.stationGroupCode
     ORDER BY Results.ord
     LIMIT ? OFFSET ?
-  `).all(
-    name, `${escaped}_%`, `_%${escaped}`, `_%${escaped}_%`,
-    name, `${escaped}_%`, `_%${escaped}`, `_%${escaped}_%`,
-    userId, len, off,
-  );
+  `,
+    )
+    .all(
+      name,
+      `${escaped}_%`,
+      `_%${escaped}`,
+      `_%${escaped}_%`,
+      name,
+      `${escaped}_%`,
+      `_%${escaped}`,
+      `_%${escaped}_%`,
+      userId,
+      len,
+      off,
+    );
 };
 
 // --- Transactions ---
 
-export const insertStationDate: Database.Transaction<(code: number, date: string | undefined, state: number, userId: string) => void> = db.transaction(
-  (code: number, date: string | undefined, state: number, userId: string) => {
-    db.prepare(
-      "INSERT INTO StationHistory VALUES(?, datetime(?), ?, ?)",
-    ).run(code, date, state, userId);
+export const insertStationDate: Database.Transaction<
+  (code: number, date: string, state: number, userId: string) => void
+> = db.transaction(
+  (code: number, date: string, state: number, userId: string) => {
+    db.prepare("INSERT INTO StationHistory VALUES(?, datetime(?), ?, ?)").run(
+      code,
+      date,
+      state,
+      userId,
+    );
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO LatestStationHistory VALUES(?, datetime(?), ?, ?)
       ON CONFLICT(stationCode, state, userId)
       DO UPDATE SET date = MAX(IFNULL(date, 0), datetime(?))
-    `).run(code, date, state, userId, date);
+    `,
+    ).run(code, date, state, userId, date);
   },
 );
 
-export const insertStationGroupDate: Database.Transaction<(code: number, date: string | undefined, userId: string) => void> = db.transaction(
-  (code: number, date: string | undefined, userId: string) => {
-    db.prepare(`
+export const insertStationGroupDate: Database.Transaction<
+  (code: number, date: string, userId: string) => void
+> = db.transaction((code: number, date: string, userId: string) => {
+  db.prepare(
+    `
       INSERT INTO StationGroupHistory VALUES(?, datetime(?), ?)
-    `).run(code, date, userId);
+    `,
+  ).run(code, date, userId);
 
-    const cnt = db.prepare<unknown[], { cnt: number }>(`
+  const cnt = db
+    .prepare<[number, string], { cnt: number }>(
+      `
       SELECT COUNT(*) AS cnt FROM LatestStationGroupHistory
       WHERE stationGroupCode = ? AND userId = ?
-    `).get(code, userId)!.cnt;
+    `,
+    )
+    .get(code, userId)!.cnt;
 
-    if (cnt) {
-      db.prepare(`
+  if (cnt) {
+    db.prepare(
+      `
         UPDATE LatestStationGroupHistory SET date = MAX(IFNULL(date, 0), datetime(?))
         WHERE stationGroupCode = ? AND userId = ?
-      `).run(date, code, userId);
-    } else {
-      db.prepare(`
+      `,
+    ).run(date, code, userId);
+  } else {
+    db.prepare(
+      `
         INSERT INTO LatestStationGroupHistory VALUES(?, datetime(?), ?)
-      `).run(code, date, userId);
-    }
-  },
-);
+      `,
+    ).run(code, date, userId);
+  }
+});
 
-export const removeStationDate: Database.Transaction<(code: number, date: string | undefined, state: number, userId: string) => void> = db.transaction(
-  (code: number, date: string | undefined, state: number, userId: string) => {
-    db.prepare(`
+export const removeStationDate: Database.Transaction<
+  (code: number, date: string, state: number, userId: string) => void
+> = db.transaction(
+  (code: number, date: string, state: number, userId: string) => {
+    db.prepare(
+      `
       DELETE FROM StationHistory
       WHERE stationCode = ? AND date = datetime(?) AND state = ? AND userId = ?
-    `).run(code, date, state, userId);
+    `,
+    ).run(code, date, state, userId);
 
-    db.prepare(`
+    db.prepare(
+      `
       UPDATE LatestStationHistory SET date = (
         SELECT MAX(date) FROM StationHistory
         WHERE stationCode = ? AND state = ? AND userId = ?
       )
       WHERE stationCode = ? AND state = ? AND userId = ?
-    `).run(code, state, userId, code, state, userId);
+    `,
+    ).run(code, state, userId, code, state, userId);
   },
 );
 
-export const removeStationGroupDate: Database.Transaction<(code: number, date: string | undefined, userId: string) => void> = db.transaction(
-  (code: number, date: string | undefined, userId: string) => {
-    db.prepare(`
+export const removeStationGroupDate: Database.Transaction<
+  (code: number, date: string, userId: string) => void
+> = db.transaction((code: number, date: string, userId: string) => {
+  db.prepare(
+    `
       DELETE FROM StationGroupHistory
       WHERE stationGroupCode = ? AND date = datetime(?) AND userId = ?
-    `).run(code, date, userId);
+    `,
+  ).run(code, date, userId);
 
-    db.prepare(`
+  db.prepare(
+    `
       UPDATE LatestStationGroupHistory SET date = (
         SELECT MAX(date) FROM StationGroupHistory
         WHERE stationGroupCode = ? AND userId = ?
       )
       WHERE stationGroupCode = ? AND userId = ?
-    `).run(code, userId, code, userId);
-  },
-);
+    `,
+  ).run(code, userId, code, userId);
+});

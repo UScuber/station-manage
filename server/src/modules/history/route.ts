@@ -8,6 +8,7 @@ import {
   PaginatedSearchHistoryQuery,
   StationDateBody,
   StationGroupDateBody,
+  ImportHistoryBody,
 } from "./schema";
 import * as historyService from "./service";
 
@@ -145,12 +146,12 @@ export default async function (fastify: FastifyInstance) {
     return historyService.exportHistory(request.userId!);
   });
 
-  fastify.post("/importHistory", {
+  fastify.post<{ Body: ImportHistoryBody }>("/importHistory", {
     onRequest: [fastify.authenticate],
+    schema: { body: ImportHistoryBody },
     bodyLimit: 50 * 1024 * 1024, // 50MB
   }, async (request, reply) => {
-    const ok = historyService.importHistory(request.body, request.userId!);
-    if (!ok) return reply.code(400).send({ error: "Invalid input" });
+    historyService.importHistory(request.body, request.userId!);
     return reply.send("OK");
   });
 }

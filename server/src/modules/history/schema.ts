@@ -48,6 +48,40 @@ export const StationGroupDateBody = Type.Object({
   date: Type.String({ format: "date-time" }),
 });
 
+const HistoryExportStationInfo = Type.Object({
+  stationGroupCode: Type.Integer(),
+  railwayCode: Type.Integer(),
+  latitude: Type.Number(),
+  longitude: Type.Number(),
+  stationName: Type.String(),
+  railwayName: Type.String(),
+  companyName: Type.String(),
+});
+
+const HistoryExportStationGroupInfo = Type.Object({
+  stationName: Type.String(),
+  kana: Type.String(),
+  latitude: Type.Number(),
+  longitude: Type.Number(),
+  prefCode: Type.Integer(),
+});
+
+export const ImportHistoryBody = Type.Object({
+  station_history: Type.Array(Type.Object({
+    history: Type.Array(Type.Object({
+      date: Type.String(),
+      state: Type.Integer({ minimum: 0, maximum: 1 }),
+    })),
+    info: HistoryExportStationInfo,
+  })),
+  station_group_history: Type.Array(Type.Object({
+    history: Type.Array(Type.Object({
+      date: Type.String(),
+    })),
+    info: HistoryExportStationGroupInfo,
+  })),
+});
+
 export type StationCodeParams = Static<typeof StationCodeParams>;
 export type StationGroupCodeParams = Static<typeof StationGroupCodeParams>;
 export type RailwayCodeParams = Static<typeof RailwayCodeParams>;
@@ -56,3 +90,4 @@ export type HistoryListQuery = Static<typeof HistoryListQuery>;
 export type PaginatedSearchHistoryQuery = Static<typeof PaginatedSearchHistoryQuery>;
 export type StationDateBody = Static<typeof StationDateBody>;
 export type StationGroupDateBody = Static<typeof StationGroupDateBody>;
+export type ImportHistoryBody = Static<typeof ImportHistoryBody>;

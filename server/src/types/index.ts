@@ -140,14 +140,32 @@ export interface HistoryMapEntry {
 
 // --- Export/Import JSON types ---
 
+export interface ExportStationHistoryInfo {
+  stationGroupCode: number;
+  railwayCode: number;
+  latitude: number;
+  longitude: number;
+  stationName: string;
+  railwayName: string;
+  companyName: string;
+}
+
+export interface ExportStationGroupHistoryInfo {
+  stationName: string;
+  kana: string;
+  latitude: number;
+  longitude: number;
+  prefCode: number;
+}
+
 export interface ExportStationHistory {
   history: { date: string; state: number }[];
-  info: Record<string, unknown>;
+  info: ExportStationHistoryInfo;
 }
 
 export interface ExportStationGroupHistory {
   history: { date: string }[];
-  info: Record<string, unknown>;
+  info: ExportStationGroupHistoryInfo;
 }
 
 export interface ExportHistoryJSON {
@@ -165,13 +183,36 @@ export interface ExportStationURLJSON {
   data: StationURLData[];
 }
 
+// --- Joined query result types ---
+
+export interface RailwayWithCompany extends RailwayRow {
+  companyName: string;
+  companyFormalName: string;
+}
+
+export interface StationDetail extends StationRow {
+  stationName: string;
+  kana: string;
+  prefCode: number;
+  prefName: string;
+  railwayName: string;
+  railwayColor: string;
+  companyCode: number;
+  railwayCompany: string;
+}
+
+export interface StationHistoryDetail extends StationDetail {
+  date: string;
+  state: number;
+}
+
 // --- GeoJSON types ---
 
-export interface GeoJSONFeature {
+export interface GeoJSONFeature<T extends object = Record<string, unknown>> {
   type: "Feature";
   geometry: {
     type: "MultiLineString";
-    coordinates: number[][][];
+    coordinates: [number, number][][];
   };
-  properties: Record<string, unknown>;
+  properties: T;
 }

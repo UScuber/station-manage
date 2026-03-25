@@ -75,7 +75,7 @@ export class Users {
     const new_sessionId = this.genSessionId();
     try {
       const userData = this.db
-        .prepare<unknown[], { userId: string; hash: string }>(
+        .prepare<[string], { userId: string; hash: string }>(
           `
         SELECT * FROM Users
         WHERE userEmail = ?
@@ -105,7 +105,7 @@ export class Users {
     let userData: UserData | undefined;
     try {
       userData = this.db
-        .prepare<unknown[], UserData>(
+        .prepare<[string], UserData>(
           `
         SELECT
           Users.userId,

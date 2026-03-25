@@ -1,15 +1,21 @@
 import type Database from "better-sqlite3";
-import type { ExportHistoryJSON } from "../types";
+import type {
+  ExportHistoryJSON,
+  ExportStationHistory,
+  ExportStationGroupHistory,
+} from "../types";
 
-interface UnknownHistoryEntry {
-  history: { date: string; state?: number }[];
-  info: Record<string, unknown>;
+interface UnknownStationHistoryEntry extends ExportStationHistory {
+  query: string[];
+}
+
+interface UnknownStationGroupHistoryEntry extends ExportStationGroupHistory {
   query: string[];
 }
 
 interface UnknownHistory {
-  station_history: UnknownHistoryEntry[];
-  station_group_history: UnknownHistoryEntry[];
+  station_history: UnknownStationHistoryEntry[];
+  station_group_history: UnknownStationGroupHistoryEntry[];
 }
 
 // 履歴データを取り込む
@@ -19,7 +25,7 @@ export const import_sql = (
   userId: string,
 ): UnknownHistory => {
   // [latitude, longitude]
-  const distance = (p1: number[], p2: number[]): number => {
+  const distance = (p1: [number, number], p2: [number, number]): number => {
     const R = Math.PI / 180;
     return (
       Math.acos(
@@ -51,9 +57,9 @@ export const import_sql = (
   db.transaction(() => {
     input_json.station_history.forEach((data) => {
       const res = db
-        .prepare<unknown[], Record<string, unknown>>(
+        .prepare<[string, string, string], { stationCode: number }>(
           `
-        SELECT * FROM Stations
+        SELECT Stations.stationCode FROM Stations
         INNER JOIN StationGroups
           ON Stations.stationGroupCode = StationGroups.stationGroupCode
             AND StationGroups.stationName = ?
@@ -66,9 +72,9 @@ export const import_sql = (
       `,
         )
         .get(
-          String(data.info.stationName),
-          String(data.info.railwayName),
-          String(data.info.companyName ?? data.info.railwayCompany),
+          data.info.stationName,
+          data.info.railwayName,
+          data.info.companyName,
         );
       if (res) {
         data.history.forEach((elem) => {
@@ -105,9 +111,9 @@ export const import_sql = (
     input_json.station_group_history.forEach((data) => {
       // 同じ駅名で、座標が一番近いものを探す
       const res = db
-        .prepare<unknown[], { stationGroupCode: number }>(
+        .prepare<[string, number, number, number, number], { stationGroupCode: number }>(
           `
-        SELECT * FROM StationGroups
+        SELECT stationGroupCode FROM StationGroups
         WHERE stationName = ? AND dist(latitude,longitude,?,?) = (
           SELECT MIN(dist(latitude,longitude,?,?)) FROM StationGroups
         )
@@ -159,53 +165,6 @@ export const import_sql = (
       new Date(a.history[0].date) < new Date(b.history[0].date) ? -1 : 1,
     );
   return unknown_history;
-};
-
-// 履歴のjsonの形式をチェックする
-export const check_json_format = (json: unknown): json is ExportHistoryJSON => {
-  if (typeof json !== "object" || json === null) return false;
-  const obj = json as Record<string, unknown>;
-  if (!("station_history" in obj)) return false;
-  if (!("station_group_history" in obj)) return false;
-  if (!Array.isArray(obj.station_history)) return false;
-  if (!Array.isArray(obj.station_group_history)) return false;
-
-  // station history
-  for (let i = 0; i < obj.station_history.length; i++) {
-    const history = obj.station_history[i] as Record<string, unknown>;
-    if (!("history" in history)) return false;
-    if (!("info" in history)) return false;
-    if (!Array.isArray(history.history)) return false;
-    for (let j = 0; j < history.history.length; j++) {
-      if (!("date" in (history.history[j] as Record<string, unknown>)))
-        return false;
-      if (!("state" in (history.history[j] as Record<string, unknown>)))
-        return false;
-    }
-    const info = history.info as Record<string, unknown>;
-    if (!("railwayCode" in info)) return false;
-    if (!("latitude" in info)) return false;
-    if (!("longitude" in info)) return false;
-    if (!("railwayName" in info)) return false;
-    if (!("companyName" in info)) return false;
-  }
-
-  // station group history
-  for (let i = 0; i < obj.station_group_history.length; i++) {
-    const history = obj.station_group_history[i] as Record<string, unknown>;
-    if (!("history" in history)) return false;
-    if (!("info" in history)) return false;
-    if (!Array.isArray(history.history)) return false;
-    for (let j = 0; j < history.history.length; j++) {
-      if (!("date" in (history.history[j] as Record<string, unknown>)))
-        return false;
-    }
-    const info = history.info as Record<string, unknown>;
-    if (!("stationName" in info)) return false;
-    if (!("latitude" in info)) return false;
-    if (!("longitude" in info)) return false;
-  }
-  return true;
 };
 
 export const import_stationURL = (

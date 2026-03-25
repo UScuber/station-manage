@@ -1,7 +1,8 @@
 import { db } from "../../db/connection";
+import type { StationDetail } from "../../types";
 
 export const findStationByCode = (stationCode: number) => {
-  return db.prepare<unknown[], Record<string, unknown>>(`
+  return db.prepare<[number], StationDetail>(`
     SELECT
       Stations.*,
       StationGroups.stationName,
@@ -42,7 +43,7 @@ export const findStationGroupByCode = (stationGroupCode: number) => {
 };
 
 export const findStationsByGroupCode = (stationGroupCode: number) => {
-  return db.prepare<unknown[], Record<string, unknown> & { stationCode: number; stationGroupCode: number }>(`
+  return db.prepare<[number], Omit<StationDetail, "prefCode" | "prefName">>(`
     SELECT
       Stations.*,
       StationGroups.stationName,

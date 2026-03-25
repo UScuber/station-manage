@@ -8,7 +8,7 @@ export const findTimetableURLs = (stationCode: number) => {
 };
 
 export const findTrainPosURL = (stationCode: number) => {
-  return db.prepare<unknown[], { url: string }>(`
+  return db.prepare<[number], { url: string }>(`
     SELECT url FROM TrainPosLinks
     WHERE stationCode = ?
   `).get(stationCode);
