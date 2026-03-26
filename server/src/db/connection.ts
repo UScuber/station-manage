@@ -11,11 +11,17 @@ if (!db_seed && !fs.existsSync(db_path)) {
   process.exit(1);
 }
 
+if (db_seed && !fs.existsSync(db_seed)) {
+  console.error(`Error: DB_SEED file does not exist: ${db_seed}`);
+  process.exit(1);
+}
+
 const db: InstanceType<typeof Database> = new Database(db_path);
 
 if (db_seed) {
   // インメモリDBにファイルからデータをコピー
-  db.exec(`ATTACH DATABASE '${db_seed}' AS seed`);
+  const escapedSeedPath = db_seed.replace(/'/g, "''");
+  db.exec(`ATTACH DATABASE '${escapedSeedPath}' AS seed`);
   const tables = db
     .prepare(
       "SELECT name, sql FROM seed.sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
