@@ -27,7 +27,7 @@
     "better-sqlite3": "^12.5.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
-    "fastify": "^5.8.2",
+    "fastify": "^5.8.4",
     "fastify-plugin": "^5.1.0"
   },
   "devDependencies": {
