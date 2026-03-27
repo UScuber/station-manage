@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestApp, loginTestUser } from "../helper";
+import { createTestApp, loginTestUser, loginTestUserWithName } from "../helper";
 import type { FastifyInstance } from "fastify";
 
 let app: FastifyInstance;
@@ -15,6 +15,37 @@ afterAll(async () => {
   await app.close();
 });
 
+const sameStationHistoryRecords = [
+  { code: 1110101, date: "2025-07-01T00:00:00.000Z", state: 0 },
+  { code: 1110102, date: "2025-07-02T00:00:00.000Z", state: 1 },
+];
+
+const sameGroupHistoryRecords = [
+  { code: 11101010, date: "2025-07-03T00:00:00.000Z" },
+];
+
+const seedSameHistory = async (targetCookie: string) => {
+  for (const record of sameStationHistoryRecords) {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/stationDate",
+      headers: { cookie: targetCookie },
+      payload: record,
+    });
+    expect(res.statusCode).toBe(200);
+  }
+
+  for (const record of sameGroupHistoryRecords) {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/stationGroupDate",
+      headers: { cookie: targetCookie },
+      payload: record,
+    });
+    expect(res.statusCode).toBe(200);
+  }
+};
+
 // --- 未認証テスト ---
 
 describe("認証必須エンドポイント", () => {
@@ -27,7 +58,10 @@ describe("認証必須エンドポイント", () => {
     { method: "GET" as const, url: "/api/stationHistoryAndInfo" },
     { method: "GET" as const, url: "/api/stationHistory/1110101" },
     { method: "GET" as const, url: "/api/stationGroupHistory/11101010" },
-    { method: "GET" as const, url: "/api/searchStationGroupListHistory?off=0&len=10" },
+    {
+      method: "GET" as const,
+      url: "/api/searchStationGroupListHistory?off=0&len=10",
+    },
   ];
 
   for (const { method, url } of endpoints) {
@@ -36,6 +70,426 @@ describe("認証必須エンドポイント", () => {
       expect(res.statusCode).toBe(401);
     });
   }
+});
+
+describe("同一履歴データでのユーザー分離(history)", () => {
+  let userACookie: string;
+  let userBCookie: string;
+  const aOnlyGroupRecord = {
+    code: 11101010,
+    date: "2025-07-05T00:00:00.000Z",
+  };
+  const aOnlyStationRecord = {
+    code: 1110103,
+    date: "2025-07-06T00:00:00.000Z",
+    state: 0,
+  };
+
+  beforeAll(async () => {
+    userACookie = await loginTestUserWithName(app, "履歴分離ユーザーA");
+    userBCookie = await loginTestUserWithName(app, "履歴分離ユーザーB");
+    await seedSameHistory(userACookie);
+    await seedSameHistory(userBCookie);
+  });
+
+  it("同じ取得方法ならA/Bで同じ履歴を返す", async () => {
+    const [stationA, stationB, latestA, latestB, groupA, groupB] =
+      await Promise.all([
+        app.inject({
+          method: "GET",
+          url: "/api/stationHistory/1110101",
+          headers: { cookie: userACookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/stationHistory/1110101",
+          headers: { cookie: userBCookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/latestStationHistory/1110101",
+          headers: { cookie: userACookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/latestStationHistory/1110101",
+          headers: { cookie: userBCookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/stationGroupHistory/11101010",
+          headers: { cookie: userACookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/stationGroupHistory/11101010",
+          headers: { cookie: userBCookie },
+        }),
+      ]);
+
+    expect(stationA.statusCode).toBe(200);
+    expect(stationB.statusCode).toBe(200);
+    expect(latestA.statusCode).toBe(200);
+    expect(latestB.statusCode).toBe(200);
+    expect(groupA.statusCode).toBe(200);
+    expect(groupB.statusCode).toBe(200);
+
+    expect(stationA.json()).toEqual(stationB.json());
+    expect(latestA.json()).toEqual(latestB.json());
+    expect(groupA.json()).toEqual(groupB.json());
+  });
+
+  it("同じ取得方法なら一覧系APIでもA/Bで同じ結果を返す", async () => {
+    const [
+      latestRailA,
+      latestRailB,
+      listA,
+      listB,
+      countA,
+      countB,
+      infoA,
+      infoB,
+      latestGroupA,
+      latestGroupB,
+      searchA,
+      searchB,
+      exportA,
+      exportB,
+    ] = await Promise.all([
+      app.inject({
+        method: "GET",
+        url: "/api/latestRailwayStationHistory/11101",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/latestRailwayStationHistory/11101",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistory?off=0&len=10",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistory?off=0&len=10",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistoryCount",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistoryCount",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistoryAndInfo",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistoryAndInfo",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/latestStationGroupHistory/11101010",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/latestStationGroupHistory/11101010",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/searchStationGroupListHistory?name=函館&off=0&len=10",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/searchStationGroupListHistory?name=函館&off=0&len=10",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/exportHistory",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/exportHistory",
+        headers: { cookie: userBCookie },
+      }),
+    ]);
+
+    expect(latestRailA.statusCode).toBe(200);
+    expect(latestRailB.statusCode).toBe(200);
+    expect(listA.statusCode).toBe(200);
+    expect(listB.statusCode).toBe(200);
+    expect(countA.statusCode).toBe(200);
+    expect(countB.statusCode).toBe(200);
+    expect(infoA.statusCode).toBe(200);
+    expect(infoB.statusCode).toBe(200);
+    expect(latestGroupA.statusCode).toBe(200);
+    expect(latestGroupB.statusCode).toBe(200);
+    expect(searchA.statusCode).toBe(200);
+    expect(searchB.statusCode).toBe(200);
+    expect(exportA.statusCode).toBe(200);
+    expect(exportB.statusCode).toBe(200);
+
+    expect(latestRailA.json()).toEqual(latestRailB.json());
+    expect(listA.json()).toEqual(listB.json());
+    expect(countA.json()).toEqual(countB.json());
+    expect(infoA.json()).toEqual(infoB.json());
+    expect(latestGroupA.json()).toEqual(latestGroupB.json());
+    expect(searchA.json()).toEqual(searchB.json());
+    expect(exportA.json()).toEqual(exportB.json());
+  });
+
+  it("Aだけ削除しても同じ取得方法でBの履歴は残る", async () => {
+    const deleteRes = await app.inject({
+      method: "DELETE",
+      url: "/api/stationDate",
+      headers: { cookie: userACookie },
+      payload: sameStationHistoryRecords[0],
+    });
+    expect(deleteRes.statusCode).toBe(200);
+
+    const [stationA, stationB, latestA, latestB] = await Promise.all([
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistory/1110101",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/stationHistory/1110101",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/latestStationHistory/1110101",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/latestStationHistory/1110101",
+        headers: { cookie: userBCookie },
+      }),
+    ]);
+
+    expect(stationA.statusCode).toBe(200);
+    expect(stationB.statusCode).toBe(200);
+    expect(latestA.statusCode).toBe(200);
+    expect(latestB.statusCode).toBe(200);
+
+    const stationBodyA = stationA.json();
+    const stationBodyB = stationB.json();
+    expect(Array.isArray(stationBodyA)).toBe(true);
+    expect(Array.isArray(stationBodyB)).toBe(true);
+    expect(stationBodyA.length).toBe(0);
+    expect(stationBodyB).toContainEqual(
+      expect.objectContaining({ stationCode: 1110101, state: 0 }),
+    );
+
+    expect(latestA.json()).toEqual({ getDate: null, passDate: null });
+    expect(latestB.json()).toEqual(expect.objectContaining({ passDate: null }));
+    expect(latestB.json().getDate).not.toBeNull();
+  });
+
+  it("Aだけグループ履歴を追加するとlatestStationGroupHistoryに差が出る", async () => {
+    const addRes = await app.inject({
+      method: "POST",
+      url: "/api/stationGroupDate",
+      headers: { cookie: userACookie },
+      payload: aOnlyGroupRecord,
+    });
+    expect(addRes.statusCode).toBe(200);
+
+    const [latestGroupA, latestGroupB, searchA, searchB] = await Promise.all([
+      app.inject({
+        method: "GET",
+        url: "/api/latestStationGroupHistory/11101010",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/latestStationGroupHistory/11101010",
+        headers: { cookie: userBCookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/searchStationGroupListHistory?name=函館&off=0&len=10",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/searchStationGroupListHistory?name=函館&off=0&len=10",
+        headers: { cookie: userBCookie },
+      }),
+    ]);
+
+    expect(latestGroupA.statusCode).toBe(200);
+    expect(latestGroupB.statusCode).toBe(200);
+    expect(searchA.statusCode).toBe(200);
+    expect(searchB.statusCode).toBe(200);
+
+    expect(latestGroupA.json()).not.toEqual(latestGroupB.json());
+    expect(searchA.json()).not.toEqual(searchB.json());
+  });
+
+  it("Aだけの履歴はBが削除してもA側に残る", async () => {
+    const addRes = await app.inject({
+      method: "POST",
+      url: "/api/stationDate",
+      headers: { cookie: userACookie },
+      payload: aOnlyStationRecord,
+    });
+    expect(addRes.statusCode).toBe(200);
+
+    const deleteByBRes = await app.inject({
+      method: "DELETE",
+      url: "/api/stationDate",
+      headers: { cookie: userBCookie },
+      payload: aOnlyStationRecord,
+    });
+    expect(deleteByBRes.statusCode).toBe(200);
+
+    const [historyA, historyB] = await Promise.all([
+      app.inject({
+        method: "GET",
+        url: `/api/stationHistory/${aOnlyStationRecord.code}`,
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "GET",
+        url: `/api/stationHistory/${aOnlyStationRecord.code}`,
+        headers: { cookie: userBCookie },
+      }),
+    ]);
+
+    expect(historyA.statusCode).toBe(200);
+    expect(historyB.statusCode).toBe(200);
+
+    expect(historyA.json()).toContainEqual(
+      expect.objectContaining({
+        stationCode: aOnlyStationRecord.code,
+        state: aOnlyStationRecord.state,
+      }),
+    );
+    expect(historyB.json()).toEqual([]);
+  });
+
+  it("AだけインポートするとexportHistoryと履歴件数に差が出る", async () => {
+    const exportBBefore = await app.inject({
+      method: "POST",
+      url: "/api/exportHistory",
+      headers: { cookie: userBCookie },
+    });
+    expect(exportBBefore.statusCode).toBe(200);
+
+    const exportA = await app.inject({
+      method: "POST",
+      url: "/api/exportHistory",
+      headers: { cookie: userACookie },
+    });
+    expect(exportA.statusCode).toBe(200);
+    const exportBodyA = exportA.json();
+    const sampleInfo = exportBodyA.station_history[0]?.info;
+    expect(sampleInfo).toBeDefined();
+
+    const importRes = await app.inject({
+      method: "POST",
+      url: "/api/importHistory",
+      headers: { cookie: userACookie },
+      payload: {
+        station_history: [
+          {
+            history: [{ date: "2025-07-07T00:00:00.000Z", state: 0 }],
+            info: sampleInfo,
+          },
+        ],
+        station_group_history: [],
+      },
+    });
+    expect(importRes.statusCode).toBe(200);
+
+    const [exportAAfter, exportBAfter] = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/exportHistory",
+        headers: { cookie: userACookie },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/exportHistory",
+        headers: { cookie: userBCookie },
+      }),
+    ]);
+
+    expect(exportAAfter.statusCode).toBe(200);
+    expect(exportBAfter.statusCode).toBe(200);
+
+    expect(exportAAfter.json()).not.toEqual(exportBAfter.json());
+    expect(exportBAfter.json()).toEqual(exportBBefore.json());
+  });
+});
+
+describe("履歴0件ユーザーの挙動", () => {
+  let userCCookie: string;
+
+  beforeAll(async () => {
+    userCCookie = await loginTestUserWithName(app, "履歴0件ユーザーC");
+  });
+
+  it("同じ取得方法で常に空・0・nullを返す", async () => {
+    const [listRes, countRes, latestStationRes, latestGroupRes, groupRes] =
+      await Promise.all([
+        app.inject({
+          method: "GET",
+          url: "/api/stationHistory?off=0&len=10",
+          headers: { cookie: userCCookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/stationHistoryCount",
+          headers: { cookie: userCCookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/latestStationHistory/1110101",
+          headers: { cookie: userCCookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/latestStationGroupHistory/11101010",
+          headers: { cookie: userCCookie },
+        }),
+        app.inject({
+          method: "GET",
+          url: "/api/stationGroupHistory/11101010",
+          headers: { cookie: userCCookie },
+        }),
+      ]);
+
+    expect(listRes.statusCode).toBe(200);
+    expect(countRes.statusCode).toBe(200);
+    expect(latestStationRes.statusCode).toBe(200);
+    expect(latestGroupRes.statusCode).toBe(200);
+    expect(groupRes.statusCode).toBe(200);
+
+    expect(listRes.json()).toEqual([]);
+    expect(countRes.json()).toBe(0);
+    expect(latestStationRes.json()).toEqual({ getDate: null, passDate: null });
+    expect(latestGroupRes.json()).toEqual({ date: null });
+    expect(groupRes.json()).toEqual([]);
+  });
 });
 
 // --- 認証済みGETテスト ---
@@ -695,9 +1149,7 @@ describe("エクスポート・インポートの整合性", () => {
       url: "/api/importHistory",
       headers: { cookie },
       payload: {
-        station_history: [
-          { history: [{ date, state: 0 }], info: sampleInfo },
-        ],
+        station_history: [{ history: [{ date, state: 0 }], info: sampleInfo }],
         station_group_history: [],
       },
     });

@@ -10,12 +10,16 @@ function randomEmail(): string {
   return `test-${crypto.randomBytes(8).toString("hex")}@example.com`;
 }
 
-export function extractSessionCookie(setCookieHeader: string | string[] | undefined): string {
+export function extractSessionCookie(
+  setCookieHeader: string | string[] | undefined,
+): string {
   if (!setCookieHeader) {
     throw new Error("set-cookie header is missing");
   }
 
-  const headers = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+  const headers = Array.isArray(setCookieHeader)
+    ? setCookieHeader
+    : [setCookieHeader];
   for (const header of headers) {
     const cookiePair = header.split(";")[0]?.trim();
     if (cookiePair?.startsWith("sessionId=")) {
@@ -26,10 +30,13 @@ export function extractSessionCookie(setCookieHeader: string | string[] | undefi
   throw new Error("sessionId cookie is missing");
 }
 
-/** テスト用ユーザーを登録してセッションCookieを返す */
-export async function loginTestUser(app: FastifyInstance): Promise<string> {
+/** 指定名のテスト用ユーザーを登録してセッションCookieを返す */
+export async function loginTestUserWithName(
+  app: FastifyInstance,
+  userName: string,
+): Promise<string> {
   const user = {
-    userName: "テストユーザー",
+    userName,
     userEmail: randomEmail(),
     password: "password1234",
   };
@@ -46,6 +53,11 @@ export async function loginTestUser(app: FastifyInstance): Promise<string> {
   return extractSessionCookie(loginRes.headers["set-cookie"]);
 }
 
+/** テスト用ユーザーを登録してセッションCookieを返す */
+export async function loginTestUser(app: FastifyInstance): Promise<string> {
+  return loginTestUserWithName(app, "テストユーザー");
+}
+
 /** テスト用管理者ユーザーを登録してセッションCookieを返す */
 export async function loginAdminUser(app: FastifyInstance): Promise<string> {
   const user = {
@@ -60,7 +72,9 @@ export async function loginAdminUser(app: FastifyInstance): Promise<string> {
   });
   // DBのroleを直接adminに更新（遅延importでDB接続の競合を回避）
   const { db } = await import("../src/db/connection");
-  db.prepare("UPDATE Users SET role = 1 WHERE userEmail = ?").run(user.userEmail);
+  db.prepare("UPDATE Users SET role = 1 WHERE userEmail = ?").run(
+    user.userEmail,
+  );
   const loginRes = await app.inject({
     method: "POST",
     url: "/api/login",
