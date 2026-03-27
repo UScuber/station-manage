@@ -10,6 +10,22 @@ function randomEmail(): string {
   return `test-${crypto.randomBytes(8).toString("hex")}@example.com`;
 }
 
+export function extractSessionCookie(setCookieHeader: string | string[] | undefined): string {
+  if (!setCookieHeader) {
+    throw new Error("set-cookie header is missing");
+  }
+
+  const headers = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+  for (const header of headers) {
+    const cookiePair = header.split(";")[0]?.trim();
+    if (cookiePair?.startsWith("sessionId=")) {
+      return cookiePair;
+    }
+  }
+
+  throw new Error("sessionId cookie is missing");
+}
+
 /** テスト用ユーザーを登録してセッションCookieを返す */
 export async function loginTestUser(app: FastifyInstance): Promise<string> {
   const user = {
@@ -27,7 +43,7 @@ export async function loginTestUser(app: FastifyInstance): Promise<string> {
     url: "/api/login",
     payload: { userEmail: user.userEmail, password: user.password },
   });
-  return loginRes.headers["set-cookie"] as string;
+  return extractSessionCookie(loginRes.headers["set-cookie"]);
 }
 
 /** テスト用管理者ユーザーを登録してセッションCookieを返す */
@@ -50,5 +66,5 @@ export async function loginAdminUser(app: FastifyInstance): Promise<string> {
     url: "/api/login",
     payload: { userEmail: user.userEmail, password: user.password },
   });
-  return loginRes.headers["set-cookie"] as string;
+  return extractSessionCookie(loginRes.headers["set-cookie"]);
 }

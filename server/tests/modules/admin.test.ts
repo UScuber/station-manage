@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestApp } from "../helper";
+import { createTestApp, extractSessionCookie } from "../helper";
 import type { FastifyInstance } from "fastify";
 
 let app: FastifyInstance;
@@ -23,7 +23,7 @@ async function createAdminCookie(): Promise<string> {
     url: "/api/login",
     payload: { userEmail: email, password: "password1234" },
   });
-  return loginRes.headers["set-cookie"] as string;
+  return extractSessionCookie(loginRes.headers["set-cookie"]);
 }
 
 /** テスト内で一般ユーザーCookieを作る */
@@ -39,7 +39,7 @@ async function createUserCookie(): Promise<string> {
     url: "/api/login",
     payload: { userEmail: email, password: "password1234" },
   });
-  return loginRes.headers["set-cookie"] as string;
+  return extractSessionCookie(loginRes.headers["set-cookie"]);
 }
 
 beforeAll(async () => {

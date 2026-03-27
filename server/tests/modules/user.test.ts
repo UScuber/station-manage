@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestApp, loginAdminUser } from "../helper";
+import { createTestApp, loginAdminUser, extractSessionCookie } from "../helper";
 import type { FastifyInstance } from "fastify";
 
 let app: FastifyInstance;
@@ -23,7 +23,11 @@ describe("POST /api/signup", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "テストユーザー", userEmail: email, password: "password1234" },
+      payload: {
+        userName: "テストユーザー",
+        userEmail: email,
+        password: "password1234",
+      },
     });
     expect(res.statusCode).toBe(200);
     const body = res.json();
@@ -37,13 +41,21 @@ describe("POST /api/signup", () => {
     await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "テスト", userEmail: email, password: "password1234" },
+      payload: {
+        userName: "テスト",
+        userEmail: email,
+        password: "password1234",
+      },
     });
     // 2回目: 重複
     const res = await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "テスト", userEmail: email, password: "password1234" },
+      payload: {
+        userName: "テスト",
+        userEmail: email,
+        password: "password1234",
+      },
     });
     expect(res.statusCode).toBe(200);
     const body = res.json();
@@ -54,7 +66,11 @@ describe("POST /api/signup", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "", userEmail: randomEmail(), password: "password1234" },
+      payload: {
+        userName: "",
+        userEmail: randomEmail(),
+        password: "password1234",
+      },
     });
     expect(res.statusCode).toBe(400);
   });
@@ -63,7 +79,11 @@ describe("POST /api/signup", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "test", userEmail: "invalid", password: "password1234" },
+      payload: {
+        userName: "test",
+        userEmail: "invalid",
+        password: "password1234",
+      },
     });
     expect(res.statusCode).toBe(400);
   });
@@ -72,7 +92,11 @@ describe("POST /api/signup", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "test", userEmail: randomEmail(), password: "short" },
+      payload: {
+        userName: "test",
+        userEmail: randomEmail(),
+        password: "short",
+      },
     });
     expect(res.statusCode).toBe(400);
   });
@@ -127,7 +151,10 @@ describe("POST /api/login", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/login",
-      payload: { userEmail: "nonexistent@example.com", password: "password1234" },
+      payload: {
+        userEmail: "nonexistent@example.com",
+        password: "password1234",
+      },
     });
     expect(res.statusCode).toBe(401);
   });
@@ -174,9 +201,13 @@ describe("GET /api/status", () => {
     const loginRes = await app.inject({
       method: "POST",
       url: "/api/login",
-      payload: { userEmail: statusUser.userEmail, password: statusUser.password },
+      payload: {
+        userEmail: statusUser.userEmail,
+        password: statusUser.password,
+      },
     });
-    const cookie = loginRes.headers["set-cookie"] as string;
+    const cookie = extractSessionCookie(loginRes.headers["set-cookie"]);
+    expect(cookie).toContain("sessionId=");
 
     const res = await app.inject({
       method: "GET",
@@ -222,9 +253,12 @@ describe("POST /api/logout", () => {
     const loginRes = await app.inject({
       method: "POST",
       url: "/api/login",
-      payload: { userEmail: logoutUser.userEmail, password: logoutUser.password },
+      payload: {
+        userEmail: logoutUser.userEmail,
+        password: logoutUser.password,
+      },
     });
-    const cookie = loginRes.headers["set-cookie"] as string;
+    const cookie = extractSessionCookie(loginRes.headers["set-cookie"]);
 
     const res = await app.inject({
       method: "POST",
@@ -272,14 +306,18 @@ describe("セッション管理", () => {
     await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "セッションテスト", userEmail: email, password: "password1234" },
+      payload: {
+        userName: "セッションテスト",
+        userEmail: email,
+        password: "password1234",
+      },
     });
     const loginRes = await app.inject({
       method: "POST",
       url: "/api/login",
       payload: { userEmail: email, password: "password1234" },
     });
-    const sessionCookie = loginRes.headers["set-cookie"] as string;
+    const sessionCookie = extractSessionCookie(loginRes.headers["set-cookie"]);
 
     // ログアウト
     await app.inject({
@@ -302,7 +340,11 @@ describe("セッション管理", () => {
     await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "複数セッション", userEmail: email, password: "password1234" },
+      payload: {
+        userName: "複数セッション",
+        userEmail: email,
+        password: "password1234",
+      },
     });
 
     const login1 = await app.inject({
@@ -315,8 +357,8 @@ describe("セッション管理", () => {
       url: "/api/login",
       payload: { userEmail: email, password: "password1234" },
     });
-    const cookie1 = login1.headers["set-cookie"] as string;
-    const cookie2 = login2.headers["set-cookie"] as string;
+    const cookie1 = extractSessionCookie(login1.headers["set-cookie"]);
+    const cookie2 = extractSessionCookie(login2.headers["set-cookie"]);
 
     // 両方のセッションが有効
     const status1 = await app.inject({
@@ -351,9 +393,16 @@ describe("セッション管理", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/signup",
-      payload: { userName: "Cookieテスト", userEmail: email, password: "password1234" },
+      payload: {
+        userName: "Cookieテスト",
+        userEmail: email,
+        password: "password1234",
+      },
     });
-    const setCookie = res.headers["set-cookie"] as string;
+    const setCookieHeader = res.headers["set-cookie"];
+    const setCookie = Array.isArray(setCookieHeader)
+      ? setCookieHeader[0]
+      : (setCookieHeader ?? "");
     expect(setCookie).toContain("sessionId=");
     expect(setCookie).toContain("HttpOnly");
   });

@@ -6,36 +6,56 @@ import { InputError } from "../shared/errors";
 const db_path = process.env.DB_PATH || "./station.db";
 const db_seed = process.env.DB_SEED; // テスト時のインメモリDB用: 初期データのコピー元
 
-if (!db_seed && !fs.existsSync(db_path)) {
-  console.error(`Error: ${db_path} does not exist`);
+function exitWithError(message: string): never {
+  console.error(`Error: ${message}`);
   process.exit(1);
 }
 
-if (db_seed && !fs.existsSync(db_seed)) {
-  console.error(`Error: DB_SEED file does not exist: ${db_seed}`);
-  process.exit(1);
-}
-
-const db: InstanceType<typeof Database> = new Database(db_path);
-
-if (db_seed) {
+function applySeedData(
+  db: InstanceType<typeof Database>,
+  seedPath: string,
+): void {
   // インメモリDBにファイルからデータをコピー
-  const escapedSeedPath = db_seed.replace(/'/g, "''");
+  const escapedSeedPath = seedPath.replace(/'/g, "''");
   db.exec(`ATTACH DATABASE '${escapedSeedPath}' AS seed`);
   const tables = db
-    .prepare(
-      "SELECT name, sql FROM seed.sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-    )
-    .all() as { name: string; sql: string }[];
+    .prepare<
+      [],
+      { name: string; sql: string }
+    >("SELECT name, sql FROM seed.sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+    .all();
   for (const t of tables) {
     db.exec(t.sql);
     db.exec(`INSERT INTO main.${t.name} SELECT * FROM seed.${t.name}`);
   }
   db.exec("DETACH DATABASE seed");
-} else {
-  db.pragma("journal_mode = WAL");
-  db.pragma("busy_timeout = 5000");
 }
+
+function createDatabase(): InstanceType<typeof Database> {
+  if (db_seed) {
+    if (!fs.existsSync(db_seed)) {
+      exitWithError(`DB_SEED file does not exist: ${db_seed}`);
+    }
+    if (db_path !== ":memory:") {
+      exitWithError("DB_PATH must be ':memory:' when DB_SEED is set");
+    }
+
+    const seededDb: InstanceType<typeof Database> = new Database(db_path);
+    applySeedData(seededDb, db_seed);
+    return seededDb;
+  }
+
+  if (!fs.existsSync(db_path)) {
+    exitWithError(`${db_path} does not exist`);
+  }
+
+  const fileDb: InstanceType<typeof Database> = new Database(db_path);
+  fileDb.pragma("journal_mode = WAL");
+  fileDb.pragma("busy_timeout = 5000");
+  return fileDb;
+}
+
+const db: InstanceType<typeof Database> = createDatabase();
 
 // SQLiteカスタム関数: 2点間の距離(km)を計算
 db.function(
