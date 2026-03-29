@@ -18,17 +18,29 @@ function applySeedData(
   // インメモリDBにファイルからデータをコピー
   const escapedSeedPath = seedPath.replace(/'/g, "''");
   db.exec(`ATTACH DATABASE '${escapedSeedPath}' AS seed`);
-  const tables = db
-    .prepare<
-      [],
-      { name: string; sql: string }
-    >("SELECT name, sql FROM seed.sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-    .all();
-  for (const t of tables) {
-    db.exec(t.sql);
-    db.exec(`INSERT INTO main.${t.name} SELECT * FROM seed.${t.name}`);
+  try {
+    db.exec("BEGIN");
+    const tables = db
+      .prepare<
+        [],
+        { name: string; sql: string }
+      >("SELECT name, sql FROM seed.sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+      .all();
+    for (const t of tables) {
+      db.exec(t.sql);
+      db.exec(`INSERT INTO main.${t.name} SELECT * FROM seed.${t.name}`);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    try {
+      db.exec("ROLLBACK");
+    } catch {
+      // rollback失敗時も元のエラーを優先して再送出する
+    }
+    throw error;
+  } finally {
+    db.exec("DETACH DATABASE seed");
   }
-  db.exec("DETACH DATABASE seed");
 }
 
 function createDatabase(): InstanceType<typeof Database> {

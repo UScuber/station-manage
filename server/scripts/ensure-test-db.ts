@@ -20,7 +20,7 @@ const DB_FILE_NAME = "station-initial.db";
 const dbPath = path.resolve(process.cwd(), DB_FILE_NAME);
 const latestKey = process.env.R2_LATEST_KEY || "initial-db/latest.json";
 
-const isSha256 = (value: string): boolean => /^[a-f0-9]{64}$/.test(value);
+const isSha256 = (value: string): boolean => /^[a-f0-9]{64}$/i.test(value);
 
 const getRequiredEnv = (key: string): string => {
   const value = process.env[key];
@@ -106,7 +106,8 @@ const parseLatestManifest = (rawJson: string): LatestManifest => {
 
 const parseShaText = (raw: string): string => {
   const firstToken = raw.trim().split(/\s+/)[0] || "";
-  return isSha256(firstToken) ? firstToken : "";
+  const normalized = firstToken.toLowerCase();
+  return isSha256(normalized) ? normalized : "";
 };
 
 const calcSha256 = async (filePath: string): Promise<string> => {
