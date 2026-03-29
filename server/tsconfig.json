@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "declaration": true,
     "sourceMap": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "types": ["node"]
   },
   "include": ["server.ts", "app.ts", "src/**/*.ts"],
