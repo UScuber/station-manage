@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "tsx watch server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test:ensure-db": "tsx scripts/ensure-test-db.ts",
+    "pretest": "npm run test:ensure-db",
+    "test": "vitest run",
+    "pretest:watch": "npm run test:ensure-db",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -22,16 +27,18 @@
     "better-sqlite3": "^12.5.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
-    "fastify": "^5.8.2",
+    "fastify": "^5.8.4",
     "fastify-plugin": "^5.1.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1017.0",
     "@types/bcrypt": "^6.0.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.5.0",
     "csv-parse": "^6.1.0",
     "exec-sh": "^0.4.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.1"
   }
 }
