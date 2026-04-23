@@ -1,5 +1,5 @@
 export const calcBounds = (
-  points: { lat: number; lng: number }[]
+  points: { lat: number; lng: number }[],
 ): [[number, number], [number, number]] => {
   let minLng = Infinity;
   let minLat = Infinity;

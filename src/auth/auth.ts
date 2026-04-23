@@ -1,11 +1,11 @@
 import { createContext, useContext, useState } from "react";
+import { User } from "../api/types";
 import {
-  User,
   useLoginMutation,
   useLogoutMutation,
   useSignupMutation,
   useUserStatus,
-} from "../api";
+} from "../api/user";
 
 export type AuthInfo = {
   signup: (
@@ -22,17 +22,9 @@ export type AuthInfo = {
   isAdmin: boolean;
 };
 
-const AuthContext = createContext<AuthInfo>({
-  signup: useSignupMutation,
-  login: useLoginMutation,
-  logout: useLogoutMutation,
-  isLoading: true,
-  isAuthenticated: false,
-  user: undefined,
-  isAdmin: false,
-});
+const AuthContext = createContext<AuthInfo | null>(null);
 
-export const getAuth = (): AuthInfo => {
+export const useAuthState = (): AuthInfo => {
   const [loading, setLoading] = useState(true);
   const [authState, setAuthState] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -63,4 +55,10 @@ export const getAuth = (): AuthInfo => {
 
 export const AuthProvider = AuthContext.Provider;
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthInfo => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within <AuthProvider>");
+  }
+  return ctx;
+};

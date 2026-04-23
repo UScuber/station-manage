@@ -29,7 +29,11 @@ import {
   TabPanel,
 } from "../components";
 
-const PrefStationMap = ({ stationList }: { stationList: StationWithVisit[] }) => {
+const PrefStationMap = ({
+  stationList,
+}: {
+  stationList: StationWithVisit[];
+}) => {
   const centerPosition = useMemo(
     () =>
       stationList.reduce(
@@ -37,9 +41,9 @@ const PrefStationMap = ({ stationList }: { stationList: StationWithVisit[] }) =>
           lat: totPos.lat + item.latitude / stationList.length,
           lng: totPos.lng + item.longitude / stationList.length,
         }),
-        { lat: 0, lng: 0 }
+        { lat: 0, lng: 0 },
       ),
-    [stationList]
+    [stationList],
   );
 
   const stationPosList = useMemo(
@@ -48,7 +52,7 @@ const PrefStationMap = ({ stationList }: { stationList: StationWithVisit[] }) =>
         lat: item.latitude,
         lng: item.longitude,
       })),
-    [stationList]
+    [stationList],
   );
 
   const stationsPositionMap = useMemo(() => {
@@ -95,9 +99,9 @@ const PrefStationMap = ({ stationList }: { stationList: StationWithVisit[] }) =>
             railwayKana: "",
             formalName: "",
           },
-        }))
+        })),
       ),
-    [stationList, stationsPositionMap]
+    [stationList, stationsPositionMap],
   );
 
   return (

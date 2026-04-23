@@ -9,12 +9,8 @@ import {
   useTheme,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
-import {
-  Company,
-  StationProgress,
-  useCompanyList,
-  useCompanyProgressList,
-} from "../api";
+import { Company, StationProgress, useCompanyList } from "../api";
+import { useCompanyProgressList } from "../api/history";
 import {
   BinaryPagination,
   CircleProgress,
@@ -25,6 +21,7 @@ import {
   TableHead,
   TableRow,
 } from "../components";
+import { DEFAULT_PAGE_SIZES } from "../constants";
 import { useLocation, useNavigate } from "react-router-dom";
 import getURLSearchParams from "../utils/getURLSearchParams";
 
@@ -98,7 +95,7 @@ const CompanyList = () => {
   const [searchParams, setSearchParams] = useState({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
-    pagesize: +(params.get("pagesize") ?? 10),
+    pagesize: +(params.get("pagesize") ?? DEFAULT_PAGE_SIZES[0]),
   });
 
   const companyListQuery = useCompanyList();
@@ -162,7 +159,7 @@ const CompanyList = () => {
     .sort((a, b) => a.ord - b.ord);
   const dividedCompanies = filteredCompanies.slice(
     (searchParams.page - 1) * searchParams.pagesize,
-    searchParams.page * searchParams.pagesize
+    searchParams.page * searchParams.pagesize,
   );
 
   const CustomPagination = (): React.ReactElement => (
@@ -170,7 +167,7 @@ const CompanyList = () => {
       page={searchParams.page}
       count={filteredCompanies.length}
       rowsPerPage={searchParams.pagesize}
-      rowsPerPageOptions={[10, 25, 50, 100, 200]}
+      rowsPerPageOptions={[...DEFAULT_PAGE_SIZES]}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
       sx={{ my: 1 }}

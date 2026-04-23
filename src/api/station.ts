@@ -1,4 +1,9 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import axios from "./axios";
 import {
   Company,
@@ -13,15 +18,11 @@ import {
 } from "./types";
 
 // 駅情報取得
-export const useStationInfo = (
-  code: number | undefined,
-  onSuccessFn?: (data: Station) => unknown
-) => {
+export const useStationInfo = (code: number | undefined) => {
   return useQuery<Station>({
     queryKey: ["Station", code],
     queryFn: async () => {
       const { data } = await axios.get<Station>("/api/station/" + code);
-      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -35,7 +36,7 @@ export const useStationsInfoByGroupCode = (code: number | undefined) => {
     queryKey: ["GroupStations", code],
     queryFn: async () => {
       const { data } = await axios.get<StationWithVisit[]>(
-        "/api/stationsByGroupCode/" + code
+        "/api/stationsByGroupCode/" + code,
       );
       return data;
     },
@@ -44,17 +45,13 @@ export const useStationsInfoByGroupCode = (code: number | undefined) => {
 };
 
 // 駅グループの情報取得
-export const useStationGroupInfo = (
-  code: number | undefined,
-  onSuccessFn?: (data: StationGroup) => unknown
-) => {
+export const useStationGroupInfo = (code: number | undefined) => {
   return useQuery<StationGroup>({
     queryKey: ["StationGroup", code],
     queryFn: async () => {
       const { data } = await axios.get<StationGroup>(
-        "/api/stationGroup/" + code
+        "/api/stationGroup/" + code,
       );
-      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -88,17 +85,13 @@ export const useRailwayList = () => {
 };
 
 // 路線に属する駅の駅情報を取得
-export const useStationsInfoByRailwayCode = (
-  code: number | undefined,
-  onSuccessFn?: (data: StationWithVisit[]) => unknown
-) => {
+export const useStationsInfoByRailwayCode = (code: number | undefined) => {
   return useQuery<StationWithVisit[]>({
     queryKey: ["RailwayStations", code],
     queryFn: async () => {
       const { data } = await axios.get<StationWithVisit[]>(
-        "/api/railwayStations/" + code
+        "/api/railwayStations/" + code,
       );
-      onSuccessFn && onSuccessFn(data);
       return data;
     },
     enabled: code !== undefined,
@@ -136,7 +129,7 @@ export const useRailwaysInfoByCompanyCode = (code: number | undefined) => {
     queryKey: ["CompanyRailways", code],
     queryFn: async () => {
       const { data } = await axios.get<Railway[]>(
-        "/api/companyRailways/" + code
+        "/api/companyRailways/" + code,
       );
       return data;
     },
@@ -151,7 +144,7 @@ export const useStationsInfoByCompanyCode = (code: number | undefined) => {
     queryKey: ["CompanyStations", code],
     queryFn: async () => {
       const { data } = await axios.get<StationWithVisit[]>(
-        "/api/companyStations/" + code
+        "/api/companyStations/" + code,
       );
       return data;
     },
@@ -177,7 +170,9 @@ export const useStationsInfoByPrefCode = (code: number | undefined) => {
   return useQuery<StationWithVisit[]>({
     queryKey: ["PrefStations", code],
     queryFn: async () => {
-      const { data } = await axios.get<StationWithVisit[]>("/api/prefStations/" + code);
+      const { data } = await axios.get<StationWithVisit[]>(
+        "/api/prefStations/" + code,
+      );
       return data;
     },
     enabled: code !== undefined,
@@ -205,7 +200,7 @@ export const useSearchStationGroupList = ({
             len: length,
             name: name,
           },
-        }
+        },
       );
       return data;
     },
@@ -232,7 +227,7 @@ export const useSearchStationGroupCount = ({
 // 座標から近い駅/駅グループを複数取得
 export const useSearchKNearestStationGroups = (
   pos: Coordinate | undefined,
-  num?: number
+  num?: number,
 ) => {
   return useQuery<StationGroup[]>({
     queryKey: ["SearchKNearestStationGroups", pos, num ?? 0],
@@ -245,7 +240,7 @@ export const useSearchKNearestStationGroups = (
             lng: pos?.lng,
             num: num,
           },
-        }
+        },
       );
       return data;
     },
@@ -289,7 +284,7 @@ export const useRailPath = (railwayCode: number | undefined) => {
     queryKey: ["RailPath", railwayCode],
     queryFn: async () => {
       const { data } = await axios.get<PathData>(
-        "/api/railpaths/" + railwayCode
+        "/api/railpaths/" + railwayCode,
       );
       return data;
     },
@@ -319,7 +314,7 @@ export const useRailPathByCompanyCode = (companyCode: number | undefined) => {
     queryKey: ["RailPathList", companyCode],
     queryFn: async () => {
       const { data } = await axios.get<PathData[]>(
-        "/api/pathslist/" + companyCode
+        "/api/pathslist/" + companyCode,
       );
       return data;
     },
@@ -346,7 +341,7 @@ export const useTimetableURL = (code: number | undefined) => {
     queryKey: ["TimetableURL", code],
     queryFn: async () => {
       const { data } = await axios.get<TimetableLinks>(
-        "/api/timetableURL/" + code
+        "/api/timetableURL/" + code,
       );
       return data;
     },
@@ -356,7 +351,7 @@ export const useTimetableURL = (code: number | undefined) => {
 
 // 時刻表と走行位置のURL追加更新(admin)
 export const useUpdateTimetableURLMutation = (
-  onSuccessFn?: (data: string) => unknown
+  onSuccessFn?: (data: string) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -381,7 +376,7 @@ export const useUpdateTimetableURLMutation = (
         direction: string;
         mode: string;
         url: string;
-      }
+      },
     ) => {
       queryClient.invalidateQueries({
         queryKey: ["TimetableURL", variant.stationCode],
@@ -396,7 +391,7 @@ export const useUpdateTimetableURLMutation = (
 
 // 列車走行位置のURL追加更新(admin)
 export const useUpdateTrainPosURLMutation = (
-  onSuccessFn?: (data: string) => unknown
+  onSuccessFn?: (data: string) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -409,7 +404,7 @@ export const useUpdateTrainPosURLMutation = (
     },
     onSuccess: (
       data: string,
-      variant: { stationCode: number; url: string }
+      variant: { stationCode: number; url: string },
     ) => {
       queryClient.invalidateQueries({
         queryKey: ["TimetableURL", variant.stationCode],
@@ -424,12 +419,12 @@ export const useUpdateTrainPosURLMutation = (
 
 // 時刻表と走行位置のURLのexport(admin)
 export const useExportStationURLMutation = (
-  onSuccessFn?: (data: string) => unknown
+  onSuccessFn?: (data: string) => unknown,
 ) => {
   return useMutation({
     mutationFn: async () => {
       const { data } = await axios.post<ExportStationURLJSON>(
-        "/api/exportStationURL"
+        "/api/exportStationURL",
       );
       return JSON.stringify(data);
     },
@@ -444,7 +439,7 @@ export const useExportStationURLMutation = (
 
 // 時刻表と走行位置のURLのimport(admin)
 export const useImportStationURLMutation = (
-  onSuccessFn?: (data: string) => unknown
+  onSuccessFn?: (data: string) => unknown,
 ) => {
   const queryClient = useQueryClient();
   return useMutation({

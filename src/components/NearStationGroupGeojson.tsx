@@ -70,12 +70,7 @@ const NearStationGroupGeojson = ({
         type="symbol"
         layout={{
           "text-field": ["get", "stationName"],
-          "text-size": [
-            "case",
-            ["boolean", ["get", "isMain"], false],
-            14,
-            12,
-          ],
+          "text-size": ["case", ["boolean", ["get", "isMain"], false], 14, 12],
           "text-offset": [0, -1.5],
           "text-anchor": "bottom",
         }}

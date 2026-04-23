@@ -137,7 +137,12 @@ const Top = () => {
               >
                 ログイン
               </Button>
-              <Button variant="outlined" size="large" component={Link} to="/signup">
+              <Button
+                variant="outlined"
+                size="large"
+                component={Link}
+                to="/signup"
+              >
                 アカウント作成
               </Button>
             </Box>

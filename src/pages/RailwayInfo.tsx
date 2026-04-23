@@ -97,7 +97,7 @@ const StationList = ({
   latestHistoryList: StationDate[] | undefined;
 }) => {
   const indices = Object.fromEntries(
-    stationList.map((station, idx) => [station.stationCode, idx])
+    stationList.map((station, idx) => [station.stationCode, idx]),
   );
 
   const startIndex =
@@ -152,7 +152,7 @@ const StationList = ({
             }
             key={stationList[index].stationCode}
           />
-        )
+        ),
       )}
     </>
   );
@@ -181,7 +181,7 @@ const RailwayMap = ({
       lat: totPos.lat + item.latitude / stationList.length,
       lng: totPos.lng + item.longitude / stationList.length,
     }),
-    { lat: 0, lng: 0 }
+    { lat: 0, lng: 0 },
   );
 
   const stationPosList = useMemo(
@@ -190,7 +190,7 @@ const RailwayMap = ({
         lat: item.latitude,
         lng: item.longitude,
       })),
-    [stationList]
+    [stationList],
   );
 
   return (

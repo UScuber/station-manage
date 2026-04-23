@@ -25,6 +25,7 @@ import {
   TableHead,
   TableRow,
 } from "../components";
+import { DEFAULT_PAGE_SIZES } from "../constants";
 import { useLocation, useNavigate } from "react-router-dom";
 import getURLSearchParams from "../utils/getURLSearchParams";
 
@@ -114,7 +115,7 @@ const RailwayList = () => {
   const [searchParams, setSearchParams] = useState({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
-    pagesize: +(params.get("rowsPerPage") ?? 10),
+    pagesize: +(params.get("rowsPerPage") ?? DEFAULT_PAGE_SIZES[0]),
   });
 
   const railwayListQuery = useRailwayList();
@@ -178,7 +179,7 @@ const RailwayList = () => {
     .sort((a, b) => a.ord - b.ord);
   const dividedRailways = filteredRailways.slice(
     (searchParams.page - 1) * searchParams.pagesize,
-    searchParams.page * searchParams.pagesize
+    searchParams.page * searchParams.pagesize,
   );
 
   const CustomPagination = (): React.ReactElement => (
@@ -186,7 +187,7 @@ const RailwayList = () => {
       page={searchParams.page}
       count={filteredRailways.length}
       rowsPerPage={searchParams.pagesize}
-      rowsPerPageOptions={[10, 25, 50, 100, 200]}
+      rowsPerPageOptions={[...DEFAULT_PAGE_SIZES]}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
       sx={{ my: 1 }}

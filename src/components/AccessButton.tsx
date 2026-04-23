@@ -12,7 +12,7 @@ type Props = {
   text: string;
   loading: boolean;
   timeLimit: number; // [sec]最終アクセスから一定時間制限する
-  accessedTime: Date | undefined;
+  accessedTime: Date | null | undefined;
   onClick: () => unknown;
   sx?: SxProps<Theme>;
 };

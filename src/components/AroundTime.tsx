@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, CircularProgress, Typography } from "@mui/material";
-import getDateString from "../utils/getDateString";
+import { formatDateTime, formatDateTimeFull } from "../utils/formatDate";
 import {
   differenceInYears,
   differenceInMonths,
@@ -12,8 +12,8 @@ import {
 
 // 現在時刻からの大まかな時間差を求める
 const getRelativeTime = (
-  date: Date | undefined,
-  invalidMsg: string
+  date: Date | null | undefined,
+  invalidMsg: string,
 ): string => {
   if (!date) return invalidMsg;
 
@@ -48,7 +48,7 @@ const AroundTime = ({
   fontSize,
   isLoading,
 }: {
-  date: Date | undefined;
+  date: Date | null | undefined;
   invalidMsg: string;
   disableMinute?: boolean;
   fontSize?: number;
@@ -71,7 +71,9 @@ const AroundTime = ({
       ) : (
         <Typography variant="h6" sx={{ lineHeight: 1, fontSize: fontSize }}>
           {isDisplayDate && date
-            ? getDateString(date, disableMinute)
+            ? disableMinute
+              ? formatDateTime(date)
+              : formatDateTimeFull(date)
             : getRelativeTime(date, invalidMsg)}
         </Typography>
       )}

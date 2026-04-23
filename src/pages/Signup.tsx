@@ -72,7 +72,7 @@ const Signup = () => {
     const email = emailRef.current.value;
     if (
       /^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/.test(
-        email
+        email,
       )
     ) {
       setEmailHelperText("");

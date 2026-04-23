@@ -24,6 +24,11 @@ import {
   useStationHistoryListAndInfo,
 } from "../api";
 import { useAuth } from "../auth";
+import {
+  DEFAULT_PAGE_SIZES,
+  JR_COMPANY_CODE_MAX,
+  ONE_DAY_MS,
+} from "../constants";
 import { StationMapGeojson, MapCustom, CustomLink } from "../components";
 import { Layer, Source } from "react-map-gl/mapbox";
 import NotFound from "./NotFound";
@@ -56,7 +61,7 @@ const splitHistoryList = (historyList: StationHistoryDetail[]): PathData[] => {
     const prev = historyList[i - 1];
     if (
       cur.railwayCode === prev.railwayCode &&
-      cur.date.getTime() - prev.date.getTime() < 1000 * 60 * 60 * 24 &&
+      cur.date.getTime() - prev.date.getTime() < ONE_DAY_MS &&
       cur.left.concat(cur.right).includes(prev.stationCode)
     ) {
       result[result.length - 1].path.push([cur.latitude, cur.longitude]);
@@ -92,8 +97,8 @@ const HistoryMap = () => {
   const [showPoint, setShowPoint] = useState(false);
   const [searchParams, setSearchParams] = useState<SearchParams>({
     page: +(params.get("page") ?? 1),
-    pagesize: +(params.get("pagesize") ?? 50),
-    comp: Number(params.get("comp")) || undefined,
+    pagesize: +(params.get("pagesize") ?? DEFAULT_PAGE_SIZES[2]),
+    comp: params.get("comp") === null ? undefined : Number(params.get("comp")),
     dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
     dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
   });
@@ -121,8 +126,22 @@ const HistoryMap = () => {
       companyListQuery.data
         ? [{ companyCode: 0, companyName: "JR" }].concat(companyListQuery.data)
         : [{ companyCode: 0, companyName: "JR" }],
-    [companyListQuery.data]
+    [companyListQuery.data],
   );
+
+  const matchesCompanyFilter = (
+    history: StationHistoryDetail,
+    companyIndex: number | undefined,
+  ): boolean => {
+    if (companyIndex === undefined) return true;
+    const selected = companyList[companyIndex];
+    if (!selected) return true;
+
+    if (selected.companyCode === 0) {
+      return history.companyCode <= JR_COMPANY_CODE_MAX;
+    }
+    return history.companyCode === selected.companyCode;
+  };
 
   const filteredHistoryList = useMemo(
     () =>
@@ -135,19 +154,14 @@ const HistoryMap = () => {
                 new Date(
                   history.date.getFullYear(),
                   history.date.getMonth(),
-                  history.date.getDate()
-                ) <= (searchParams.dateTo?.toDate() ?? new Date("9999-12-31"))
+                  history.date.getDate(),
+                ) <= (searchParams.dateTo?.toDate() ?? new Date("9999-12-31")),
             )
             .filter((history) =>
-              searchParams.comp
-                ? history.companyCode ===
-                  companyList[searchParams.comp].companyCode
-                : searchParams.comp !== undefined
-                ? history.companyCode <= 6 // JR
-                : true
+              matchesCompanyFilter(history, searchParams.comp),
             )
         : [],
-    [historyList, searchParams, companyList]
+    [historyList, searchParams, companyList],
   );
 
   const stationPosList = useMemo(
@@ -156,7 +170,7 @@ const HistoryMap = () => {
         lat: item.latitude,
         lng: item.longitude,
       })),
-    [filteredHistoryList]
+    [filteredHistoryList],
   );
 
   const centerPosition = useMemo(() => {

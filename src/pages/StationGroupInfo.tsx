@@ -13,7 +13,6 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Station,
   StationGroup,
-  StationGroupDate,
   StationWithVisit,
   useLatestStationGroupHistory,
   useLatestStationHistory,
@@ -54,13 +53,13 @@ const StationMap = ({
 
   const nearStationsQuery = useSearchKNearestStationGroups(
     { lat: groupStationData.latitude, lng: groupStationData.longitude },
-    5
+    5,
   );
   const nearStations = nearStationsQuery.data;
 
   const railwayCodes = useMemo(
     () => [...new Set(stationList.map((s) => s.railwayCode))],
-    [stationList]
+    [stationList],
   );
   const railPaths = useRailPathsByRailwayCodes(railwayCodes);
 
@@ -83,7 +82,10 @@ const StationMap = ({
       </Box>
 
       <MapCustom
-        center={{ lat: groupStationData.latitude, lng: groupStationData.longitude }}
+        center={{
+          lat: groupStationData.latitude,
+          lng: groupStationData.longitude,
+        }}
         zoom={15}
         style={{ height: "60vh" }}
         interactiveLayerIds={
@@ -202,7 +204,7 @@ const StationItem = ({ info }: { info: Station }): React.ReactElement => {
 
 const StationGroupInfo = () => {
   const stationGroupCode = Number(
-    useParams<"stationGroupCode">().stationGroupCode
+    useParams<"stationGroupCode">().stationGroupCode,
   );
   const { isAuthenticated } = useAuth();
 
@@ -213,13 +215,14 @@ const StationGroupInfo = () => {
 
   const groupStationQuery = useStationGroupInfo(stationGroupCode);
   const groupStationData = groupStationQuery.data;
-  const latestDateQuery = useLatestStationGroupHistory(
-    stationGroupCode,
-    (data: StationGroupDate) => {
+  const latestDateQuery = useLatestStationGroupHistory(stationGroupCode);
+  const latestDate = latestDateQuery.data;
+
+  useEffect(() => {
+    if (latestDateQuery.data) {
       setLoading(false);
     }
-  );
-  const latestDate = latestDateQuery.data;
+  }, [latestDateQuery.data]);
 
   const sendMutation = useSendStationGroupStateMutation();
 
@@ -324,7 +327,10 @@ const StationGroupInfo = () => {
         </TabPanel>
 
         <TabPanel label="マップ">
-          <StationMap groupStationData={groupStationData} stationList={stationList} />
+          <StationMap
+            groupStationData={groupStationData}
+            stationList={stationList}
+          />
         </TabPanel>
       </TabNavigation>
     </Container>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   CircularProgress,
@@ -16,10 +16,9 @@ import {
   useDeleteStationHistoryMutation,
   useStationAllHistory,
 } from "../api";
+import { RECORD_STATE_LABELS } from "../constants";
 import { ConfirmDialog } from "../components";
-import getDateString from "../utils/getDateString";
-
-const stateName = ["乗降", "通過"];
+import { formatDateTimeFull } from "../utils/formatDate";
 
 // 履歴のテーブル(StationInfo.tsxで使用)
 const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
@@ -27,10 +26,14 @@ const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteHistoryItem, setDeleteHistoryItem] =
     useState<StationHistoryData>();
-  const stationHistoryQuery = useStationAllHistory(stationCode, () => {
-    setDeleteLoading(false);
-  });
+  const stationHistoryQuery = useStationAllHistory(stationCode);
   const stationHistory = stationHistoryQuery.data;
+
+  useEffect(() => {
+    if (stationHistoryQuery.data) {
+      setDeleteLoading(false);
+    }
+  }, [stationHistoryQuery.data]);
 
   const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
 
@@ -84,8 +87,10 @@ const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
             <TableBody>
               {stationHistory.map((history) => (
                 <TableRow key={`${history.date}|${history.state}`}>
-                  <TableCell>{getDateString(history.date)}</TableCell>
-                  <TableCell>{stateName[history.state]}</TableCell>
+                  <TableCell>{formatDateTimeFull(history.date)}</TableCell>
+                  <TableCell>
+                    {RECORD_STATE_LABELS[history.state] ?? history.state}
+                  </TableCell>
                   <TableCell>
                     <IconButton
                       aria-label="delete"
@@ -108,7 +113,9 @@ const HistoryListTable = ({ stationCode }: { stationCode: number }) => {
         onClose={handleDialogClose}
         title="データを削除しますか"
         descriptionFn={(value) =>
-          `${getDateString(value.date)}  ${stateName[value.state]}`
+          `${formatDateTimeFull(value.date)}  ${
+            RECORD_STATE_LABELS[value.state] ?? value.state
+          }`
         }
       />
     </Box>

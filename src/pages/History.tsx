@@ -19,12 +19,8 @@ import { Search as SearchIcon } from "@mui/icons-material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
-import {
-  useStationHistoryList,
-  useStationHistoryCount,
-  StationHistoryDetail,
-  RecordState,
-} from "../api";
+import { StationHistoryDetail, RecordState } from "../api";
+import { useStationHistoryCount, useStationHistoryList } from "../api/history";
 import { useAuth } from "../auth";
 import {
   BinaryPagination,
@@ -32,13 +28,16 @@ import {
   CustomLink,
   RespStationName,
 } from "../components";
-import getDateString from "../utils/getDateString";
+import {
+  DAY_NAMES_JA,
+  HISTORY_PAGE_SIZES,
+  ONE_DAY_MS,
+  RECORD_STATE_LABELS,
+} from "../constants";
+import { formatDate, formatTime } from "../utils/formatDate";
 import NotFound from "./NotFound";
 import aroundDayName from "../utils/aroundDayName";
 import getURLSearchParams from "../utils/getURLSearchParams";
-
-const stateNames = ["乗降", "通過"];
-const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
 
 const HistoryContent = ({
   history,
@@ -62,9 +61,8 @@ const HistoryContent = ({
         </Box>
 
         <Typography variant="h6" color="text.secondary" sx={{ fontSize: 14 }}>
-          {stateNames[history.state]}{" "}
-          {("0" + history.date.getHours()).slice(-2)}:
-          {("0" + history.date.getMinutes()).slice(-2)}
+          {RECORD_STATE_LABELS[history.state] ?? history.state}{" "}
+          {formatTime(history.date)}
         </Typography>
       </Button>
     );
@@ -93,8 +91,8 @@ const HistoryContent = ({
             sx={{ fontSize: 14 }}
             key={hist.date.toString()}
           >
-            {stateNames[hist.state]} {("0" + hist.date.getHours()).slice(-2)}:
-            {("0" + hist.date.getMinutes()).slice(-2)}
+            {RECORD_STATE_LABELS[hist.state] ?? hist.state}{" "}
+            {formatTime(hist.date)}
           </Typography>
         ))}
       </Stack>
@@ -143,7 +141,7 @@ const OmittedContents = ({
 // 詳細で表示するものとそのまま表示するものを分ける
 // そのまま表示する要素のindexを返す
 const splitHistoryList = (
-  historyList: StationHistoryDetail[]
+  historyList: StationHistoryDetail[],
 ): (StationHistoryDetail & { idx: number })[] => {
   if (historyList.length <= 3) {
     return historyList.map((history, idx) => ({ ...history, idx: idx }));
@@ -159,9 +157,8 @@ const splitHistoryList = (
       historyList[i - 1].railwayCode !== history.railwayCode ||
       historyList[i + 1].railwayCode !== history.railwayCode ||
       historyList[i - 1].date.getTime() - history.date.getTime() >=
-        1000 * 60 * 60 * 24 ||
-      history.date.getTime() - historyList[i + 1].date.getTime() >=
-        1000 * 60 * 60 * 24
+        ONE_DAY_MS ||
+      history.date.getTime() - historyList[i + 1].date.getTime() >= ONE_DAY_MS
     )
       res.push({ ...history, idx: i });
   }
@@ -193,7 +190,7 @@ const History = () => {
   const getSearchParams = () => ({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
-    pagesize: +(params.get("pagesize") ?? 50),
+    pagesize: +(params.get("pagesize") ?? HISTORY_PAGE_SIZES[1]),
     type: params.get("type") ?? "station",
     dateFrom: params.get("dateFrom") ? dayjs(params.get("dateFrom")) : null,
     dateTo: params.get("dateTo") ? dayjs(params.get("dateTo")) : null,
@@ -207,14 +204,14 @@ const History = () => {
     searchParams.name,
     searchParams.type,
     searchParams.dateFrom?.toDate(),
-    searchParams.dateTo?.toDate()
+    searchParams.dateTo?.toDate(),
   );
 
   const historyListCount = useStationHistoryCount(
     searchParams.name,
     searchParams.type,
     searchParams.dateFrom?.toDate(),
-    searchParams.dateTo?.toDate()
+    searchParams.dateTo?.toDate(),
   );
 
   const handleChangeRowsPerPage = (event: SelectChangeEvent) => {
@@ -237,7 +234,7 @@ const History = () => {
           name: text,
           page: 1,
         });
-      }, 500)
+      }, 500),
     );
   };
 
@@ -247,7 +244,7 @@ const History = () => {
         page={searchParams.page}
         count={historyListCount.data!}
         rowsPerPage={searchParams.pagesize}
-        rowsPerPageOptions={[20, 50, 100, 200, 1000]}
+        rowsPerPageOptions={[...HISTORY_PAGE_SIZES]}
         onPageChange={(newPage) =>
           setSearchParams({ ...searchParams, page: newPage })
         }
@@ -429,8 +426,7 @@ const History = () => {
           const date = item.date;
           // if (!i) console.log(list);
           const isSameDate =
-            i &&
-            list[i - 1].date.getTime() - date.getTime() < 1000 * 60 * 60 * 24;
+            i && list[i - 1].date.getTime() - date.getTime() < ONE_DAY_MS;
           return (
             <Box key={`${date.toString()}|${item.stationCode}|${item.state}`}>
               {/* 省略 */}
@@ -438,15 +434,15 @@ const History = () => {
                 <OmittedContents
                   historyList={historyList.data.slice(
                     list[i - 1].idx + 1,
-                    item.idx
+                    item.idx,
                   )}
                 />
               )}
               {/* 日付 */}
               {!isSameDate && (
                 <Typography variant="h6" sx={{ mt: 1 }}>
-                  {getDateString(date, true, true)}({dayNames[date.getDay()]})
-                  ー {aroundDayName(item.date)}
+                  {formatDate(date)}({DAY_NAMES_JA[date.getDay()]}) ー{" "}
+                  {aroundDayName(item.date)}
                 </Typography>
               )}
               {/* 路線名 */}
@@ -490,8 +486,7 @@ const History = () => {
               <Box sx={{ ml: 2 }}>
                 {i + 1 < list.length &&
                 item.stationCode === list[i + 1].stationCode &&
-                date.getTime() - list[i + 1].date.getTime() <
-                  1000 * 60 * 60 * 24 ? (
+                date.getTime() - list[i + 1].date.getTime() < ONE_DAY_MS ? (
                   <HistoryContent history={[item, list[i + 1]]} />
                 ) : (
                   !(

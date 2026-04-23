@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   CircularProgress,
@@ -16,10 +16,9 @@ import {
   useDeleteStationHistoryMutation,
   useStationGroupAllHistory,
 } from "../api";
+import { RECORD_STATE_LABELS_WITH_GROUP } from "../constants";
 import { ConfirmDialog } from "../components";
-import getDateString from "../utils/getDateString";
-
-const stateName = ["乗降", "通過", "立ち寄り"];
+import { formatDateTimeFull } from "../utils/formatDate";
 
 const GroupHistoryTable = ({
   stationGroupCode,
@@ -31,13 +30,15 @@ const GroupHistoryTable = ({
   const [deleteHistoryItem, setDeleteHistoryItem] =
     useState<StationHistoryData>();
 
-  const stationGroupAllHistoryQuery = useStationGroupAllHistory(
-    stationGroupCode,
-    (data: StationHistoryData[]) => {
+  const stationGroupAllHistoryQuery =
+    useStationGroupAllHistory(stationGroupCode);
+  const stationGroupAllHistory = stationGroupAllHistoryQuery.data;
+
+  useEffect(() => {
+    if (stationGroupAllHistoryQuery.data) {
       setDeleteLoading(false);
     }
-  );
-  const stationGroupAllHistory = stationGroupAllHistoryQuery.data;
+  }, [stationGroupAllHistoryQuery.data]);
 
   const deleteStationHistoryMutation = useDeleteStationHistoryMutation();
 
@@ -93,8 +94,11 @@ const GroupHistoryTable = ({
             <TableBody>
               {stationGroupAllHistory.map((history) => (
                 <TableRow key={`${history.date}|${history.state}`}>
-                  <TableCell>{getDateString(history.date)}</TableCell>
-                  <TableCell>{stateName[history.state]}</TableCell>
+                  <TableCell>{formatDateTimeFull(history.date)}</TableCell>
+                  <TableCell>
+                    {RECORD_STATE_LABELS_WITH_GROUP[history.state] ??
+                      history.state}
+                  </TableCell>
                   <TableCell
                     sx={{
                       textDecoration: "underline",
@@ -126,8 +130,8 @@ const GroupHistoryTable = ({
         onClose={handleDialogClose}
         title="データを削除しますか"
         descriptionFn={(value) =>
-          `${getDateString(value.date)}  ${value.railwayName ?? ""}  ${
-            stateName[value.state]
+          `${formatDateTimeFull(value.date)}  ${value.railwayName ?? ""}  ${
+            RECORD_STATE_LABELS_WITH_GROUP[value.state] ?? value.state
           }`
         }
       />

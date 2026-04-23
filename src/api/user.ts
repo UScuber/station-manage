@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "./axios";
+import { invalidateAllHistoryQueries } from "./queryKeys";
 import { Auth, User } from "./types";
 
 // 新規登録
@@ -72,32 +73,9 @@ export const useLogoutMutation = (onSuccessFn?: () => unknown) => {
       const { data } = await axios.post<string>("/api/logout");
       return data;
     },
-    onSuccess: (data: string, variables: User) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["UserData"] });
-      // 履歴関連のキャッシュを全削除
-      queryClient.invalidateQueries({ queryKey: ["LatestStationHistory"] });
-      queryClient.invalidateQueries({ queryKey: ["LatestStationHistoryList"] });
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationGroupHistory"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryList"] });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryCount"] });
-      queryClient.invalidateQueries({ queryKey: ["StationHistoryDetail"] });
-      queryClient.invalidateQueries({ queryKey: ["StationHistory"] });
-      queryClient.invalidateQueries({ queryKey: ["StationGroupHistory"] });
-      queryClient.invalidateQueries({
-        queryKey: ["LatestStationGroupHistoryList"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgressList"] });
-      queryClient.invalidateQueries({
-        queryKey: ["RailwayProgressListByPref"],
-      });
-      queryClient.invalidateQueries({ queryKey: ["RailwayProgressListAll"] });
-      queryClient.invalidateQueries({ queryKey: ["CompanyProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["CompanyProgressList"] });
-      queryClient.invalidateQueries({ queryKey: ["PrefProgress"] });
-      queryClient.invalidateQueries({ queryKey: ["PrefProgressList"] });
+      invalidateAllHistoryQueries(queryClient);
       onSuccessFn && onSuccessFn();
     },
     onError: (err: Error) => {
