@@ -1,17 +1,17 @@
-const pad = (n: number): string => String(n).padStart(2, "0");
+import { format } from "date-fns";
 
 /** "2025-01-15" */
 export const formatDate = (date: Date): string =>
-  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  format(date, "yyyy-MM-dd");
 
 /** "2025-01-15 12:30" */
 export const formatDateTime = (date: Date): string =>
-  `${formatDate(date)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  format(date, "yyyy-MM-dd HH:mm");
 
 /** "2025-01-15 12:30:45" */
 export const formatDateTimeFull = (date: Date): string =>
-  `${formatDateTime(date)}:${pad(date.getSeconds())}`;
+  format(date, "yyyy-MM-dd HH:mm:ss");
 
 /** "12:30" */
 export const formatTime = (date: Date): string =>
-  `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  format(date, "HH:mm");
