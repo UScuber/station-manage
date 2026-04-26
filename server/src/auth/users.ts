@@ -2,20 +2,7 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 import type { DatabaseInstance } from "../db/connection";
 import type { UserData } from "../types";
-
-const date_string = (date: Date | number): string => {
-  const date_options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  };
-  return new Date(date)
-    .toLocaleString("ja-JP", date_options)
-    .replaceAll("/", "-");
-};
+import { convertDate } from "../shared/date";
 
 export class Users {
   private db: DatabaseInstance;
@@ -61,7 +48,7 @@ export class Users {
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
       `,
       )
-      .run(userId, sessionId, date_string(new Date()));
+      .run(userId, sessionId, convertDate(new Date()));
 
     return sessionId;
   }
@@ -89,15 +76,18 @@ export class Users {
         INSERT INTO Sessions VALUES(?, ?, datetime(?))
       `,
       )
-      .run(userData.userId, sessionId, date_string(new Date()));
+      .run(userData.userId, sessionId, convertDate(new Date()));
 
     return sessionId;
   }
 
   // login状態を判定
   status(sessionId: string): UserData | undefined {
+    const expireThreshold = convertDate(
+      new Date().getTime() - Users.expirationTime,
+    );
     const userData = this.db
-      .prepare<[string], UserData>(
+      .prepare<[string, string], UserData>(
         `
         SELECT
           Users.userId,
@@ -108,9 +98,10 @@ export class Users {
         INNER JOIN Sessions
           ON Users.userId = Sessions.userId
             AND Sessions.sessionId = ?
+            AND Sessions.updatedDate >= datetime(?)
       `,
       )
-      .get(sessionId);
+      .get(sessionId, expireThreshold);
     if (!userData) {
       return undefined;
     }
@@ -121,7 +112,7 @@ export class Users {
         WHERE userId = ? AND sessionId = ?
       `,
       )
-      .run(date_string(new Date()), userData.userId, sessionId);
+      .run(convertDate(new Date()), userData.userId, sessionId);
     return userData;
   }
 
@@ -146,7 +137,7 @@ export class Users {
         WHERE updatedDate < datetime(?)
       `,
         )
-        .run(date_string(new Date().getTime() - Users.expirationTime));
+        .run(convertDate(new Date().getTime() - Users.expirationTime));
     }, Users.sessionCheckInterval);
   }
 

@@ -1,10 +1,10 @@
-import type { DatabaseInstance } from "../db/connection";
+import type { DatabaseInstance } from "../../db/connection";
 import type {
   ExportStationHistory,
   ExportStationHistoryInfo,
   ExportStationGroupHistory,
   ExportStationGroupHistoryInfo,
-} from "../types";
+} from "../../types";
 
 interface StationHistoryRow extends ExportStationHistoryInfo {
   stationCode: number;
@@ -18,7 +18,7 @@ interface StationGroupHistoryRow extends ExportStationGroupHistoryInfo {
 }
 
 // 履歴を出力する
-export const export_sql = (db: DatabaseInstance, userId: string) => {
+export const exportHistory = (db: DatabaseInstance, userId: string) => {
   const stationRows = db
     .prepare<[string], StationHistoryRow>(
       `
@@ -114,7 +114,7 @@ export const export_sql = (db: DatabaseInstance, userId: string) => {
 };
 
 // 駅の情報のURLを出力する
-export const export_stationURL = (db: DatabaseInstance) => {
+export const exportStationURL = (db: DatabaseInstance) => {
   const timetableRows = db
     .prepare<[], { stationCode: number; direction: string; url: string }>(
       `

@@ -6,15 +6,17 @@ const buildHistoryMap = (
   userId: string,
   stationCodes: number[],
 ): Record<number, HistoryMapEntry> => {
-  const placeholders = stationCodes.map(() => "?").join(",");
+  if (stationCodes.length === 0) return {};
+
   const latestHistories = db
-    .prepare<[string, ...number[]], { stationCode: number; state: number }>(
+    .prepare<[string, string], { stationCode: number; state: number }>(
       `
     SELECT stationCode, state FROM LatestStationHistory
-    WHERE userId = ? AND stationCode IN (${placeholders})
+    WHERE userId = ?
+      AND stationCode IN (SELECT value FROM json_each(?))
   `,
     )
-    .all(userId, ...stationCodes);
+    .all(userId, JSON.stringify(stationCodes));
 
   const historyMap: Record<number, HistoryMapEntry> = {};
   for (const h of latestHistories) {
@@ -42,13 +44,14 @@ const findGateExitStations = (
     ...new Set(getStationCodes.map((c) => codeToGroup[c])),
   ];
   const groupHistories = db
-    .prepare<[string, ...number[]], { stationGroupCode: number; date: string }>(
+    .prepare<[string, string], { stationGroupCode: number; date: string }>(
       `
     SELECT stationGroupCode, date FROM StationGroupHistory
-    WHERE userId = ? AND stationGroupCode IN (${getGroupCodes.map(() => "?").join(",")})
+    WHERE userId = ?
+      AND stationGroupCode IN (SELECT value FROM json_each(?))
   `,
     )
-    .all(userId, ...getGroupCodes);
+    .all(userId, JSON.stringify(getGroupCodes));
 
   const groupDateMap: Record<number, number[]> = {};
   for (const gh of groupHistories) {
@@ -60,15 +63,16 @@ const findGateExitStations = (
   const gateExitStations = new Set<number>();
   if (Object.keys(groupDateMap).length === 0) return gateExitStations;
 
-  const getPlaceholders = getStationCodes.map(() => "?").join(",");
   const stationHistories = db
-    .prepare<[string, ...number[]], { stationCode: number; date: string }>(
+    .prepare<[string, string], { stationCode: number; date: string }>(
       `
     SELECT stationCode, date FROM StationHistory
-    WHERE userId = ? AND state = ${RecordState.Get} AND stationCode IN (${getPlaceholders})
+    WHERE userId = ?
+      AND state = ${RecordState.Get}
+      AND stationCode IN (SELECT value FROM json_each(?))
   `,
     )
-    .all(userId, ...getStationCodes);
+    .all(userId, JSON.stringify(getStationCodes));
 
   const twentyFourHours = 24 * 60 * 60 * 1000;
   for (const sh of stationHistories) {

@@ -1,7 +1,7 @@
 import fp from "fastify-plugin";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { usersManager } from "../db/connection";
-import { Users } from "../components/user";
+import { Users } from "../auth/users";
 import { AuthError, ForbiddenError } from "../shared/errors";
 
 export default fp(async function (fastify: FastifyInstance) {

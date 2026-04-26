@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { Users } from "../../components/user";
+import { Users } from "../../auth/users";
 import { SignupBody, LoginBody } from "./schema";
 import * as userService from "./service";
 import type { CookieSerializeOptions } from "@fastify/cookie";

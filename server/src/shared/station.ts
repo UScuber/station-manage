@@ -22,7 +22,7 @@ export const batchNextStations = (
   return map;
 };
 
-export const insert_next_stations = <T>(
+export const insertNextStations = <T>(
   elem: T,
   code: number,
 ): T & { left: number[]; right: number[] } => {

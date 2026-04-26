@@ -1,6 +1,6 @@
 import fs from "fs";
 import Database, { type Statement } from "better-sqlite3";
-import { Users } from "../components/user";
+import { Users } from "../auth/users";
 import { InputError } from "../shared/errors";
 
 const db_path = process.env.DB_PATH || "./station.db";

@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { db } from "../../db/connection";
 import { RecordState } from "../../constants";
 import { escapeLikePattern } from "../../shared/sql";
-import { convert_date } from "../../shared/date";
+import { convertDate } from "../../shared/date";
 import type { StationHistoryDetail } from "../../types";
 import type { HistoryFilterQuery } from "./schema";
 
@@ -76,10 +76,10 @@ const buildHistoryFilter = (
   const name = query.name ?? "";
   const type = query.type;
   const dateFrom = query.dateFrom
-    ? convert_date(query.dateFrom).substring(0, 10) + " 00:00:00"
+    ? convertDate(query.dateFrom).substring(0, 10) + " 00:00:00"
     : "0000-01-01 00:00:00";
   const dateTo = query.dateTo
-    ? convert_date(query.dateTo).substring(0, 10) + " 23:59:59"
+    ? convertDate(query.dateTo).substring(0, 10) + " 23:59:59"
     : "9999-12-31 23:59:59";
 
   const base = [userId, dateFrom, dateTo] as const;
