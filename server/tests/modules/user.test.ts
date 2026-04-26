@@ -388,6 +388,40 @@ describe("セッション管理", () => {
     expect(statusAfter.json().auth).toBe(true);
   });
 
+  it("期限切れのセッションでは認証されない", async () => {
+    const email = randomEmail();
+    await app.inject({
+      method: "POST",
+      url: "/api/signup",
+      payload: {
+        userName: "期限切れテスト",
+        userEmail: email,
+        password: "password1234",
+      },
+    });
+    const loginRes = await app.inject({
+      method: "POST",
+      url: "/api/login",
+      payload: { userEmail: email, password: "password1234" },
+    });
+    const sessionCookie = extractSessionCookie(loginRes.headers["set-cookie"]);
+
+    const { db } = await import("../../src/db/connection");
+    db.prepare(
+      `UPDATE Sessions
+       SET updatedDate = datetime('2000-01-01 00:00:00')
+       WHERE userId = (SELECT userId FROM Users WHERE userEmail = ?)`,
+    ).run(email);
+
+    const statusRes = await app.inject({
+      method: "GET",
+      url: "/api/status",
+      headers: { cookie: sessionCookie },
+    });
+    expect(statusRes.statusCode).toBe(200);
+    expect(statusRes.json().auth).toBe(false);
+  });
+
   it("signup時にセッションCookieが発行される", async () => {
     const email = randomEmail();
     const res = await app.inject({
