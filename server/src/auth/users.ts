@@ -1,15 +1,23 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
+import { SqliteError } from "better-sqlite3";
 import type { DatabaseInstance } from "../db/connection";
 import type { UserData } from "../types";
 import { convertDate } from "../shared/date";
+
+export const BCRYPT_MAX_PASSWORD_BYTES = 72;
+
+export const isPasswordWithinBcryptLimit = (password: string): boolean =>
+  Buffer.byteLength(password, "utf8") <= BCRYPT_MAX_PASSWORD_BYTES;
+
+const BCRYPT_ROUNDS = 12;
+const DUMMY_HASH = bcrypt.hashSync("dummy", BCRYPT_ROUNDS);
 
 export class Users {
   private db: DatabaseInstance;
 
   static expirationTime = 1000 * 60 * 60 * 24 * 20; // [ms] (20 days)
   static sessionCheckInterval = 1000 * 60 * 15; // [ms] (15 min.)
-  private static DUMMY_HASH = bcrypt.hashSync("dummy", 10);
   static roleFlags = Object.freeze({
     none: 0,
     admin: 1,
@@ -28,33 +36,49 @@ export class Users {
     return Users.hasAdmin(role);
   }
 
-  // 新規
-  signup(userName: string, userEmail: string, password: string): string {
+  // 新規、重複メールの場合は undefined を返す
+  async signup(
+    userName: string,
+    userEmail: string,
+    password: string,
+  ): Promise<string | undefined> {
     const userId = this.genSessionId();
-    const BCRYPT_ROUNDS = 12;
-    const hash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
+    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const sessionId = this.genSessionId();
+
+    try {
+      this.db
+        .prepare(
+          `
+          INSERT INTO Users(userId, userName, userEmail, role, hash)
+          VALUES(?, ?, ?, ?, ?)
+        `,
+        )
+        .run(userId, userName, userEmail, 0, hash);
+    } catch (e) {
+      if (e instanceof SqliteError && e.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        return undefined;
+      }
+      throw e;
+    }
 
     this.db
       .prepare(
         `
-        INSERT INTO Users VALUES(?, ?, ?, ?, ?)
+        INSERT INTO Sessions(userId, sessionId, updatedDate)
+        VALUES(?, ?, datetime(?))
       `,
       )
-      .run(userId, userName, userEmail, 0, hash);
-    this.db
-      .prepare(
-        `
-        INSERT INTO Sessions VALUES(?, ?, datetime(?))
-      `,
-      )
-      .run(userId, sessionId, convertDate(new Date()));
+      .run(userId, Users.hashSessionId(sessionId), convertDate(new Date()));
 
     return sessionId;
   }
 
   // 既存
-  login(userEmail: string, password: string): string | undefined {
+  async login(
+    userEmail: string,
+    password: string,
+  ): Promise<string | undefined> {
     const userData = this.db
       .prepare<[string], { userId: string; hash: string }>(
         `
@@ -64,8 +88,9 @@ export class Users {
       )
       .get(userEmail);
 
-    const hash = userData?.hash ?? Users.DUMMY_HASH;
-    if (!bcrypt.compareSync(password, hash) || !userData) {
+    const hash = userData?.hash ?? DUMMY_HASH;
+    const ok = await bcrypt.compare(password, hash);
+    if (!ok || !userData) {
       return undefined;
     }
 
@@ -73,16 +98,22 @@ export class Users {
     this.db
       .prepare(
         `
-        INSERT INTO Sessions VALUES(?, ?, datetime(?))
+        INSERT INTO Sessions(userId, sessionId, updatedDate)
+        VALUES(?, ?, datetime(?))
       `,
       )
-      .run(userData.userId, sessionId, convertDate(new Date()));
+      .run(
+        userData.userId,
+        Users.hashSessionId(sessionId),
+        convertDate(new Date()),
+      );
 
     return sessionId;
   }
 
   // login状態を判定
   status(sessionId: string): UserData | undefined {
+    const sessionHash = Users.hashSessionId(sessionId);
     const expireThreshold = convertDate(
       new Date().getTime() - Users.expirationTime,
     );
@@ -101,7 +132,7 @@ export class Users {
             AND Sessions.updatedDate >= datetime(?)
       `,
       )
-      .get(sessionId, expireThreshold);
+      .get(sessionHash, expireThreshold);
     if (!userData) {
       return undefined;
     }
@@ -112,7 +143,7 @@ export class Users {
         WHERE userId = ? AND sessionId = ?
       `,
       )
-      .run(convertDate(new Date()), userData.userId, sessionId);
+      .run(convertDate(new Date()), userData.userId, sessionHash);
     return userData;
   }
 
@@ -124,7 +155,7 @@ export class Users {
         WHERE sessionId = ?
       `,
       )
-      .run(sessionId);
+      .run(Users.hashSessionId(sessionId));
   }
 
   // 一定期間が経過したsessionを消す
@@ -143,5 +174,10 @@ export class Users {
 
   genSessionId(): string {
     return crypto.randomBytes(32).toString("hex");
+  }
+
+  // DBに保存するセッションIDはハッシュ化
+  static hashSessionId(sessionId: string): string {
+    return crypto.createHash("sha256").update(sessionId).digest("hex");
   }
 }

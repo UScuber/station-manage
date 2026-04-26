@@ -1,25 +1,28 @@
-import { db, usersManager } from "../../db/connection";
-import { AuthError } from "../../shared/errors";
+import { usersManager } from "../../db/connection";
+import { AuthError, InvalidValueError } from "../../shared/errors";
+import { isPasswordWithinBcryptLimit } from "../../auth/users";
 import type { SignupBody, LoginBody } from "./schema";
 
 usersManager.watch();
 
-export const signup = (body: SignupBody): { auth: false } | { auth: true; sessionId: string } => {
+export const signup = async (
+  body: SignupBody,
+): Promise<{ auth: false } | { auth: true; sessionId: string }> => {
   const { userName, userEmail, password } = body;
 
-  const exists = db
-    .prepare(`SELECT 1 FROM Users WHERE userEmail = ?`)
-    .get(userEmail);
-  if (exists) {
-    return { auth: false };
+  if (!isPasswordWithinBcryptLimit(password)) {
+    throw new InvalidValueError("パスワードが長すぎます");
   }
 
-  const sessionId = usersManager.signup(userName, userEmail, password);
+  const sessionId = await usersManager.signup(userName, userEmail, password);
+  if (!sessionId) {
+    return { auth: false };
+  }
   return { auth: true, sessionId };
 };
 
-export const login = (body: LoginBody): string => {
-  const sessionId = usersManager.login(body.userEmail, body.password);
+export const login = async (body: LoginBody): Promise<string> => {
+  const sessionId = await usersManager.login(body.userEmail, body.password);
   if (!sessionId) {
     throw new AuthError("メールアドレスまたはパスワードが間違っています");
   }
