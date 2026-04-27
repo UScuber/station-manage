@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { InvalidValueError } from "./errors";
 
-export const convert_date = (date: string | Date): string => {
+export const convertDate = (date: string | Date | number): string => {
   const d = date instanceof Date ? date : new Date(date);
   if (isNaN(d.getTime())) {
     throw new InvalidValueError("invalid date: " + String(date));

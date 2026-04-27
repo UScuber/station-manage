@@ -1,6 +1,6 @@
 import { db } from "../../db/connection";
-import { export_stationURL } from "../../components/export-sql";
-import { import_stationURL } from "../../components/import-sql";
+import { exportStationURL as exportStationURLData } from "../history/export";
+import { importStationURL as importStationURLData } from "../history/import";
 import * as adminRepo from "./repository";
 
 export const getTimetableURL = (stationCode: number) => {
@@ -34,9 +34,9 @@ export const updateTrainPosURL = (code: number, url: string) => {
 };
 
 export const exportStationURL = () => {
-  return export_stationURL(db);
+  return exportStationURLData(db);
 };
 
-export const importStationURL = (data: Parameters<typeof import_stationURL>[1]) => {
-  import_stationURL(db, data);
+export const importStationURL = (data: Parameters<typeof importStationURLData>[1]) => {
+  importStationURLData(db, data);
 };

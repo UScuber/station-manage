@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { Users } from "../../components/user";
+import { Users } from "../../auth/users";
 import { SignupBody, LoginBody } from "./schema";
 import * as userService from "./service";
 import type { CookieSerializeOptions } from "@fastify/cookie";
@@ -19,7 +19,7 @@ export default async function (fastify: FastifyInstance) {
     },
     schema: { body: SignupBody },
   }, async (request, reply) => {
-    const result = userService.signup(request.body);
+    const result = await userService.signup(request.body);
     if (!result.auth) {
       return { auth: false };
     }
@@ -33,7 +33,7 @@ export default async function (fastify: FastifyInstance) {
     },
     schema: { body: LoginBody },
   }, async (request, reply) => {
-    const sessionId = userService.login(request.body);
+    const sessionId = await userService.login(request.body);
     reply.setCookie("sessionId", sessionId, SESSION_COOKIE_OPTIONS);
     return { auth: true };
   });

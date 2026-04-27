@@ -1,4 +1,4 @@
-import { insert_next_stations } from "../../shared/station";
+import { insertNextStations } from "../../shared/station";
 import { attachVisitType } from "../../shared/visit-type";
 import * as prefRepo from "./repository";
 
@@ -16,6 +16,6 @@ export const getPrefRailways = (prefCode: number) => {
 
 export const getPrefStations = (prefCode: number, userId: string | null) => {
   const data = prefRepo.findStationsByPrefCode(prefCode);
-  const result = data.map(station => insert_next_stations(station, station.stationCode));
+  const result = data.map(station => insertNextStations(station, station.stationCode));
   return attachVisitType(result, userId);
 };

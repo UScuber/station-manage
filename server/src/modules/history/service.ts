@@ -1,9 +1,9 @@
 import { db } from "../../db/connection";
-import { convert_date } from "../../shared/date";
-import { insert_next_stations, batchNextStations } from "../../shared/station";
+import { convertDate } from "../../shared/date";
+import { insertNextStations, batchNextStations } from "../../shared/station";
 import { attachVisitType } from "../../shared/visit-type";
-import { export_sql } from "../../components/export-sql";
-import { import_sql } from "../../components/import-sql";
+import { exportHistory as exportHistoryData } from "./export";
+import { importHistory as importHistoryData } from "./import";
 import type { ExportHistoryJSON } from "../../types";
 import * as historyRepo from "./repository";
 import type { HistoryFilterQuery } from "./schema";
@@ -27,7 +27,7 @@ export const getStationHistoryList = (
   len: number,
 ) => {
   const data = historyRepo.findStationHistoryList(query, userId, off, len);
-  return data.map(station => insert_next_stations(station, station.stationCode));
+  return data.map(station => insertNextStations(station, station.stationCode));
 };
 
 export const getStationHistoryCount = (query: HistoryFilterQuery, userId: string) => {
@@ -63,25 +63,25 @@ export const searchStationGroupHistoryList = (
 };
 
 export const postStationDate = (code: number, date: string, state: number, userId: string) => {
-  historyRepo.insertStationDate(code, convert_date(date), state, userId);
+  historyRepo.insertStationDate(code, convertDate(date), state, userId);
 };
 
 export const postStationGroupDate = (code: number, date: string, userId: string) => {
-  historyRepo.insertStationGroupDate(code, convert_date(date), userId);
+  historyRepo.insertStationGroupDate(code, convertDate(date), userId);
 };
 
 export const deleteStationDate = (code: number, date: string, state: number, userId: string) => {
-  historyRepo.removeStationDate(code, convert_date(date), state, userId);
+  historyRepo.removeStationDate(code, convertDate(date), state, userId);
 };
 
 export const deleteStationGroupDate = (code: number, date: string, userId: string) => {
-  historyRepo.removeStationGroupDate(code, convert_date(date), userId);
+  historyRepo.removeStationGroupDate(code, convertDate(date), userId);
 };
 
 export const exportHistory = (userId: string) => {
-  return export_sql(db, userId);
+  return exportHistoryData(db, userId);
 };
 
 export const importHistory = (data: ExportHistoryJSON, userId: string) => {
-  import_sql(db, data, userId);
+  importHistoryData(db, data, userId);
 };

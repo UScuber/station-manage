@@ -1,4 +1,4 @@
-import { insert_next_stations } from "../../shared/station";
+import { insertNextStations } from "../../shared/station";
 import { attachVisitType } from "../../shared/visit-type";
 import * as companyRepo from "./repository";
 
@@ -16,6 +16,6 @@ export const getCompanyRailways = (companyCode: number) => {
 
 export const getCompanyStations = (companyCode: number, userId: string | null) => {
   const data = companyRepo.findStationsByCompanyCode(companyCode);
-  const result = data.map(station => insert_next_stations(station, station.stationCode));
+  const result = data.map(station => insertNextStations(station, station.stationCode));
   return attachVisitType(result, userId);
 };

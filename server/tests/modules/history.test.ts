@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createTestApp, loginTestUser, loginTestUserWithName } from "../helper";
+import {
+  SEED_STATION_HISTORY_RECORDS,
+  seedHistory,
+} from "../seed-history";
 import type { FastifyInstance } from "fastify";
 
 let app: FastifyInstance;
@@ -14,37 +18,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await app.close();
 });
-
-const sameStationHistoryRecords = [
-  { code: 1110101, date: "2025-07-01T00:00:00.000Z", state: 0 },
-  { code: 1110102, date: "2025-07-02T00:00:00.000Z", state: 1 },
-];
-
-const sameGroupHistoryRecords = [
-  { code: 11101010, date: "2025-07-03T00:00:00.000Z" },
-];
-
-const seedSameHistory = async (targetCookie: string) => {
-  for (const record of sameStationHistoryRecords) {
-    const res = await app.inject({
-      method: "POST",
-      url: "/api/stationDate",
-      headers: { cookie: targetCookie },
-      payload: record,
-    });
-    expect(res.statusCode).toBe(200);
-  }
-
-  for (const record of sameGroupHistoryRecords) {
-    const res = await app.inject({
-      method: "POST",
-      url: "/api/stationGroupDate",
-      headers: { cookie: targetCookie },
-      payload: record,
-    });
-    expect(res.statusCode).toBe(200);
-  }
-};
 
 // --- 未認証テスト ---
 
@@ -88,8 +61,8 @@ describe("同一履歴データでのユーザー分離(history)", () => {
   beforeAll(async () => {
     userACookie = await loginTestUserWithName(app, "履歴分離ユーザーA");
     userBCookie = await loginTestUserWithName(app, "履歴分離ユーザーB");
-    await seedSameHistory(userACookie);
-    await seedSameHistory(userBCookie);
+    await seedHistory(app, userACookie);
+    await seedHistory(app, userBCookie);
   });
 
   it("同じ取得方法ならA/Bで同じ履歴を返す", async () => {
@@ -257,7 +230,7 @@ describe("同一履歴データでのユーザー分離(history)", () => {
       method: "DELETE",
       url: "/api/stationDate",
       headers: { cookie: userACookie },
-      payload: sameStationHistoryRecords[0],
+      payload: SEED_STATION_HISTORY_RECORDS[0],
     });
     expect(deleteRes.statusCode).toBe(200);
 

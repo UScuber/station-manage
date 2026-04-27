@@ -1,9 +1,9 @@
-import type { DatabaseInstance } from "../db/connection";
+import type { DatabaseInstance } from "../../db/connection";
 import type {
   ExportHistoryJSON,
   ExportStationHistory,
   ExportStationGroupHistory,
-} from "../types";
+} from "../../types";
 
 interface UnknownStationHistoryEntry extends ExportStationHistory {
   query: string[];
@@ -19,7 +19,7 @@ interface UnknownHistory {
 }
 
 // 履歴データを取り込む
-export const import_sql = (
+export const importHistory = (
   db: DatabaseInstance,
   input_json: ExportHistoryJSON,
   userId: string,
@@ -155,7 +155,7 @@ export const import_sql = (
   return unknown_history;
 };
 
-export const import_stationURL = (
+export const importStationURL = (
   db: DatabaseInstance,
   input_json: { data: { stationCode: number; timetable: { direction: string; url: string }[]; trainPosURL: string | null }[] },
 ): void => {
