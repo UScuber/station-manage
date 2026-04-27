@@ -7,10 +7,10 @@ export enum RecordState {
 
 // 訪問種別 enum（値は優先度順）
 export enum VisitType {
-  None = 0,      // 履歴なし
-  Pass = 1,      // 通過
-  Get = 2,       // 乗降り
-  GateExit = 3,  // 降りて改札下車
+  None = 0, // 履歴なし
+  Pass = 1, // 通過
+  Get = 2, // 乗降り
+  GateExit = 3, // 降りて改札下車
 }
 
 // 訪問状態（履歴の集約結果、駅単位）
@@ -97,12 +97,12 @@ export type Auth = {
 // history
 
 export type StationDate = {
-  getDate: Date | undefined;
-  passDate: Date | undefined;
+  getDate: Date | null;
+  passDate: Date | null;
 };
 
 export type StationGroupDate = {
-  date: Date | undefined;
+  date: Date | null;
 };
 
 export type StationHistory = {
@@ -126,6 +126,31 @@ export type StationHistoryData = {
   railwayColor?: string;
 };
 
+// API response payloads
+export type StationDateResponse = {
+  getDate: string | null;
+  passDate: string | null;
+};
+
+export type StationGroupDateResponse = {
+  date: string | null;
+};
+
+export type StationHistoryResponse = Omit<StationHistory, "date"> & {
+  date: string;
+};
+
+export type StationHistoryDetailResponse = Omit<
+  StationHistoryDetail,
+  "date"
+> & {
+  date: string;
+};
+
+export type StationHistoryDataResponse = Omit<StationHistoryData, "date"> & {
+  date: string;
+};
+
 export type StationProgress = {
   stationNum: number;
   getOrPassStationNum: number;
@@ -140,7 +165,7 @@ export type StationGroupHistory = {
 export type ExportHistoryJSON = {
   station_history: {
     history: {
-      date: Date;
+      date: string;
       state: number;
     }[];
     info: {
@@ -154,7 +179,7 @@ export type ExportHistoryJSON = {
   }[];
   station_group_history: {
     history: {
-      date: Date;
+      date: string;
     }[];
     info: {
       stationName: string;

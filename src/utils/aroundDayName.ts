@@ -1,54 +1,34 @@
+import {
+  differenceInCalendarDays,
+  differenceInCalendarYears,
+  isSameMonth,
+  isSameWeek,
+  startOfDay,
+  subMonths,
+  subWeeks,
+} from "date-fns";
+
 // 大まかな日付(○○日前)を計算
 const aroundDayName = (date: Date): string => {
-  let past = date;
-  let now = new Date();
-  past = new Date(past.getFullYear(), past.getMonth(), past.getDate());
-  now = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (past.getTime() === now.getTime()) {
-    return "今日";
-  }
-  past.setDate(past.getDate() + 1);
-  if (past.getTime() === now.getTime()) {
-    return "昨日";
-  }
-  past.setDate(past.getDate() + 1);
-  if (past.getTime() === now.getTime()) {
-    return "おととい";
-  }
-  // 1 week
-  past.setDate(past.getDate() - 2);
-  const pastDay = past.getDay(),
-    nowDay = now.getDay();
-  past.setDate(past.getDate() - pastDay);
-  now.setDate(now.getDate() - nowDay);
-  if (past.getTime() === now.getTime()) {
-    return "今週";
-  }
-  past.setDate(past.getDate() + 7);
-  if (past.getTime() === now.getTime()) {
-    return "先週";
-  }
-  past.setDate(past.getDate() - 7 + pastDay);
-  now.setDate(now.getDate() + nowDay);
-  past.setDate(1);
-  now.setDate(1);
-  if (past.getTime() === now.getTime()) {
-    return "今月";
-  }
-  past.setMonth(past.getMonth() + 1);
-  if (past.getTime() === now.getTime()) {
-    return "先月";
-  }
-  past.setMonth(past.getMonth() - 1);
-  if (past.getFullYear() === now.getFullYear()) {
-    return "今年";
-  }
-  if (past.getFullYear() + 1 === now.getFullYear()) {
-    return "去年";
-  }
-  if (past.getFullYear() + 2 === now.getFullYear()) {
-    return "おととし";
-  }
+  const now = startOfDay(new Date());
+  const target = startOfDay(date);
+
+  const diffDays = differenceInCalendarDays(now, target);
+  if (diffDays === 0) return "今日";
+  if (diffDays === 1) return "昨日";
+  if (diffDays === 2) return "おととい";
+
+  if (isSameWeek(target, now, { weekStartsOn: 0 })) return "今週";
+  if (isSameWeek(target, subWeeks(now, 1), { weekStartsOn: 0 })) return "先週";
+
+  if (isSameMonth(target, now)) return "今月";
+  if (isSameMonth(target, subMonths(now, 1))) return "先月";
+
+  const diffYears = differenceInCalendarYears(now, target);
+  if (diffYears === 0) return "今年";
+  if (diffYears === 1) return "去年";
+  if (diffYears === 2) return "おととし";
+
   return "";
 };
 

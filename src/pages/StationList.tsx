@@ -26,9 +26,10 @@ import {
   StationGroupDate,
   useSearchStationGroupCount,
   useSearchStationGroupList,
-  useSearchStationGroupListHistory,
 } from "../api";
+import { useSearchStationGroupListHistory } from "../api/history";
 import { useAuth } from "../auth";
+import { DEFAULT_PAGE_SIZES } from "../constants";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
 import { useLocation, useNavigate } from "react-router-dom";
 import getURLSearchParams from "../utils/getURLSearchParams";
@@ -136,7 +137,7 @@ const StationList = () => {
   const getSearchParams = () => ({
     name: params.get("name") ?? "",
     page: +(params.get("page") ?? 1),
-    pagesize: +(params.get("pagesize") ?? 50),
+    pagesize: +(params.get("pagesize") ?? DEFAULT_PAGE_SIZES[2]),
   });
   const [searchParams, setSearchParams] = useState(getSearchParams);
 
@@ -149,7 +150,7 @@ const StationList = () => {
     length: Math.min(
       searchParams.pagesize,
       (stationGroupCount.data ?? 1e9) -
-        (searchParams.page - 1) * searchParams.pagesize
+        (searchParams.page - 1) * searchParams.pagesize,
     ),
     name: searchParams.name,
   });
@@ -160,7 +161,7 @@ const StationList = () => {
     length: Math.min(
       searchParams.pagesize,
       (stationGroupCount.data ?? 1e9) -
-        (searchParams.page - 1) * searchParams.pagesize
+        (searchParams.page - 1) * searchParams.pagesize,
     ),
     name: searchParams.name,
   });
@@ -192,7 +193,7 @@ const StationList = () => {
           name: text,
           page: 1,
         });
-      }, 500)
+      }, 500),
     );
   };
 
@@ -202,7 +203,7 @@ const StationList = () => {
         page={searchParams.page}
         count={stationGroupCount.data!}
         rowsPerPage={searchParams.pagesize}
-        rowsPerPageOptions={[10, 25, 50, 100, 200]}
+        rowsPerPageOptions={[...DEFAULT_PAGE_SIZES]}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         sx={{ my: 1 }}

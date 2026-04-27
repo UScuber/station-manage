@@ -6,14 +6,11 @@ export type ThemeMode = {
   changeDarkMode: (mode: PaletteMode) => void;
 };
 
-const DarkModeContext = createContext<ThemeMode>({
-  mode: "light",
-  changeDarkMode: (_) => {},
-});
+const DarkModeContext = createContext<ThemeMode | null>(null);
 
-export const getDarkMode = (): ThemeMode => {
+export const useDarkModeState = (): ThemeMode => {
   const [mode, setMode] = useState<PaletteMode>(
-    (localStorage.getItem("theme-mode") as PaletteMode) ?? "light"
+    (localStorage.getItem("theme-mode") as PaletteMode) ?? "light",
   );
 
   const changeDarkMode = (newMode: PaletteMode) => {
@@ -29,4 +26,10 @@ export const getDarkMode = (): ThemeMode => {
 
 export const DarkModeProvider = DarkModeContext.Provider;
 
-export const useDarkMode = () => useContext(DarkModeContext);
+export const useDarkMode = (): ThemeMode => {
+  const ctx = useContext(DarkModeContext);
+  if (!ctx) {
+    throw new Error("useDarkMode must be used within <DarkModeProvider>");
+  }
+  return ctx;
+};

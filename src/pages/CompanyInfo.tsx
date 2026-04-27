@@ -56,7 +56,7 @@ const CompanyStationMap = ({
       lat: totPos.lat + item.latitude / stationList.length,
       lng: totPos.lng + item.longitude / stationList.length,
     }),
-    { lat: 0, lng: 0 }
+    { lat: 0, lng: 0 },
   );
 
   const stationPosList = useMemo(
@@ -65,7 +65,7 @@ const CompanyStationMap = ({
         lat: item.latitude,
         lng: item.longitude,
       })),
-    [stationList]
+    [stationList],
   );
 
   return (

@@ -155,7 +155,7 @@ const SearchStation = () => {
         setPosition({ lat: latitude, lng: longitude });
       },
       () => setAvailable(false),
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
   };
 
@@ -168,7 +168,7 @@ const SearchStation = () => {
         setPosition({ lat: latitude, lng: longitude });
       },
       undefined,
-      { enableHighAccuracy: true, timeout: 3000 }
+      { enableHighAccuracy: true, timeout: 3000 },
     );
     setTimeout(() => navigator.geolocation.clearWatch(watchId), 3000);
   };

@@ -1,17 +1,16 @@
-// 日付を文字列に変換する
+import { formatDate, formatDateTime, formatDateTimeFull } from "./formatDate";
+
+/**
+ * @deprecated formatDate / formatDateTime / formatDateTimeFull を使用してください。
+ */
 const getDateString = (
   date: Date,
   disableSeconds?: boolean,
-  disableHour?: boolean
-): string =>
-  `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(-2)}-${(
-    "0" + date.getDate()
-  ).slice(-2)}` +
-  (disableHour
-    ? ""
-    : ` ${("0" + date.getHours()).slice(-2)}:${("0" + date.getMinutes()).slice(
-        -2
-      )}`) +
-  (disableSeconds ? "" : ":" + ("0" + date.getSeconds()).slice(-2));
+  disableHour?: boolean,
+): string => {
+  if (disableHour) return formatDate(date);
+  if (disableSeconds) return formatDateTime(date);
+  return formatDateTimeFull(date);
+};
 
 export default getDateString;

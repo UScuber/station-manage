@@ -15,11 +15,13 @@ import {
 import {
   ExportHistoryJSON,
   ExportStationURLJSON,
-  useExportHistoryMutation,
   useExportStationURLMutation,
-  useImportHistoryMutation,
   useImportStationURLMutation,
 } from "../api";
+import {
+  useExportHistoryMutation,
+  useImportHistoryMutation,
+} from "../api/history";
 import { useAuth } from "../auth";
 import { ConfirmDialog } from "../components";
 import { useDarkMode } from "../contexts/DarkModeContext";
@@ -315,7 +317,7 @@ const Profile = () => {
     setOpen(false);
     if (!value || !user) return;
 
-    logoutMutation.mutate(user);
+    logoutMutation.mutate();
   };
 
   if (isLoading || !user) {

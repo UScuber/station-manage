@@ -9,7 +9,7 @@ import {
   ThemeProvider,
   createTheme,
 } from "@mui/material";
-import { AuthProvider, getAuth } from "./auth/auth";
+import { AuthProvider, useAuthState } from "./auth/auth";
 import Header from "./components/Header";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -29,7 +29,7 @@ import CompanyInfo from "./pages/CompanyInfo";
 import PrefectureInfo from "./pages/PrefectureInfo";
 import PrefectureList from "./pages/PrefectureList";
 import HistoryMap from "./pages/HistoryMap";
-import { DarkModeProvider, getDarkMode } from "./contexts/DarkModeContext";
+import { DarkModeProvider, useDarkModeState } from "./contexts/DarkModeContext";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -127,8 +127,8 @@ const Notification = () => {
 };
 
 const AppChild = () => {
-  const auth = getAuth();
-  const darkmode = getDarkMode();
+  const auth = useAuthState();
+  const darkmode = useDarkModeState();
 
   const modedTheme = useMemo(() => getTheme(darkmode.mode), [darkmode.mode]);
 

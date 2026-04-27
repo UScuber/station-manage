@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -14,14 +20,15 @@ import {
 import {
   RecordState,
   Station,
-  StationDate,
   StationHistory,
-  useLatestStationHistory,
   useRailPath,
-  useSendStationStateMutation,
   useStationInfo,
   useStationsInfoByRailwayCode,
 } from "../api";
+import {
+  useLatestStationHistory,
+  useSendStationStateMutation,
+} from "../api/history";
 import { useAuth } from "../auth";
 import {
   AccessButton,
@@ -78,7 +85,6 @@ const NextStation = ({ code }: { code: number }): React.ReactElement => {
   );
 };
 
-
 // mapの要素をクリックしたときに表示する情報の型
 type StationMapProperties = (
   | {
@@ -108,7 +114,7 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
         lat: item.latitude,
         lng: item.longitude,
       })) || (info ? [{ lat: info.latitude, lng: info.longitude }] : []),
-    [stationList, info]
+    [stationList, info],
   );
 
   if (!info) {
@@ -143,9 +149,7 @@ const StationMap = ({ info }: { info: Station | undefined }) => {
         zoom={15}
         style={{ height: "60vh" }}
         stationList={stationPosList}
-        interactiveLayerIds={
-          !hideStations ? ["stations", "lines"] : ["lines"]
-        }
+        interactiveLayerIds={!hideStations ? ["stations", "lines"] : ["lines"]}
         onClick={(e) => {
           const feature = e.features?.[0];
           if (!feature) {
@@ -230,28 +234,30 @@ const StationInfo = () => {
 
   const station = useStationInfo(stationCode);
   const info = station.data;
-  const latestDateQuery = useLatestStationHistory(
-    stationCode,
-    (data: StationDate) => {
-      if ((data.getDate ?? new Date(0)) > (data.passDate ?? new Date(0))) {
-        setGetLoading(false);
-      } else {
-        setPassLoading(false);
-      }
-    }
-  );
+  const latestDateQuery = useLatestStationHistory(stationCode);
   const latestDate = latestDateQuery.data;
+
+  useEffect(() => {
+    if (!latestDate) return;
+    if (
+      (latestDate.getDate ?? new Date(0)) > (latestDate.passDate ?? new Date(0))
+    ) {
+      setGetLoading(false);
+    } else {
+      setPassLoading(false);
+    }
+  }, [latestDate]);
 
   const handleSubmitError = (err: Error, variables: StationHistory) => {
     if (variables.state === RecordState.Get) {
       setGetLoading(false);
       setButtonErrorMsg(
-        `${info?.stationName}駅 乗降記録の送信に失敗しました(Error: ${err.message})`
+        `${info?.stationName}駅 乗降記録の送信に失敗しました(Error: ${err.message})`,
       );
     } else if (variables.state === RecordState.Pass) {
       setPassLoading(false);
       setButtonErrorMsg(
-        `${info?.stationName}駅 通過記録の送信に失敗しました(Error: ${err.message})`
+        `${info?.stationName}駅 通過記録の送信に失敗しました(Error: ${err.message})`,
       );
     }
   };
@@ -309,7 +315,7 @@ const StationInfo = () => {
         rightKeyRef.current = true;
       }
     },
-    [info, navigation]
+    [info, navigation],
   );
 
   const handleKeyUp = useCallback((e: KeyboardEvent) => {

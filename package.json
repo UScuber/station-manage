@@ -21,7 +21,9 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{js,json}\""
   },
   "eslintConfig": {
     "extends": [
@@ -46,6 +48,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
+    "prettier": "^3.8.3",
     "vite": "^7.3.2"
   }
 }
