@@ -70,6 +70,12 @@ export default async function (fastify: FastifyInstance) {
     return historyService.getStationHistoryDetail(request.userId!);
   });
 
+  fastify.get("/allStationGroupHistory", {
+    onRequest: [fastify.authenticate],
+  }, async (request) => {
+    return historyService.getAllStationGroupHistory(request.userId!);
+  });
+
   fastify.get<{ Params: StationCodeParams }>("/stationHistory/:stationCode", {
     onRequest: [fastify.authenticate],
     schema: { params: StationCodeParams },

@@ -64,6 +64,15 @@ export const findLatestStationGroupHistory = (
   };
 };
 
+export const findAllStationGroupHistory = (userId: string) => {
+  return db
+    .prepare<[string], { stationGroupCode: number; date: string }>(`
+      SELECT stationGroupCode, date FROM StationGroupHistory
+      WHERE userId = ?
+    `)
+    .all(userId);
+};
+
 type HistoryFilterResult = {
   nameCondition: string;
   params: [userId: string, dateFrom: string, dateTo: string, ...name: string[]];

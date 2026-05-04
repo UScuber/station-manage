@@ -20,6 +20,10 @@ export const getLatestStationGroupHistory = (stationGroupCode: number, userId: s
   return historyRepo.findLatestStationGroupHistory(stationGroupCode, userId);
 };
 
+export const getAllStationGroupHistory = (userId: string) => {
+  return historyRepo.findAllStationGroupHistory(userId);
+};
+
 export const getStationHistoryList = (
   query: HistoryFilterQuery,
   userId: string,
