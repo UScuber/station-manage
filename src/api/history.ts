@@ -187,6 +187,24 @@ export const useStationHistoryListAndInfo = () => {
   });
 };
 
+// 駅グループの全履歴日付一覧を取得（GateExit 判定用）
+export const useAllStationGroupHistory = () => {
+  const { isAuthenticated } = useAuth();
+  return useQuery<StationGroupHistory[]>({
+    queryKey: ["AllStationGroupHistory"],
+    queryFn: async () => {
+      const { data } = await axios.get<
+        { stationGroupCode: number; date: string }[]
+      >("/api/allStationGroupHistory");
+      return data.map((d) => ({
+        stationGroupCode: d.stationGroupCode,
+        date: new Date(d.date),
+      }));
+    },
+    enabled: isAuthenticated,
+  });
+};
+
 // 駅の履歴を取得
 export const useStationAllHistory = (code: number | undefined) => {
   const { isAuthenticated } = useAuth();

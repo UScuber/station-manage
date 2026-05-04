@@ -18,8 +18,11 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import {
+  RecordState,
   StationHistoryDetail,
+  VisitType,
   useAllRailPaths,
+  useAllStationGroupHistory,
   useCompanyList,
   useStationHistoryListAndInfo,
 } from "../api";
@@ -116,6 +119,9 @@ const HistoryMap = () => {
   const historyListQuery = useStationHistoryListAndInfo();
   const historyList = historyListQuery.data;
 
+  const allStationGroupHistoryQuery = useAllStationGroupHistory();
+  const allStationGroupHistory = allStationGroupHistoryQuery.data;
+
   const allRailPathsQuery = useAllRailPaths();
   const allRailPaths = allRailPathsQuery.data;
 
@@ -172,6 +178,52 @@ const HistoryMap = () => {
       })),
     [filteredHistoryList],
   );
+
+  const filteredHistoryWithVisitType = useMemo(() => {
+    if (!searchParams.dateFrom && !searchParams.dateTo) {
+      return filteredHistoryList;
+    }
+    if (!allStationGroupHistory) return filteredHistoryList;
+
+    // stationGroupCodeごとの立ち寄り日時一覧
+    const groupDateMap = new Map<number, number[]>();
+    for (const gh of allStationGroupHistory) {
+      const list = groupDateMap.get(gh.stationGroupCode) ?? [];
+      list.push(gh.date.getTime());
+      groupDateMap.set(gh.stationGroupCode, list);
+    }
+
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+
+    const visitTypeMap = new Map<number, VisitType>();
+    for (const item of filteredHistoryList) {
+      const current = visitTypeMap.get(item.stationCode) ?? VisitType.None;
+      let visitType: VisitType;
+      if (item.state === RecordState.Get) {
+        const getTime = item.date.getTime();
+        const groupDates = groupDateMap.get(item.stationGroupCode) ?? [];
+        const isGateExit = groupDates.some(
+          (gd) => Math.abs(gd - getTime) <= twentyFourHours,
+        );
+        visitType = isGateExit ? VisitType.GateExit : VisitType.Get;
+      } else {
+        visitType = VisitType.Pass;
+      }
+      if (visitType > current) {
+        visitTypeMap.set(item.stationCode, visitType);
+      }
+    }
+
+    return filteredHistoryList.map((item) => ({
+      ...item,
+      visitType: visitTypeMap.get(item.stationCode) ?? VisitType.None,
+    }));
+  }, [
+    filteredHistoryList,
+    allStationGroupHistory,
+    searchParams.dateFrom,
+    searchParams.dateTo,
+  ]);
 
   const centerPosition = useMemo(() => {
     if (filteredHistoryList.length === 0)
@@ -380,7 +432,7 @@ const HistoryMap = () => {
               formalName: "",
             },
           }))}
-          stationList={filteredHistoryList}
+          stationList={filteredHistoryWithVisitType}
           hideStations={!showPoint}
         />
 
