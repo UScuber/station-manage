@@ -15,6 +15,6 @@ export const VISIT_TYPE_STYLE = {
   [VisitType.GateExit]: {
     color: "#e60012",
     strokeColor: "#ffffff",
-    sizeScale: 1.4,
+    sizeScale: 1.5,
   },
 } as const;
