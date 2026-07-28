@@ -161,14 +161,18 @@ export class Users {
   // 一定期間が経過したsessionを消す
   watch(): void {
     setInterval(() => {
-      this.db
-        .prepare(
-          `
-        DELETE FROM Sessions
-        WHERE updatedDate < datetime(?)
-      `,
-        )
-        .run(convertDate(new Date().getTime() - Users.expirationTime));
+      try {
+        this.db
+          .prepare(
+            `
+          DELETE FROM Sessions
+          WHERE updatedDate < datetime(?)
+        `,
+          )
+          .run(convertDate(new Date().getTime() - Users.expirationTime));
+      } catch (e) {
+        console.error("[watch] session cleanup failed:", e);
+      }
     }, Users.sessionCheckInterval);
   }
 

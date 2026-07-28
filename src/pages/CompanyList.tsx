@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "../components";
 import { DEFAULT_PAGE_SIZES } from "../constants";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import getURLSearchParams from "../utils/getURLSearchParams";
 
 // 文字列同士の類似度、価が小さいほど高い

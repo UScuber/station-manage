@@ -64,6 +64,7 @@ function createDatabase(): InstanceType<typeof Database> {
   const fileDb: InstanceType<typeof Database> = new Database(db_path);
   fileDb.pragma("journal_mode = WAL");
   fileDb.pragma("busy_timeout = 5000");
+  fileDb.exec("REINDEX");
   return fileDb;
 }
 

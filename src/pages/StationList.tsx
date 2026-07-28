@@ -31,7 +31,7 @@ import { useSearchStationGroupListHistory } from "../api/history";
 import { useAuth } from "../auth";
 import { DEFAULT_PAGE_SIZES } from "../constants";
 import { AroundTime, BinaryPagination, CustomLink } from "../components";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import getURLSearchParams from "../utils/getURLSearchParams";
 
 const Row = ({

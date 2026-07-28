@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { styled } from "@mui/material";
 
 const CustomLink = styled(Link)(({ theme, color }) => ({
