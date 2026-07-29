@@ -360,7 +360,7 @@ const StationInfo = () => {
 
   return (
     <Container>
-      <Box maxWidth="sm" sx={{ margin: "auto" }}>
+      <Box sx={{ maxWidth: "sm", margin: "auto" }}>
         <Box sx={{ textAlign: "center" }}>
           <RespStationName variant="h3" sx={{ lineHeight: 1 }}>
             {info.stationName}
